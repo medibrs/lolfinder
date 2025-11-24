@@ -119,6 +119,8 @@ export default function NotificationsPage() {
         return <Crown className="w-5 h-5 text-yellow-500" />
       case 'team_member_left':
         return <Users className="w-5 h-5 text-gray-500" />
+      case 'team_member_removed':
+        return <X className="w-5 h-5 text-red-500" />
       case 'system':
         return <AlertCircle className="w-5 h-5 text-orange-500" />
       default:

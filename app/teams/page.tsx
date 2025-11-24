@@ -216,6 +216,10 @@ export default function TeamsPage() {
                     <Button asChild className="w-full bg-yellow-600 hover:bg-yellow-700">
                       <a href="/manage-team">Manage Team</a>
                     </Button>
+                  ) : user && userTeam?.id === team.id ? (
+                    <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+                      <a href="/manage-team">View Team</a>
+                    </Button>
                   ) : user && userTeam ? (
                     <Button disabled className="w-full">
                       Already in a team

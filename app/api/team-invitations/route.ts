@@ -127,22 +127,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invited player not found' }, { status: 404 });
     }
 
+    // Source of truth: Check if player is currently in a team
     if (invitedPlayer.team_id) {
       return NextResponse.json({ error: 'Player is already in a team' }, { status: 400 });
     }
 
-    // Check for existing pending invitation
-    const { data: existingInvitation } = await supabase
+    // Delete any old pending invitations (cleanup stale data)
+    await supabase
       .from('team_invitations')
-      .select('id')
+      .delete()
       .eq('team_id', validatedData.team_id)
       .eq('invited_player_id', validatedData.invited_player_id)
-      .eq('status', 'pending')
-      .single();
+      .eq('status', 'pending');
 
-    if (existingInvitation) {
-      return NextResponse.json({ error: 'Invitation already sent' }, { status: 400 });
-    }
+    // Delete old unread notifications for invitations from this team
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', validatedData.invited_player_id)
+      .eq('type', 'team_invitation')
+      .eq('read', false)
+      .filter('data->>team_id', 'eq', validatedData.team_id);
 
     // Create invitation
     const { data, error } = await supabase
@@ -159,7 +164,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create notification for invited player
-    await supabase
+    const { error: notificationError } = await supabase
       .from('notifications')
       .insert([{
         user_id: validatedData.invited_player_id,
@@ -172,6 +177,10 @@ export async function POST(request: NextRequest) {
           team_name: team.name,
         }
       }]);
+
+    if (notificationError) {
+      console.error('Error creating notification:', notificationError);
+    }
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {

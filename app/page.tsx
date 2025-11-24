@@ -4,18 +4,18 @@ import { Card } from '@/components/ui/card'
 
 export default function Home() {
   return (
-    <main className="pt-20">
+    <main>
       {/* Hero Section */}
-      <section className="min-h-screen bg-gradient-to-b from-background to-card flex items-center justify-center px-4">
+      <section className="h-screen bg-gradient-to-b from-background to-card flex items-center justify-center px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 text-balance">
+          <h1 className="text-5xl md:text-7xl font-bold mb-4 text-balance">
             Find Your <span className="text-primary">Perfect Team</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 text-balance">
+          <p className="text-xl md:text-2xl text-muted-foreground mb-6 text-balance">
             Join the ultimate League of Legends community. Create teams, compete in tournaments, and climb the ranks together.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
               <Link href="/setup-profile">Create Profile</Link>
             </Button>

@@ -19,6 +19,7 @@ export default function ManageTeamPage() {
   const [user, setUser] = useState<any>(null)
   const [team, setTeam] = useState<any>(null)
   const [teamMembers, setTeamMembers] = useState<any[]>([])
+  const [joinRequests, setJoinRequests] = useState<any[]>([])
   const [editing, setEditing] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -44,17 +45,20 @@ export default function ManageTeamPage() {
       
       setUser(authUser)
 
-      // Get team where user is captain
+      // Get team where user is captain using the view
       const { data: teamData, error: teamError } = await supabase
-        .from('teams')
+        .from('team_with_players')
         .select('*')
         .eq('captain_id', authUser.id)
         .single()
 
       if (teamError || !teamData) {
+        console.log('Team error:', teamError)
         router.push('/create-team')
         return
       }
+
+      console.log('Team data with players:', teamData)
 
       setTeam(teamData)
       setFormData({
@@ -64,13 +68,34 @@ export default function ManageTeamPage() {
         recruiting_status: teamData.recruiting_status
       })
 
-      // Get team members
-      const { data: membersData } = await supabase
-        .from('players')
-        .select('*')
-        .eq('team_id', teamData.id)
+      // Get team members from the view's players array or query directly
+      if (teamData.players && Array.isArray(teamData.players)) {
+        console.log('Players from view:', teamData.players)
+        setTeamMembers(teamData.players)
+      } else {
+        // Fallback: query players directly
+        console.log('Querying players directly for team:', teamData.id)
+        const { data: membersData, error: membersError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('team_id', teamData.id)
 
-      setTeamMembers(membersData || [])
+        console.log('Direct query result:', { membersData, membersError })
+        setTeamMembers(membersData || [])
+      }
+
+      // Fetch pending join requests
+      const { data: requestsData } = await supabase
+        .from('team_join_requests')
+        .select(`
+          *,
+          player:players(summoner_name, main_role, tier, discord)
+        `)
+        .eq('team_id', teamData.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false})
+
+      setJoinRequests(requestsData || [])
     } catch (error) {
       console.error('Error loading team data:', error)
     } finally {
@@ -108,6 +133,13 @@ export default function ManageTeamPage() {
     try {
       const supabase = createClient()
       
+      // Get the player's name before removing
+      const { data: playerData } = await supabase
+        .from('players')
+        .select('summoner_name')
+        .eq('id', memberId)
+        .single()
+      
       // Remove member from team
       const { error } = await supabase
         .from('players')
@@ -119,9 +151,66 @@ export default function ManageTeamPage() {
         return
       }
 
+      // Delete any pending invitations for this player from this team
+      await supabase
+        .from('team_invitations')
+        .delete()
+        .eq('team_id', team.id)
+        .eq('invited_player_id', memberId)
+        .eq('status', 'pending')
+
+      // Delete any pending join requests from this player to this team
+      await supabase
+        .from('team_join_requests')
+        .delete()
+        .eq('team_id', team.id)
+        .eq('player_id', memberId)
+        .eq('status', 'pending')
+
+      // Send notification to the removed player
+      await supabase
+        .from('notifications')
+        .insert([{
+          user_id: memberId,
+          type: 'team_member_removed',
+          title: `Removed from ${team.name}`,
+          message: `You have been removed from ${team.name} by the team captain.`,
+          data: {
+            team_id: team.id,
+            team_name: team.name
+          }
+        }])
+
       loadTeamData() // Refresh data
     } catch (error) {
       console.error('Error removing member:', error)
+    }
+  }
+
+  const handleJoinRequestAction = async (requestId: string, action: 'accept' | 'reject') => {
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      const response = await fetch(`/api/team-join-requests/${requestId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ action }),
+      })
+
+      if (response.ok) {
+        alert(`Join request ${action}ed successfully!`)
+        loadTeamData() // Refresh data
+      } else {
+        const error = await response.json()
+        alert(`Error ${action}ing join request: ${error.error}`)
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing join request:`, error)
+      alert(`Error ${action}ing join request`)
     }
   }
 
@@ -383,6 +472,54 @@ export default function ManageTeamPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Join Requests */}
+            {joinRequests.length > 0 && (
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserPlus className="w-5 h-5" />
+                    Join Requests ({joinRequests.length})
+                  </CardTitle>
+                  <CardDescription>Players requesting to join your team</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {joinRequests.map((request: any) => (
+                      <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{request.player?.summoner_name || 'Unknown Player'}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>{request.player?.main_role || 'No role'}</span>
+                            <span>•</span>
+                            <span>{request.player?.tier || 'Unranked'}</span>
+                          </div>
+                          {request.message && (
+                            <p className="text-sm text-muted-foreground mt-1">{request.message}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => handleJoinRequestAction(request.id, 'accept')}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            onClick={() => handleJoinRequestAction(request.id, 'reject')}
+                            size="sm"
+                            variant="outline"
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Quick Actions */}

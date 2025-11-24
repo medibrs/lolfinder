@@ -104,6 +104,13 @@ export async function PUT(
 
       console.log('Player successfully added to team!')
 
+      // Delete the player's notification about this invitation
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('type', 'team_invitation')
+        .filter('data->>invitation_id', 'eq', id);
+
       // Create notification for team captain
       await supabase
         .from('notifications')
@@ -121,15 +128,22 @@ export async function PUT(
       return NextResponse.json({ message: 'Invitation accepted successfully' });
 
     } else if (validatedData.action === 'reject') {
-      // Update invitation status
-      const { error: updateError } = await supabase
+      // Delete the invitation instead of marking as rejected (allows captain to re-invite)
+      const { error: deleteError } = await supabase
         .from('team_invitations')
-        .update({ status: 'rejected' })
+        .delete()
         .eq('id', id);
 
-      if (updateError) {
-        return NextResponse.json({ error: updateError.message }, { status: 400 });
+      if (deleteError) {
+        return NextResponse.json({ error: deleteError.message }, { status: 400 });
       }
+
+      // Delete the player's notification about this invitation
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('type', 'team_invitation')
+        .filter('data->>invitation_id', 'eq', id);
 
       // Create notification for team captain
       await supabase

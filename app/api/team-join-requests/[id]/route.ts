@@ -98,6 +98,13 @@ export async function PUT(
         return NextResponse.json({ error: joinError.message }, { status: 400 });
       }
 
+      // Delete the captain's notification about this request
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('type', 'team_join_request')
+        .filter('data->>request_id', 'eq', id);
+
       // Create notification for the player who was accepted
       await supabase
         .from('notifications')
@@ -115,15 +122,22 @@ export async function PUT(
       return NextResponse.json({ message: 'Join request accepted successfully' });
 
     } else if (validatedData.action === 'reject') {
-      // Update request status
-      const { error: updateError } = await supabase
+      // Delete the request instead of marking as rejected (allows player to request again)
+      const { error: deleteError } = await supabase
         .from('team_join_requests')
-        .update({ status: 'rejected' })
+        .delete()
         .eq('id', id);
 
-      if (updateError) {
-        return NextResponse.json({ error: updateError.message }, { status: 400 });
+      if (deleteError) {
+        return NextResponse.json({ error: deleteError.message }, { status: 400 });
       }
+
+      // Delete the captain's notification about this request
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('type', 'team_join_request')
+        .filter('data->>request_id', 'eq', id);
 
       // Create notification for the player who was rejected
       await supabase
