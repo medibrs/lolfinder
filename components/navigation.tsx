@@ -260,34 +260,6 @@ export default function Navigation() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {notifications.slice(0, 3).map(notification => (
-                  <DropdownMenuItem 
-                    key={notification.id}
-                    className="flex flex-col items-start p-3 cursor-pointer"
-                    onClick={() => markNotificationAsRead(notification.id)}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-medium text-sm">{notification.title}</span>
-                      {!notification.read && (
-                        <span className="w-2 h-2 bg-primary rounded-full"></span>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground mt-1">
-                      {notification.message}
-                    </span>
-                    <span className="text-xs text-muted-foreground mt-1">
-                      {new Date(notification.created_at).toLocaleDateString()}
-                    </span>
-                  </DropdownMenuItem>
-                ))}
-                {notifications.length > 3 && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/notifications" className="text-center text-sm">
-                      View all notifications
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   Sign out
                 </DropdownMenuItem>

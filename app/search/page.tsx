@@ -347,7 +347,7 @@ export default function SearchPage() {
                           {sendingInvite === player.id ? 'Sending...' : 'Invite to Team'}
                         </Button>
                       )
-                    ) : player.opgg_url ? (
+                    ) : player.opgg_url && player.opgg_url.trim() !== '' ? (
                       <Button asChild className="w-full bg-primary hover:bg-primary/90">
                         <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
                           View OP.GG

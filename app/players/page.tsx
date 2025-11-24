@@ -204,7 +204,7 @@ export default function PlayersPage() {
                           {sendingInvite === player.id ? 'Sending...' : 'Invite to Team'}
                         </Button>
                       )}
-                      {player.opgg_url ? (
+                      {player.opgg_url && player.opgg_url.trim() !== '' ? (
                         <Button asChild variant="outline" className="w-full">
                           <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
                             View OP.GG
@@ -216,7 +216,7 @@ export default function PlayersPage() {
                         </Button>
                       )}
                     </div>
-                  ) : player.opgg_url ? (
+                  ) : player.opgg_url && player.opgg_url.trim() !== '' ? (
                     <Button asChild className="w-full bg-primary hover:bg-primary/90">
                       <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
                         View OP.GG
