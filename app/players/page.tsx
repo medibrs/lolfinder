@@ -1,29 +1,56 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { createClient } from '@/lib/supabase/client'
 
 const ROLES = ['TOP', 'JNG', 'MID', 'ADC', 'SUP']
+
+interface Player {
+  id: string
+  summoner_name: string
+  role: string
+  opgg_url?: string
+  discord?: string
+  looking_for_team: boolean
+}
 
 export default function PlayersPage() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [players, setPlayers] = useState<Player[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
 
-  // Mock player data
-  const mockPlayers = [
-    { id: 1, summonerName: 'ShadowKing', role: 'TOP', opggUrl: '#', discord: 'ShadowKing#1234', looking: true },
-    { id: 2, summonerName: 'FrostMage', role: 'MID', opggUrl: '#', discord: 'Frost#5678', looking: false },
-    { id: 3, summonerName: 'SwiftArrow', role: 'ADC', opggUrl: '#', discord: 'Swift#9012', looking: true },
-    { id: 4, summonerName: 'IceGuard', role: 'SUP', opggUrl: '#', discord: 'Ice#3456', looking: true },
-    { id: 5, summonerName: 'RazorEdge', role: 'JNG', opggUrl: '#', discord: 'Razor#7890', looking: false },
-    { id: 6, summonerName: 'PhoenixRise', role: 'TOP', opggUrl: '#', discord: 'Phoenix#2345', looking: true },
-  ]
+  useEffect(() => {
+    fetchPlayers()
+  }, [])
 
-  const filteredPlayers = mockPlayers.filter(player => {
+  const fetchPlayers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching players:', error)
+        return
+      }
+
+      setPlayers(data || [])
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredPlayers = players.filter(player => {
     const matchesRole = !selectedRole || player.role === selectedRole
-    const matchesSearch = player.summonerName.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesRole && matchesSearch
   })
 
@@ -62,31 +89,51 @@ export default function PlayersPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPlayers.map(player => (
-            <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold">{player.summonerName}</h3>
-                  <p className="text-primary font-semibold">{player.role}</p>
-                </div>
-                {player.looking && (
-                  <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-medium">
-                    LFT
-                  </span>
-                )}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPlayers.length > 0 ? (
+              filteredPlayers.map(player => (
+                <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold">{player.summoner_name}</h3>
+                      <p className="text-primary font-semibold">{player.role}</p>
+                    </div>
+                    {player.looking_for_team && (
+                      <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-medium">
+                        LFT
+                      </span>
+                    )}
+                  </div>
+                  
+                  {player.discord && (
+                    <p className="text-muted-foreground mb-4">Discord: {player.discord}</p>
+                  )}
+                  
+                  {player.opgg_url ? (
+                    <Button asChild className="w-full bg-primary hover:bg-primary/90">
+                      <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
+                        View OP.GG
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button disabled className="w-full">
+                      No OP.GG Linked
+                    </Button>
+                  )}
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No players found matching your criteria.</p>
               </div>
-              
-              <p className="text-muted-foreground mb-4">Discord: {player.discord}</p>
-              
-              <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                <a href={player.opggUrl} target="_blank" rel="noopener noreferrer">
-                  View OP.GG
-                </a>
-              </Button>
-            </Card>
-          ))}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </main>
   )

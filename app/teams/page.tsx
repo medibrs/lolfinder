@@ -1,28 +1,58 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { createClient } from '@/lib/supabase/client'
 
 const ROLES = ['TOP', 'JNG', 'MID', 'ADC', 'SUP']
+
+interface Team {
+  id: string
+  name: string
+  description?: string
+  looking_for_players: boolean
+  needed_roles: string[]
+  owner_id: string
+  created_at: string
+}
 
 export default function TeamsPage() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [teams, setTeams] = useState<Team[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
 
-  // Mock team data
-  const mockTeams = [
-    { id: 1, name: 'Shadow Legends', owner: 'ShadowKing', looking: true, neededRoles: ['MID', 'ADC'], memberCount: 3 },
-    { id: 2, name: 'Frost Dynasty', owner: 'FrostMage', looking: false, neededRoles: [], memberCount: 5 },
-    { id: 3, name: 'Phoenix Rising', owner: 'PhoenixRise', looking: true, neededRoles: ['SUP'], memberCount: 4 },
-    { id: 4, name: 'Quantum Force', owner: 'VortexDoom', looking: true, neededRoles: ['TOP', 'JNG'], memberCount: 3 },
-  ]
+  useEffect(() => {
+    fetchTeams()
+  }, [])
 
-  const filteredTeams = mockTeams.filter(team => {
-    const matchesRole = !selectedRole || team.neededRoles.includes(selectedRole)
+  const fetchTeams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching teams:', error)
+        return
+      }
+
+      setTeams(data || [])
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredTeams = teams.filter(team => {
+    const matchesRole = !selectedRole || team.needed_roles.includes(selectedRole)
     const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesLooking = team.looking
+    const matchesLooking = team.looking_for_players
     return matchesRole && matchesSearch && matchesLooking
   })
 
@@ -68,31 +98,48 @@ export default function TeamsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredTeams.map(team => (
-            <Card key={team.id} className="bg-card border-border p-6 hover:border-primary transition">
-              <div className="mb-4">
-                <h3 className="text-2xl font-bold">{team.name}</h3>
-                <p className="text-muted-foreground">Owner: {team.owner}</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredTeams.length > 0 ? (
+              filteredTeams.map(team => (
+                <Card key={team.id} className="bg-card border-border p-6 hover:border-primary transition">
+                  <div className="mb-4">
+                    <h3 className="text-2xl font-bold">{team.name}</h3>
+                    {team.description && (
+                      <p className="text-muted-foreground">{team.description}</p>
+                    )}
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {team.needed_roles.length > 0 ? (
+                        team.needed_roles.map(role => (
+                          <span key={role} className="bg-accent/20 text-accent px-2 py-1 rounded text-sm font-medium">
+                            Need {role}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Team is full</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <Button className="w-full bg-primary hover:bg-primary/90">
+                    Apply Now
+                  </Button>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No teams found looking for players.</p>
               </div>
-              
-              <div className="mb-4">
-                <p className="text-sm text-muted-foreground mb-2">Members: {team.memberCount}/5</p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {team.neededRoles.map(role => (
-                    <span key={role} className="bg-accent/20 text-accent px-2 py-1 rounded text-sm font-medium">
-                      Need {role}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              
-              <Button className="w-full bg-primary hover:bg-primary/90">
-                Apply Now
-              </Button>
-            </Card>
-          ))}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </main>
   )

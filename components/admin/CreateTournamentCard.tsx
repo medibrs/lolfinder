@@ -15,11 +15,11 @@ export default function CreateTournamentCard() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    game: 'League of Legends',
     max_teams: 8,
     start_date: '',
     end_date: '',
-    status: 'upcoming'
+    prize_pool: '',
+    rules: ''
   })
   const supabase = createClient()
 
@@ -28,29 +28,51 @@ export default function CreateTournamentCard() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.from('tournaments').insert({
-        ...formData,
-        start_date: new Date(formData.start_date).toISOString(),
-        end_date: new Date(formData.end_date).toISOString()
-      })
+      // Validate required fields
+      if (!formData.name || !formData.start_date || !formData.end_date) {
+        throw new Error('Name, start date, and end date are required')
+      }
 
-      if (error) throw error
+      // Validate dates
+      const startDate = new Date(formData.start_date)
+      const endDate = new Date(formData.end_date)
+      
+      if (startDate >= endDate) {
+        throw new Error('End date must be after start date')
+      }
+
+      const tournamentData = {
+        name: formData.name,
+        description: formData.description || null,
+        max_teams: formData.max_teams,
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        prize_pool: formData.prize_pool || null,
+        rules: formData.rules || null
+      }
+
+      const { error } = await supabase.from('tournaments').insert(tournamentData)
+
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
 
       // Reset form
       setFormData({
         name: '',
         description: '',
-        game: 'League of Legends',
         max_teams: 8,
         start_date: '',
         end_date: '',
-        status: 'upcoming'
+        prize_pool: '',
+        rules: ''
       })
 
       alert('Tournament created successfully!')
     } catch (error) {
       console.error('Error creating tournament:', error)
-      alert('Failed to create tournament')
+      alert(`Failed to create tournament: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
@@ -70,32 +92,15 @@ export default function CreateTournamentCard() {
       </CardHeader>
       
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="name">Tournament Name</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Summer Championship"
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="game">Game</Label>
-            <Select value={formData.game} onValueChange={(value) => setFormData({ ...formData, game: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="League of Legends">League of Legends</SelectItem>
-                <SelectItem value="Valorant">Valorant</SelectItem>
-                <SelectItem value="CS:GO">CS:GO</SelectItem>
-                <SelectItem value="Dota 2">Dota 2</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div>
+          <Label htmlFor="name">Tournament Name</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Summer Championship"
+            required
+          />
         </div>
 
         <div>
@@ -109,7 +114,7 @@ export default function CreateTournamentCard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="max_teams">Max Teams</Label>
             <Input
@@ -123,6 +128,18 @@ export default function CreateTournamentCard() {
             />
           </div>
           
+          <div>
+            <Label htmlFor="prize_pool">Prize Pool</Label>
+            <Input
+              id="prize_pool"
+              value={formData.prize_pool}
+              onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })}
+              placeholder="$10,000"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="start_date">Start Date</Label>
             <Input
@@ -144,6 +161,17 @@ export default function CreateTournamentCard() {
               required
             />
           </div>
+        </div>
+
+        <div>
+          <Label htmlFor="rules">Rules</Label>
+          <Textarea
+            id="rules"
+            value={formData.rules}
+            onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
+            placeholder="Tournament rules and format..."
+            rows={4}
+          />
         </div>
 
         <Button type="submit" disabled={loading} className="w-full">
