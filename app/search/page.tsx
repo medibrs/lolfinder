@@ -227,7 +227,7 @@ export default function SearchPage() {
                     )}
                     {user && userTeam?.id === team.id ? (
                     <Button asChild className="w-full bg-green-600 hover:bg-green-700">
-                      <a href="/manage-team">View Team</a>
+                      <a href="/view-team">View Team</a>
                     </Button>
                   ) : user && userTeam ? (
                     <Button disabled className="w-full">
@@ -258,7 +258,8 @@ export default function SearchPage() {
                 players.filter(player => {
                   const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
                   const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
-                  return matchesRole && matchesSearch
+                  const notCurrentUser = player.id !== user?.id
+                  return matchesRole && matchesSearch && notCurrentUser
                 }).map(player => (
                   <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
                     <h3 className="text-2xl font-bold mb-2">{player.summoner_name}</h3>

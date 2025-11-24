@@ -14,7 +14,9 @@ interface Player {
   main_role: string
   secondary_role?: string
   opgg_url?: string
+  tier: string
   discord?: string
+  team_id?: string
   looking_for_team: boolean
 }
 
@@ -88,20 +90,23 @@ export default function PlayersPage() {
 
       if (response.ok) {
         alert('Invitation sent successfully!')
+        // Refresh players to update UI
+        fetchPlayers()
       } else {
         const error = await response.json()
-        alert(`Error sending invitation: ${error.error}`)
+        console.error('Error sending invitation:', error.error)
+        // UI should prevent this, but log if it happens
       }
     } catch (error) {
       console.error('Error sending invitation:', error)
-      alert('Error sending invitation')
     }
   }
 
   const filteredPlayers = players.filter(player => {
     const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
     const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesRole && matchesSearch
+    const notCurrentUser = player.id !== user?.id
+    return matchesRole && matchesSearch && notCurrentUser
   })
 
   return (
@@ -177,12 +182,18 @@ export default function PlayersPage() {
                   
                   {user && userTeam && player.id !== user.id ? (
                     <div className="space-y-2">
-                      <Button 
-                        onClick={() => handleInvitePlayer(player.id)}
-                        className="w-full bg-yellow-600 hover:bg-yellow-700"
-                      >
-                        Invite to Team
-                      </Button>
+                      {player.team_id ? (
+                        <Button disabled className="w-full">
+                          Already in a Team
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={() => handleInvitePlayer(player.id)}
+                          className="w-full bg-yellow-600 hover:bg-yellow-700"
+                        >
+                          Invite to Team
+                        </Button>
+                      )}
                       {player.opgg_url ? (
                         <Button asChild variant="outline" className="w-full">
                           <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">

@@ -222,7 +222,7 @@ export default function TeamsPage() {
                     </Button>
                   ) : user && userTeam?.id === team.id ? (
                     <Button asChild className="w-full bg-green-600 hover:bg-green-700">
-                      <a href="/manage-team">View Team</a>
+                      <a href="/view-team">View Team</a>
                     </Button>
                   ) : user && userTeam ? (
                     <Button disabled className="w-full">
