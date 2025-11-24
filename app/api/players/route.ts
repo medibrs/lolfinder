@@ -54,14 +54,30 @@ export async function GET(request: NextRequest) {
 // POST /api/players - Create a new player
 export async function POST(request: NextRequest) {
   try {
+    // Get current user
+    const authHeader = request.headers.get('authorization');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader?.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const body = await request.json();
     
     // Validate input
     const validatedData = createPlayerSchema.parse(body);
 
+    // Use the authenticated user's ID as the player ID
+    const playerData = {
+      ...validatedData,
+      id: user.id
+    };
+
     const { data, error } = await supabase
       .from('players')
-      .insert([validatedData])
+      .insert([playerData])
       .select()
       .single();
 

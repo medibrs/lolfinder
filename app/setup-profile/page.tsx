@@ -118,13 +118,19 @@ export default function SetupProfilePage() {
     setLoading(true)
 
     try {
+      console.log('Submit data:', { isEditing, userId, formData })
       const endpoint = isEditing ? `/api/players/${userId}` : '/api/players'
       const method = isEditing ? 'PUT' : 'POST'
+      console.log('Using endpoint:', endpoint, 'with method:', method)
+      
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
       
       const response = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify(formData),
       })
