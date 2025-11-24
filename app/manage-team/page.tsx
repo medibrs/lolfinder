@@ -211,15 +211,13 @@ export default function ManageTeamPage() {
       })
 
       if (response.ok) {
-        alert(`Join request ${action}ed successfully!`)
         loadTeamData() // Refresh data
       } else {
         const error = await response.json()
-        alert(`Error ${action}ing join request: ${error.error}`)
+        console.error(`Error ${action}ing join request:`, error.error)
       }
     } catch (error) {
       console.error(`Error ${action}ing join request:`, error)
-      alert(`Error ${action}ing join request`)
     }
   }
 

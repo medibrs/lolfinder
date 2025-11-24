@@ -40,6 +40,19 @@ export default function NotificationsPage() {
       }
 
       setNotifications(data || [])
+
+      // Mark all unread notifications as read when visiting the page
+      const unreadNotifications = data?.filter(n => !n.read) || []
+      if (unreadNotifications.length > 0) {
+        await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('user_id', authUser.id)
+          .eq('read', false)
+        
+        // Update local state
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      }
     } catch (error) {
       console.error('Error loading notifications:', error)
     } finally {

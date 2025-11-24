@@ -29,21 +29,32 @@ export default function Navigation() {
   const supabase = createClient()
 
   useEffect(() => {
-    // Get initial session
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      setLoading(false)
+    const fetchUser = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      setUser(authUser)
       
-      if (session?.user) {
-        fetchNotifications(session.user.id)
-        fetchUserTeam(session.user.id)
-        checkAdminStatus(session.user)
+      if (authUser) {
+        fetchNotifications(authUser.id)
+        fetchUserTeam(authUser.id)
+        
+        // Check if user is admin
+        const isUserAdmin = authUser.app_metadata?.role === 'admin' || authUser.raw_app_meta_data?.role === 'admin'
+        setIsAdmin(isUserAdmin)
       }
+      
+      setLoading(false)
     }
+    
+    fetchUser()
+  }, [])
 
-    getSession()
+  useEffect(() => {
+    if (user) {
+      fetchNotifications(user.id)
+    }
+  }, [pathname])
 
+  useEffect(() => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {

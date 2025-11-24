@@ -103,7 +103,22 @@ export default function SearchPage() {
       if (teamsResult.error) console.error('Error fetching teams:', teamsResult.error)
       if (playersResult.error) console.error('Error fetching players:', playersResult.error)
 
-      setTeams(teamsResult.data || [])
+      // Fetch member counts for each team
+      const teamsWithCounts = await Promise.all(
+        (teamsResult.data || []).map(async (team) => {
+          const { count } = await supabase
+            .from('players')
+            .select('*', { count: 'exact', head: true })
+            .eq('team_id', team.id)
+          
+          return {
+            ...team,
+            current_members: count || 0
+          }
+        })
+      )
+
+      setTeams(teamsWithCounts)
       setPlayers(playersResult.data || [])
     } catch (error) {
       console.error('Error:', error)
@@ -133,16 +148,14 @@ export default function SearchPage() {
       })
 
       if (response.ok) {
-        alert('Join request sent successfully!')
         // Add to pending requests to update UI
         setPendingRequests(prev => [...prev, teamId])
       } else {
         const error = await response.json()
-        alert(`Error sending join request: ${error.error}`)
+        console.error('Error sending join request:', error.error)
       }
     } catch (error) {
       console.error('Error sending join request:', error)
-      alert('Error sending join request')
     } finally {
       setSendingRequest(null)
     }
@@ -170,7 +183,6 @@ export default function SearchPage() {
       })
 
       if (response.ok) {
-        alert('Invitation sent successfully!')
         // Refresh data to update UI
         fetchData()
       } else {
@@ -262,11 +274,20 @@ export default function SearchPage() {
                         <span className="text-sm text-muted-foreground">Team is full</span>
                       )}
                     </div>
-                    {team.captain && (
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Captain: {team.captain.summoner_name}
+                    <div className="mb-4 space-y-1">
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Members: </span>
+                        <span className="font-medium">{team.current_members}/{team.team_size}</span>
+                        {team.current_members >= parseInt(team.team_size) && (
+                          <span className="text-xs text-red-500 font-semibold ml-2">FULL</span>
+                        )}
                       </p>
-                    )}
+                      {team.captain && (
+                        <p className="text-sm text-muted-foreground">
+                          Captain: {team.captain.summoner_name}
+                        </p>
+                      )}
+                    </div>
                     {user && userTeam?.id === team.id ? (
                     <Button asChild className="w-full bg-green-600 hover:bg-green-700">
                       <a href="/view-team">View Team</a>
@@ -274,6 +295,10 @@ export default function SearchPage() {
                   ) : user && userTeam ? (
                     <Button disabled className="w-full">
                       Already in a team
+                    </Button>
+                  ) : team.current_members >= parseInt(team.team_size) ? (
+                    <Button disabled className="w-full">
+                      Team is Full
                     </Button>
                   ) : user && pendingRequests.includes(team.id) ? (
                     <Button disabled className="w-full bg-orange-600">
@@ -301,7 +326,9 @@ export default function SearchPage() {
                   const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
                   const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
                   const notCurrentUser = player.id !== user?.id
-                  return matchesRole && matchesSearch && notCurrentUser
+                  const isLookingForTeam = player.looking_for_team === true
+                  const notInTeam = !player.team_id
+                  return matchesRole && matchesSearch && notCurrentUser && isLookingForTeam && notInTeam
                 }).map(player => (
                   <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
                     <div className="flex items-start gap-4 mb-4">

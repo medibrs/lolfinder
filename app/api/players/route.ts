@@ -8,7 +8,7 @@ const createPlayerSchema = z.object({
   discord: z.string().min(1).max(255),
   main_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
   secondary_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']).optional(),
-  opgg_link: z.string().url().optional().or(z.literal('')),
+  opgg_url: z.string().optional().or(z.literal('')),
   tier: z.enum(['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']),
   looking_for_team: z.boolean().default(false),
 });

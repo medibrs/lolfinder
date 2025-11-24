@@ -84,7 +84,22 @@ export default function TeamsPage() {
         return
       }
 
-      setTeams(data || [])
+      // Fetch member counts for each team
+      const teamsWithCounts = await Promise.all(
+        (data || []).map(async (team) => {
+          const { count } = await supabase
+            .from('players')
+            .select('*', { count: 'exact', head: true })
+            .eq('team_id', team.id)
+          
+          return {
+            ...team,
+            current_members: count || 0
+          }
+        })
+      )
+
+      setTeams(teamsWithCounts)
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -113,16 +128,14 @@ export default function TeamsPage() {
       })
 
       if (response.ok) {
-        alert('Join request sent successfully!')
         // Add to pending requests to update UI
         setPendingRequests(prev => [...prev, teamId])
       } else {
         const error = await response.json()
-        alert(`Error sending join request: ${error.error}`)
+        console.error('Error sending join request:', error.error)
       }
     } catch (error) {
       console.error('Error sending join request:', error)
-      alert('Error sending join request')
     } finally {
       setSendingRequest(null)
     }
@@ -195,10 +208,10 @@ export default function TeamsPage() {
                   {/* Team Info */}
                   <div className="mb-4 space-y-2">
                     <div className="flex items-center gap-4 text-sm">
-                      <span className="text-muted-foreground">Size:</span>
-                      <span className="font-medium">{team.team_size} players</span>
-                      {team.team_size === '6' && (
-                        <span className="text-xs text-muted-foreground">(5 + sub)</span>
+                      <span className="text-muted-foreground">Members:</span>
+                      <span className="font-medium">{team.current_members}/{team.team_size}</span>
+                      {team.current_members >= parseInt(team.team_size) && (
+                        <span className="text-xs text-red-500 font-semibold">FULL</span>
                       )}
                     </div>
                     {team.captain && (
@@ -235,6 +248,10 @@ export default function TeamsPage() {
                   ) : user && userTeam ? (
                     <Button disabled className="w-full">
                       Already in a team
+                    </Button>
+                  ) : team.current_members >= parseInt(team.team_size) ? (
+                    <Button disabled className="w-full">
+                      Team is Full
                     </Button>
                   ) : user && pendingRequests.includes(team.id) ? (
                     <Button disabled className="w-full bg-orange-600">

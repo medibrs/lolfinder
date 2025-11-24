@@ -51,7 +51,7 @@ export default function SetupProfilePage() {
     main_role: '',
     secondary_role: '',
     tier: '',
-    opgg_link: '',
+    opgg_url: '',
     looking_for_team: true
   })
 
@@ -95,7 +95,7 @@ export default function SetupProfilePage() {
             main_role: existingProfile.main_role || '',
             secondary_role: existingProfile.secondary_role || '',
             tier: existingProfile.tier || '',
-            opgg_link: existingProfile.opgg_link || '',
+            opgg_url: existingProfile.opgg_url || '',
             looking_for_team: existingProfile.looking_for_team || false
           })
           setIsEditing(true)
@@ -144,17 +144,15 @@ export default function SetupProfilePage() {
       })
 
       if (response.ok) {
-        alert('You have left the team successfully!')
         setUserTeam(null)
         // Reload profile to update team_id
         window.location.reload()
       } else {
         const error = await response.json()
-        alert(`Error leaving team: ${error.error}`)
+        console.error('Error leaving team:', error.error)
       }
     } catch (error) {
       console.error('Error leaving team:', error)
-      alert('Error leaving team')
     }
   }
 
@@ -171,20 +169,36 @@ export default function SetupProfilePage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       
+      // Auto-prepend https:// to opgg_url if it doesn't have a protocol
+      let processedFormData = { ...formData }
+      if (processedFormData.opgg_url && processedFormData.opgg_url.trim() !== '') {
+        const opggLink = processedFormData.opgg_url.trim()
+        if (!opggLink.startsWith('http://') && !opggLink.startsWith('https://')) {
+          processedFormData.opgg_url = `https://${opggLink}`
+        }
+      }
+      
       const response = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(processedFormData),
       })
 
       if (response.ok) {
         router.push('/')
       } else {
-        const error = await response.json()
-        console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, error)
+        console.error(`Error ${isEditing ? 'updating' : 'creating'} profile - Status:`, response.status)
+        const errorText = await response.text()
+        console.error('Response body:', errorText)
+        try {
+          const error = JSON.parse(errorText)
+          console.error('Parsed error:', error)
+        } catch {
+          console.error('Could not parse error response')
+        }
       }
     } catch (error) {
       console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, error)
@@ -345,13 +359,14 @@ export default function SetupProfilePage() {
                     OP.GG Profile URL (Optional)
                   </label>
                   <Input
-                    type="url"
-                    name="opgg_link"
-                    value={formData.opgg_link}
+                    type="text"
+                    name="opgg_url"
+                    value={formData.opgg_url}
                     onChange={handleChange}
-                    placeholder="https://op.gg/..."
+                    placeholder="op.gg/lol/summoners/euw/YourName-TAG or https://op.gg/..."
                     className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                   />
+                  <p className="text-xs text-gray-400 mt-1">You can paste the full URL or just op.gg/...</p>
                   <p className="text-purple-300 text-xs mt-1">
                     Help teams verify your rank and gameplay
                   </p>

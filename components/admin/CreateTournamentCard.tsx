@@ -68,11 +68,8 @@ export default function CreateTournamentCard() {
         prize_pool: '',
         rules: ''
       })
-
-      alert('Tournament created successfully!')
     } catch (error) {
       console.error('Error creating tournament:', error)
-      alert(`Failed to create tournament: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }

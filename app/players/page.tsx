@@ -93,7 +93,6 @@ export default function PlayersPage() {
       })
 
       if (response.ok) {
-        alert('Invitation sent successfully!')
         // Refresh players to update UI
         fetchPlayers()
       } else {
@@ -130,12 +129,12 @@ export default function PlayersPage() {
           />
           
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant={selectedRole === null ? 'default' : 'outline'}
+            <Button 
+              variant="outline" 
               onClick={() => setSelectedRole(null)}
               className={selectedRole === null ? 'bg-primary' : ''}
             >
-              All Roles
+              All
             </Button>
             {ROLES.map(role => (
               <Button

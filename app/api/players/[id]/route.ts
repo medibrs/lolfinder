@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 
-// Validation schema for updates (all fields required except opgg_link)
+// Validation schema for updates (all fields required except opgg_url)
 const updatePlayerSchema = z.object({
   summoner_name: z.string().min(1).max(255),
   discord: z.string().min(1).max(255),
   main_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
   secondary_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
-  opgg_link: z.string().url().optional().or(z.literal('')),
+  opgg_url: z.string().optional().or(z.literal('')),
   tier: z.enum(['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']),
   looking_for_team: z.boolean(),
 });

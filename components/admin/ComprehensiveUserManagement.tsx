@@ -137,7 +137,6 @@ export default function ComprehensiveUserManagement() {
       
       // Reset form
       setSupportTicket({ userId: '', issue: '', resolution: '' })
-      alert('Support ticket marked as resolved!')
     } catch (error) {
       console.error('Error solving problem:', error)
     }

@@ -99,7 +99,6 @@ export default function ViewTeamPage() {
 
       if (updateError) {
         console.error('Error leaving team:', updateError)
-        alert('Failed to leave team')
         return
       }
 
@@ -126,7 +125,6 @@ export default function ViewTeamPage() {
       router.push('/teams')
     } catch (error) {
       console.error('Error leaving team:', error)
-      alert('Failed to leave team')
     } finally {
       setLeaving(false)
     }
