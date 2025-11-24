@@ -8,6 +8,9 @@ import TeamsTable from '@/components/admin/TeamsTable'
 import TournamentsTable from '@/components/admin/TournamentsTable'
 import RegistrationsTable from '@/components/admin/RegistrationsTable'
 import UserManagement from '@/components/admin/UserManagement'
+import CreateTournamentCard from '@/components/admin/CreateTournamentCard'
+import SystemHealthCard from '@/components/admin/SystemHealthCard'
+import ComprehensiveUserManagement from '@/components/admin/ComprehensiveUserManagement'
 import { getCurrentAdminUser } from '@/lib/admin-check'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -122,43 +125,8 @@ export default async function AdminPage() {
             
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-card border-border p-6">
-                  <div className="text-4xl mb-4">🎮</div>
-                  <h3 className="text-xl font-bold mb-4">Recent Players</h3>
-                  <CardDescription className="mb-4">
-                    Latest players to join the platform
-                  </CardDescription>
-                  <div className="space-y-4">
-                    {stats.recentPlayers.map((player: any) => (
-                      <div key={player.id} className="flex items-center justify-between p-3 bg-background rounded-lg">
-                        <div>
-                          <p className="font-medium">{player.summoner_name}</p>
-                          <p className="text-sm text-muted-foreground">{player.role}</p>
-                        </div>
-                        <Badge variant="secondary">{player.tier}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-                
-                <Card className="bg-card border-border p-6">
-                  <div className="text-4xl mb-4">🏅</div>
-                  <h3 className="text-xl font-bold mb-4">Recent Tournaments</h3>
-                  <CardDescription className="mb-4">
-                    Latest tournaments created
-                  </CardDescription>
-                  <div className="space-y-4">
-                    {stats.recentTournaments.map((tournament: any) => (
-                      <div key={tournament.id} className="flex items-center justify-between p-3 bg-background rounded-lg">
-                        <div>
-                          <p className="font-medium">{tournament.name}</p>
-                          <p className="text-sm text-muted-foreground">{tournament.game}</p>
-                        </div>
-                        <Badge variant="secondary">{tournament.status}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
+                <CreateTournamentCard />
+                <SystemHealthCard stats={stats} />
               </div>
             </TabsContent>
             
@@ -195,14 +163,7 @@ export default async function AdminPage() {
             </TabsContent>
             
             <TabsContent value="users">
-              <Card className="bg-card border-border p-6">
-                <div className="text-4xl mb-4">🛡️</div>
-                <h3 className="text-xl font-bold mb-4">User Role Management</h3>
-                <CardDescription className="mb-4">
-                  Manage user roles and permissions
-                </CardDescription>
-                <UserManagement />
-              </Card>
+              <ComprehensiveUserManagement />
             </TabsContent>
           </Tabs>
         </div>

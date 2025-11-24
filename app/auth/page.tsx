@@ -82,7 +82,7 @@ export default function AuthPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 pt-20">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
           <p className="text-white text-lg">Loading...</p>
@@ -92,7 +92,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 pt-20">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-black/20"></div>
       <div className="absolute inset-0">
@@ -100,26 +100,26 @@ export default function AuthPage() {
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="relative min-h-screen flex items-center justify-center p-4">
+      <div className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center p-4">
         <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
           
           {/* Left Side - Hero Content */}
           <div className="text-center lg:text-left space-y-6 text-white">
             <div className="space-y-4">
-              <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl lg:text-6xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                 LoL Tournaments
               </h1>
-              <p className="text-xl lg:text-2xl text-purple-100">
+              <p className="text-lg lg:text-2xl text-purple-100">
                 Join the competitive League of Legends scene
               </p>
             </div>
 
             <div className="space-y-4 text-purple-200">
-              <p className="text-lg">
+              <p className="text-base lg:text-lg">
                 Create your profile, find teammates, and compete in tournaments
               </p>
               
-              <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-500/20 rounded-lg">
                     <Users className="h-5 w-5" />
@@ -149,20 +149,20 @@ export default function AuthPage() {
           </div>
 
           {/* Right Side - Auth Form */}
-          <div className="flex justify-center">
-            <Card className="w-full max-w-md bg-gray-900/90 backdrop-blur-sm border-purple-500/20 shadow-2xl">
-              <CardHeader className="space-y-1 text-center">
-                <CardTitle className="text-2xl font-bold text-white">
+          <div className="flex justify-center lg:justify-end">
+            <Card className="w-full max-w-sm lg:max-w-md bg-gray-900/90 backdrop-blur-sm border-purple-500/20 shadow-2xl max-h-[80vh] overflow-y-auto">
+              <CardHeader className="space-y-1 text-center pb-4">
+                <CardTitle className="text-xl lg:text-2xl font-bold text-white">
                   {view === 'sign_in' ? 'Welcome Back' : 'Create Account'}
                 </CardTitle>
-                <CardDescription className="text-purple-200">
+                <CardDescription className="text-purple-200 text-sm">
                   {view === 'sign_in' 
                     ? 'Sign in to access your tournament dashboard' 
                     : 'Join the League of Legends tournament community'
                   }
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pb-6">
                 {/* Toggle between Sign In and Sign Up */}
                 <div className="flex rounded-lg bg-gray-800 p-1">
                   <button
@@ -216,12 +216,13 @@ export default function AuthPage() {
                       },
                     },
                     className: {
-                      button: 'font-semibold transition-all',
-                      input: 'transition-all bg-gray-800',
-                      label: 'text-purple-200 font-medium',
-                      message: 'text-sm',
-                      container: 'space-y-4',
-                      anchor: 'text-purple-400 hover:text-purple-300',
+                      button: 'font-semibold transition-all text-sm py-2 px-4 h-auto',
+                      input: 'transition-all bg-gray-800 text-sm py-2 px-3 h-auto',
+                      label: 'text-purple-200 font-medium text-xs',
+                      message: 'text-xs',
+                      container: 'space-y-3 max-h-[60vh] overflow-y-auto pr-2',
+                      anchor: 'text-purple-400 hover:text-purple-300 text-xs',
+                      divider: 'text-xs text-purple-300 my-2',
                     },
                   }}
                   providers={['discord', 'google']}

@@ -110,7 +110,7 @@ export default function SetupProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 pt-20">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-black/20"></div>
       <div className="absolute inset-0">
@@ -118,7 +118,7 @@ export default function SetupProfilePage() {
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="relative min-h-screen flex items-center justify-center p-4">
+      <div className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center p-4">
         <div className="w-full max-w-2xl">
           <Card className="bg-gray-900/90 backdrop-blur-sm border-purple-500/20 shadow-2xl">
             <CardHeader className="space-y-1 text-center">
