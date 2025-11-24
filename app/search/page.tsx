@@ -45,6 +45,7 @@ export default function SearchPage() {
   const [pendingRequests, setPendingRequests] = useState<string[]>([])
   const [sendingRequest, setSendingRequest] = useState<string | null>(null)
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
+  const [sentInvites, setSentInvites] = useState<string[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -86,6 +87,26 @@ export default function SearchPage() {
         
         const pendingTeamIds = requests?.map(r => r.team_id) || []
         setPendingRequests(pendingTeamIds)
+
+        // Fetch pending invitations sent by this team
+        if (playerData?.team_id) {
+          const { data: teamData } = await supabase
+            .from('teams')
+            .select('*')
+            .eq('id', playerData.team_id)
+            .single()
+          
+          if (teamData && teamData.captain_id === authUser.id) {
+            const { data: invitations } = await supabase
+              .from('team_invitations')
+              .select('invited_player_id')
+              .eq('team_id', teamData.id)
+              .eq('status', 'pending')
+            
+            const invitedPlayerIds = invitations?.map(inv => inv.invited_player_id) || []
+            setSentInvites(invitedPlayerIds)
+          }
+        }
       }
 
       const [teamsResult, playersResult] = await Promise.all([
@@ -364,6 +385,10 @@ export default function SearchPage() {
                       player.team_id ? (
                         <Button disabled className="w-full">
                           Already in a Team
+                        </Button>
+                      ) : sentInvites.includes(player.id) ? (
+                        <Button disabled className="w-full bg-orange-600">
+                          Invite Sent
                         </Button>
                       ) : (
                         <Button 

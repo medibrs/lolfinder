@@ -30,6 +30,7 @@ export default function PlayersPage() {
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
+  const [sentInvites, setSentInvites] = useState<string[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -51,6 +52,18 @@ export default function PlayersPage() {
           .single()
         
         setUserTeam(teamData)
+
+        // Fetch pending invitations sent by this team
+        if (teamData) {
+          const { data: invitations } = await supabase
+            .from('team_invitations')
+            .select('invited_player_id')
+            .eq('team_id', teamData.id)
+            .eq('status', 'pending')
+          
+          const invitedPlayerIds = invitations?.map(inv => inv.invited_player_id) || []
+          setSentInvites(invitedPlayerIds)
+        }
       }
 
       const { data, error } = await supabase
@@ -193,6 +206,10 @@ export default function PlayersPage() {
                       {player.team_id ? (
                         <Button disabled className="w-full">
                           Already in a Team
+                        </Button>
+                      ) : sentInvites.includes(player.id) ? (
+                        <Button disabled className="w-full bg-orange-600">
+                          Invite Sent
                         </Button>
                       ) : (
                         <Button 
