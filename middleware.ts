@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/setup-profile', '/admin']
+  const protectedRoutes = ['/setup-profile', '/admin']
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   )
@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
     
     // Redirect based on profile existence
     if (playerProfile) {
-      url.pathname = '/dashboard'
+      url.pathname = '/'
     } else {
       url.pathname = '/setup-profile'
     }

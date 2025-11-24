@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { CurrentUserAvatar } from '@/components/current-user-avatar'
 import { createClient } from '@/lib/supabase/client'
@@ -14,8 +15,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 
 export default function Navigation() {
+  const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
@@ -68,16 +71,40 @@ export default function Navigation() {
           </Link>
           
           <div className="hidden md:flex items-center gap-8">
-            <Link href="/players" className="text-foreground hover:text-primary transition">
+            <Link 
+              href="/players" 
+              className={cn(
+                "text-foreground hover:text-primary transition",
+                pathname === "/players" && "text-primary font-medium"
+              )}
+            >
               Players
             </Link>
-            <Link href="/teams" className="text-foreground hover:text-primary transition">
+            <Link 
+              href="/teams" 
+              className={cn(
+                "text-foreground hover:text-primary transition",
+                pathname === "/teams" && "text-primary font-medium"
+              )}
+            >
               Teams
             </Link>
-            <Link href="/tournaments" className="text-foreground hover:text-primary transition">
+            <Link 
+              href="/tournaments" 
+              className={cn(
+                "text-foreground hover:text-primary transition",
+                pathname === "/tournaments" && "text-primary font-medium"
+              )}
+            >
               Tournaments
             </Link>
-            <Link href="/search" className="text-foreground hover:text-primary transition">
+            <Link 
+              href="/search" 
+              className={cn(
+                "text-foreground hover:text-primary transition",
+                pathname === "/search" && "text-primary font-medium"
+              )}
+            >
               Search
             </Link>
           </div>

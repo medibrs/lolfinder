@@ -49,42 +49,34 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = createTeamSchema.parse(body);
 
-    // Check if captain exists and if they're already in a team
+    // Check if captain exists and has a complete profile
     const { data: existingCaptain, error: existingCaptainError } = await supabase
       .from('players')
-      .select('id, team_id')
+      .select('id, team_id, summoner_name, discord, main_role, tier')
       .eq('id', validatedData.captain_id)
       .single();
 
     if (existingCaptainError || !existingCaptain) {
-      // Create a basic player profile for the captain
-      const { data: newCaptain, error: createCaptainError } = await supabase
-        .from('players')
-        .insert([{
-          id: validatedData.captain_id,
-          summoner_name: 'Team Captain',
-          discord: 'captain#' + Math.random().toString(36).substring(7),
-          main_role: 'Top',
-          tier: 'Gold',
-          looking_for_team: false
-        }])
-        .select('id')
-        .single();
+      return NextResponse.json(
+        { error: 'You must create a player profile before creating a team. Please complete your profile first.' },
+        { status: 400 }
+      );
+    }
 
-      if (createCaptainError || !newCaptain) {
-        return NextResponse.json(
-          { error: 'Failed to create captain profile: ' + createCaptainError.message },
-          { status: 400 }
-        );
-      }
-    } else {
-      // Check if player is already in a team
-      if (existingCaptain.team_id) {
-        return NextResponse.json(
-          { error: 'You are already in a team and cannot create a new team' },
-          { status: 403 }
-        );
-      }
+    // Check if player profile is complete
+    if (!existingCaptain.summoner_name || !existingCaptain.discord || !existingCaptain.main_role || !existingCaptain.tier) {
+      return NextResponse.json(
+        { error: 'Please complete your player profile before creating a team.' },
+        { status: 400 }
+      );
+    }
+
+    // Check if player is already in a team
+    if (existingCaptain.team_id) {
+      return NextResponse.json(
+        { error: 'You are already in a team and cannot create a new team' },
+        { status: 403 }
+      );
     }
 
     // Check if captain already owns a team

@@ -31,7 +31,7 @@ export default function AuthPage() {
           
           // Redirect based on profile existence
           if (playerProfile) {
-            router.push('/dashboard')
+            router.push('/')
           } else {
             router.push('/setup-profile')
           }
@@ -63,7 +63,7 @@ export default function AuthPage() {
             
             // Redirect based on profile existence or original destination
             if (playerProfile) {
-              router.push(redirectTo || '/dashboard')
+              router.push(redirectTo || '/')
             } else {
               router.push('/setup-profile')
             }
@@ -157,7 +157,7 @@ export default function AuthPage() {
                 </CardTitle>
                 <CardDescription className="text-purple-200 text-sm">
                   {view === 'sign_in' 
-                    ? 'Sign in to access your tournament dashboard' 
+                    ? 'Sign in to access your tournament profile' 
                     : 'Join the League of Legends tournament community'
                   }
                 </CardDescription>

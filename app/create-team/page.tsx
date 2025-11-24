@@ -171,7 +171,7 @@ export default function CreateTeamPage() {
                   <Link href="/teams">View Your Team</Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link href="/dashboard">Back to Dashboard</Link>
+                  <Link href="/">Back to Home</Link>
                 </Button>
               </div>
             </div>

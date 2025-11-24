@@ -111,7 +111,7 @@ export default function SetupProfilePage() {
       })
 
       if (response.ok) {
-        router.push('/dashboard')
+        router.push('/')
       } else {
         const error = await response.json()
         console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, error)

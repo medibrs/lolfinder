@@ -12,9 +12,14 @@ interface Team {
   id: string
   name: string
   description?: string
-  looking_for_players: boolean
-  needed_roles: string[]
+  captain_id: string
+  open_positions: string[]
+  team_size: string
+  recruiting_status: string
   created_at: string
+  captain?: {
+    summoner_name: string
+  }
 }
 
 interface Player {
@@ -44,8 +49,8 @@ export default function SearchPage() {
       const [teamsResult, playersResult] = await Promise.all([
         supabase
           .from('teams')
-          .select('*')
-          .eq('looking_for_players', true)
+          .select('*, captain:players!captain_id(summoner_name)')
+          .eq('recruiting_status', 'Open')
           .order('created_at', { ascending: false }),
         supabase
           .from('players')
@@ -130,7 +135,7 @@ export default function SearchPage() {
             {searchType === 'teams' ? (
               teams.length > 0 ? (
                 teams.filter(team => {
-                  const matchesRole = !selectedRole || team.needed_roles.includes(selectedRole)
+                  const matchesRole = !selectedRole || team.open_positions.includes(selectedRole)
                   const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase())
                   return matchesRole && matchesSearch
                 }).map(team => (
@@ -140,8 +145,8 @@ export default function SearchPage() {
                       <p className="text-muted-foreground mb-4">{team.description}</p>
                     )}
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {team.needed_roles.length > 0 ? (
-                        team.needed_roles.map(role => (
+                      {team.open_positions.length > 0 ? (
+                        team.open_positions.map(role => (
                           <span key={role} className="bg-accent/20 text-accent px-2 py-1 rounded text-sm font-medium">
                             {role}
                           </span>
@@ -150,6 +155,11 @@ export default function SearchPage() {
                         <span className="text-sm text-muted-foreground">Team is full</span>
                       )}
                     </div>
+                    {team.captain && (
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Captain: {team.captain.summoner_name}
+                      </p>
+                    )}
                     <Button className="w-full bg-primary hover:bg-primary/90">Apply Now</Button>
                   </Card>
                 ))
