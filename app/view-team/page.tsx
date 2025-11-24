@@ -17,6 +17,7 @@ export default function ViewTeamPage() {
   const [user, setUser] = useState<any>(null)
   const [team, setTeam] = useState<any>(null)
   const [teamMembers, setTeamMembers] = useState<any[]>([])
+  const [leaving, setLeaving] = useState(false)
 
   useEffect(() => {
     loadTeamData()
@@ -78,6 +79,56 @@ export default function ViewTeamPage() {
       console.error('Error loading team data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleLeaveTeam = async () => {
+    if (!confirm('Are you sure you want to leave this team? This action cannot be undone.')) {
+      return
+    }
+
+    setLeaving(true)
+    try {
+      const supabase = createClient()
+
+      // Remove player from team
+      const { error: updateError } = await supabase
+        .from('players')
+        .update({ team_id: null, looking_for_team: true })
+        .eq('id', user.id)
+
+      if (updateError) {
+        console.error('Error leaving team:', updateError)
+        alert('Failed to leave team')
+        return
+      }
+
+      // Send notification to captain
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: team.captain_id,
+          type: 'team_member_left',
+          title: `${user.email?.split('@')[0] || 'A player'} left your team`,
+          message: `A team member has left ${team.name}. You now have ${teamMembers.length - 1} members.`,
+          data: {
+            team_id: team.id,
+            team_name: team.name,
+            player_id: user.id
+          }
+        })
+
+      if (notificationError) {
+        console.error('Error sending notification:', notificationError)
+      }
+
+      // Redirect to teams page
+      router.push('/teams')
+    } catch (error) {
+      console.error('Error leaving team:', error)
+      alert('Failed to leave team')
+    } finally {
+      setLeaving(false)
     }
   }
 
@@ -238,7 +289,7 @@ export default function ViewTeamPage() {
               </CardContent>
             </Card>
 
-            {user?.id === team.captain_id && (
+            {user?.id === team.captain_id ? (
               <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle>Captain Actions</CardTitle>
@@ -247,6 +298,25 @@ export default function ViewTeamPage() {
                   <Button asChild className="w-full">
                     <Link href="/manage-team">Manage Team</Link>
                   </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle>Team Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={handleLeaveTeam}
+                    disabled={leaving}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    {leaving ? 'Leaving...' : 'Leave Team'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    You can rejoin or join another team anytime
+                  </p>
                 </CardContent>
               </Card>
             )}
