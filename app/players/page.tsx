@@ -36,6 +36,25 @@ export default function PlayersPage() {
 
   useEffect(() => {
     fetchPlayers()
+    
+    // Refetch invitations when page becomes visible (to catch rejected/accepted invites)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchPlayers()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Also refetch every 30 seconds to keep data fresh
+    const interval = setInterval(() => {
+      fetchPlayers()
+    }, 30000)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(interval)
+    }
   }, [])
 
   const fetchPlayers = async () => {
@@ -107,12 +126,11 @@ export default function PlayersPage() {
       })
 
       if (response.ok) {
-        // Refresh players to update UI
-        fetchPlayers()
+        // Add to sent invites immediately
+        setSentInvites(prev => [...prev, playerId])
       } else {
         const error = await response.json()
         console.error('Error sending invitation:', error.error)
-        // UI should prevent this, but log if it happens
       }
     } catch (error) {
       console.error('Error sending invitation:', error)
@@ -220,8 +238,13 @@ export default function PlayersPage() {
                           Already in a Team
                         </Button>
                       ) : sentInvites.includes(player.id) ? (
-                        <Button disabled className="w-full bg-orange-600">
-                          Invite Sent
+                        <Button 
+                          onClick={() => handleInvitePlayer(player.id)}
+                          disabled={sendingInvite === player.id}
+                          className="w-full bg-orange-600 hover:bg-orange-700"
+                          title="Click to resend invitation"
+                        >
+                          {sendingInvite === player.id ? 'Sending...' : 'Invite Sent (Click to Resend)'}
                         </Button>
                       ) : (
                         <Button 

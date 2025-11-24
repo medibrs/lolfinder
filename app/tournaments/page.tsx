@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { CheckCircle, XCircle } from 'lucide-react'
 
 interface Tournament {
   id: string
@@ -25,8 +27,9 @@ export default function TournamentsPage() {
   const [userTeam, setUserTeam] = useState<any>(null)
   const [registrationStatuses, setRegistrationStatuses] = useState<Record<string, string>>({})
   const [registering, setRegistering] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [successMessage, setSuccessMessage] = useState<string>('')
   const supabase = createClient()
-  const { toast } = useToast()
 
   useEffect(() => {
     fetchData()
@@ -104,32 +107,21 @@ export default function TournamentsPage() {
       if (response.ok) {
         // Add to registration statuses as pending
         setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
+        setSuccessMessage('Registration submitted! Your team registration is pending admin approval.')
+        setErrorMessage('')
         
-        toast({
-          title: "Registration Submitted!",
-          description: "Your team registration is pending admin approval.",
-          duration: 5000,
-        })
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccessMessage(''), 5000)
       } else {
         const error = await response.json()
         console.error('Error registering for tournament:', error.error)
-        
-        toast({
-          title: "Registration Failed",
-          description: error.error || "Failed to register for tournament.",
-          variant: "destructive",
-          duration: 7000,
-        })
+        setErrorMessage(error.error || "Failed to register for tournament.")
+        setSuccessMessage('')
       }
     } catch (error: any) {
       console.error('Error registering for tournament:', error)
-      
-      toast({
-        title: "Registration Failed",
-        description: error.message || "An unexpected error occurred.",
-        variant: "destructive",
-        duration: 5000,
-      })
+      setErrorMessage(error.message || "An unexpected error occurred.")
+      setSuccessMessage('')
     } finally {
       setRegistering(null)
     }
@@ -154,6 +146,26 @@ export default function TournamentsPage() {
       <div className="max-w-6xl mx-auto px-4">
         <h1 className="text-4xl font-bold mb-2">Tournaments</h1>
         <p className="text-muted-foreground mb-8">Browse and register for upcoming tournaments</p>
+
+        {/* Success Message */}
+        {successMessage && (
+          <Alert className="mb-6 bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
+            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <AlertDescription className="text-green-800 dark:text-green-200">
+              {successMessage}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Message */}
+        {errorMessage && (
+          <Alert className="mb-6 bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800">
+            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <AlertDescription className="text-red-800 dark:text-red-200">
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
