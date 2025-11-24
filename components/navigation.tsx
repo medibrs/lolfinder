@@ -21,6 +21,8 @@ export default function Navigation() {
   const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const supabase = createClient()
 
   useEffect(() => {
@@ -29,19 +31,73 @@ export default function Navigation() {
       const { data: { session } } = await supabase.auth.getSession()
       setUser(session?.user ?? null)
       setLoading(false)
+      
+      if (session?.user) {
+        fetchNotifications(session.user.id)
+      }
     }
 
     getSession()
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (event, session) => {
         setUser(session?.user ?? null)
+        setLoading(false)
+        
+        if (session?.user) {
+          fetchNotifications(session.user.id)
+        } else {
+          setNotifications([])
+          setUnreadCount(0)
+        }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase])
+  }, [])
+
+  const fetchNotifications = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (error) {
+        console.error('Error fetching notifications:', error)
+        return
+      }
+
+      setNotifications(data || [])
+      setUnreadCount(data?.filter(n => !n.read).length || 0)
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    }
+  }
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId)
+
+      if (error) {
+        console.error('Error marking notification as read:', error)
+        return
+      }
+
+      // Refresh notifications
+      if (user) {
+        fetchNotifications(user.id)
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -132,8 +188,47 @@ export default function Navigation() {
                   <Link href="/setup-profile">Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings">Settings</Link>
+                  <Link href="/manage-team">Manage Team</Link>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/notifications" className="flex items-center justify-between">
+                    <span>Notifications</span>
+                    {unreadCount > 0 && (
+                      <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-1">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {notifications.slice(0, 3).map(notification => (
+                  <DropdownMenuItem 
+                    key={notification.id}
+                    className="flex flex-col items-start p-3 cursor-pointer"
+                    onClick={() => markNotificationAsRead(notification.id)}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-medium text-sm">{notification.title}</span>
+                      {!notification.read && (
+                        <span className="w-2 h-2 bg-primary rounded-full"></span>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      {notification.message}
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      {new Date(notification.created_at).toLocaleDateString()}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+                {notifications.length > 3 && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/notifications" className="text-center text-sm">
+                      View all notifications
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   Sign out

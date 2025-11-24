@@ -23,6 +23,8 @@ export default function PlayersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [userTeam, setUserTeam] = useState<any>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -31,6 +33,21 @@ export default function PlayersPage() {
 
   const fetchPlayers = async () => {
     try {
+      // Get current user
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      setUser(authUser)
+
+      // Check if user is a team captain
+      if (authUser) {
+        const { data: teamData } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('captain_id', authUser.id)
+          .single()
+        
+        setUserTeam(teamData)
+      }
+
       const { data, error } = await supabase
         .from('players')
         .select('*')
@@ -46,6 +63,38 @@ export default function PlayersPage() {
       console.error('Error:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleInvitePlayer = async (playerId: string) => {
+    if (!userTeam) return
+
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/team-invitations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          team_id: userTeam.id,
+          invited_player_id: playerId,
+          message: `You've been invited to join ${userTeam.name}!`
+        }),
+      })
+
+      if (response.ok) {
+        alert('Invitation sent successfully!')
+      } else {
+        const error = await response.json()
+        alert(`Error sending invitation: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error sending invitation:', error)
+      alert('Error sending invitation')
     }
   }
 
@@ -126,7 +175,27 @@ export default function PlayersPage() {
                     <p className="text-muted-foreground mb-4">Discord: {player.discord}</p>
                   )}
                   
-                  {player.opgg_url ? (
+                  {user && userTeam && player.id !== user.id ? (
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={() => handleInvitePlayer(player.id)}
+                        className="w-full bg-yellow-600 hover:bg-yellow-700"
+                      >
+                        Invite to Team
+                      </Button>
+                      {player.opgg_url ? (
+                        <Button asChild variant="outline" className="w-full">
+                          <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
+                            View OP.GG
+                          </a>
+                        </Button>
+                      ) : (
+                        <Button disabled variant="outline" className="w-full">
+                          No OP.GG Linked
+                        </Button>
+                      )}
+                    </div>
+                  ) : player.opgg_url ? (
                     <Button asChild className="w-full bg-primary hover:bg-primary/90">
                       <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
                         View OP.GG

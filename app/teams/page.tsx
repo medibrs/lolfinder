@@ -27,6 +27,7 @@ export default function TeamsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -35,16 +36,22 @@ export default function TeamsPage() {
 
   const fetchTeams = async () => {
     try {
+      // Get current user
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      setUser(authUser)
+
       const { data, error } = await supabase
         .from('teams')
         .select('*, captain:players!captain_id(summoner_name)')
+        .eq('recruiting_status', 'Open')
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error:', error)
-      } else {
-        setTeams(data || [])
+        console.error('Error fetching teams:', error)
+        return
       }
+
+      setTeams(data || [])
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -149,9 +156,15 @@ export default function TeamsPage() {
                     </div>
                   </div>
                   
-                  <Button className="w-full bg-primary hover:bg-primary/90">
-                    Apply Now
-                  </Button>
+                  {user && team.captain_id === user.id ? (
+                    <Button asChild className="w-full bg-yellow-600 hover:bg-yellow-700">
+                      <a href="/manage-team">Manage Team</a>
+                    </Button>
+                  ) : (
+                    <Button className="w-full bg-primary hover:bg-primary/90">
+                      Apply Now
+                    </Button>
+                  )}
                 </Card>
               ))
             ) : (
