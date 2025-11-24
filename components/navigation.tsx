@@ -23,6 +23,9 @@ export default function Navigation() {
   const [loading, setLoading] = useState(true)
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [userTeam, setUserTeam] = useState<any>(null)
+  const [isCaptain, setIsCaptain] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -34,6 +37,8 @@ export default function Navigation() {
       
       if (session?.user) {
         fetchNotifications(session.user.id)
+        fetchUserTeam(session.user.id)
+        checkAdminStatus(session.user)
       }
     }
 
@@ -47,15 +52,55 @@ export default function Navigation() {
         
         if (session?.user) {
           fetchNotifications(session.user.id)
+          fetchUserTeam(session.user.id)
+          checkAdminStatus(session.user)
         } else {
           setNotifications([])
           setUnreadCount(0)
+          setUserTeam(null)
+          setIsCaptain(false)
+          setIsAdmin(false)
         }
       }
     )
 
     return () => subscription.unsubscribe()
   }, [])
+
+  const checkAdminStatus = (user: any) => {
+    // Check if user has admin role in metadata
+    const isUserAdmin = user?.app_metadata?.role === 'admin' || 
+                        user?.raw_app_meta_data?.role === 'admin' ||
+                        user?.email === 'tiznit.sos@gmail.com' // Temporary bypass
+    setIsAdmin(isUserAdmin)
+  }
+
+  const fetchUserTeam = async (userId: string) => {
+    try {
+      // Get player's team
+      const { data: playerData } = await supabase
+        .from('players')
+        .select('team_id')
+        .eq('id', userId)
+        .single()
+
+      if (playerData?.team_id) {
+        // Get team data
+        const { data: teamData } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('id', playerData.team_id)
+          .single()
+
+        if (teamData) {
+          setUserTeam(teamData)
+          setIsCaptain(teamData.captain_id === userId)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user team:', error)
+    }
+  }
 
   const fetchNotifications = async (userId: string) => {
     try {
@@ -187,9 +232,22 @@ export default function Navigation() {
                 <DropdownMenuItem asChild>
                   <Link href="/setup-profile">Profile</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/manage-team">Manage Team</Link>
-                </DropdownMenuItem>
+                {userTeam && (
+                  <DropdownMenuItem asChild>
+                    {isCaptain ? (
+                      <Link href="/manage-team">Manage Team</Link>
+                    ) : (
+                      <Link href="/view-team">View Team</Link>
+                    )}
+                  </DropdownMenuItem>
+                )}
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="text-yellow-600 font-semibold">
+                      Admin Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/notifications" className="flex items-center justify-between">

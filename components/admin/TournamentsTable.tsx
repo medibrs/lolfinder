@@ -7,7 +7,17 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Trophy, Calendar, Users } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +45,9 @@ export default function TournamentsTable() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingTournament, setEditingTournament] = useState<Tournament | null>(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchTournaments()
@@ -104,6 +117,44 @@ export default function TournamentsTable() {
     
     return matchesSearch && matchesStatus
   })
+
+  const openEditDialog = (tournament: Tournament) => {
+    setEditingTournament(tournament)
+    setEditDialogOpen(true)
+  }
+
+  const handleSaveTournament = async () => {
+    if (!editingTournament) return
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/tournaments/${editingTournament.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingTournament.name,
+          description: editingTournament.description,
+          start_date: editingTournament.start_date,
+          end_date: editingTournament.end_date,
+          prize_pool: editingTournament.prize_pool,
+          max_teams: editingTournament.max_teams,
+        }),
+      })
+
+      if (response.ok) {
+        // Refresh tournaments
+        await fetchTournaments()
+        setEditDialogOpen(false)
+        setEditingTournament(null)
+      } else {
+        console.error('Failed to update tournament')
+      }
+    } catch (error) {
+      console.error('Error updating tournament:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const deleteTournament = async (tournamentId: string) => {
     if (confirm('Are you sure you want to delete this tournament? This will also delete all registrations.')) {
@@ -250,7 +301,7 @@ export default function TournamentsTable() {
                           <Eye className="mr-2 h-4 w-4" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditDialog(tournament)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Tournament
                         </DropdownMenuItem>
@@ -277,6 +328,94 @@ export default function TournamentsTable() {
           </div>
         )}
       </CardContent>
+
+      {/* Edit Tournament Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Tournament</DialogTitle>
+            <DialogDescription>
+              Update tournament details. Changes will be saved immediately.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingTournament && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Tournament Name</Label>
+                <Input
+                  id="name"
+                  value={editingTournament.name}
+                  onChange={(e) => setEditingTournament({ ...editingTournament, name: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={editingTournament.description}
+                  onChange={(e) => setEditingTournament({ ...editingTournament, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="start_date">Start Date</Label>
+                  <Input
+                    id="start_date"
+                    type="datetime-local"
+                    value={editingTournament.start_date?.slice(0, 16)}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, start_date: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="end_date">End Date</Label>
+                  <Input
+                    id="end_date"
+                    type="datetime-local"
+                    value={editingTournament.end_date?.slice(0, 16)}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, end_date: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="prize_pool">Prize Pool</Label>
+                  <Input
+                    id="prize_pool"
+                    value={editingTournament.prize_pool}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, prize_pool: e.target.value })}
+                    placeholder="e.g., $1,000"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="max_teams">Max Teams</Label>
+                  <Input
+                    id="max_teams"
+                    type="number"
+                    value={editingTournament.max_teams}
+                    onChange={(e) => setEditingTournament({ ...editingTournament, max_teams: parseInt(e.target.value) })}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTournament} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

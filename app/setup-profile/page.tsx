@@ -10,7 +10,7 @@ import { Shield, Trophy, Users, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
-const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster']
+const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
 
 const getTierColor = (tier: string) => {
   const colors: { [key: string]: string } = {
@@ -22,7 +22,8 @@ const getTierColor = (tier: string) => {
     'Emerald': 'bg-emerald-500',
     'Diamond': 'bg-blue-500',
     'Master': 'bg-purple-500',
-    'Grandmaster': 'bg-red-500'
+    'Grandmaster': 'bg-red-500',
+    'Challenger': 'bg-cyan-400'
   }
   return colors[tier] || 'bg-gray-500'
 }

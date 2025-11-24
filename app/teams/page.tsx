@@ -77,7 +77,6 @@ export default function TeamsPage() {
       const { data, error } = await supabase
         .from('teams')
         .select('*, captain:players!captain_id(summoner_name)')
-        .eq('recruiting_status', 'Open')
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -132,8 +131,7 @@ export default function TeamsPage() {
   const filteredTeams = teams.filter(team => {
     const matchesRole = !selectedRole || team.open_positions.includes(selectedRole)
     const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesLooking = team.recruiting_status === 'Open'
-    return matchesRole && matchesSearch && matchesLooking
+    return matchesRole && matchesSearch
   })
 
   return (
