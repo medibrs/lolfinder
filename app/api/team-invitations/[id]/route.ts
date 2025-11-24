@@ -112,7 +112,8 @@ export async function PUT(
         .filter('data->>invitation_id', 'eq', id);
 
       // Create notification for team captain
-      await supabase
+      console.log('Creating notification for captain:', invitation.team.captain_id)
+      const { error: captainNotificationError } = await supabase
         .from('notifications')
         .insert([{
           user_id: invitation.team.captain_id,
@@ -124,6 +125,12 @@ export async function PUT(
             player_id: currentPlayer.id,
           }
         }]);
+
+      if (captainNotificationError) {
+        console.error('Error creating captain notification:', captainNotificationError);
+      } else {
+        console.log('Captain notification created successfully');
+      }
 
       return NextResponse.json({ message: 'Invitation accepted successfully' });
 

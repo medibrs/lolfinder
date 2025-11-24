@@ -106,7 +106,8 @@ export async function PUT(
         .filter('data->>request_id', 'eq', id);
 
       // Create notification for the player who was accepted
-      await supabase
+      console.log('Creating acceptance notification for player:', request.player_id)
+      const { error: notificationError } = await supabase
         .from('notifications')
         .insert([{
           user_id: request.player_id,
@@ -118,6 +119,12 @@ export async function PUT(
             team_name: request.team.name
           }
         }]);
+
+      if (notificationError) {
+        console.error('Error creating acceptance notification:', notificationError);
+      } else {
+        console.log('Acceptance notification created successfully');
+      }
 
       return NextResponse.json({ message: 'Join request accepted successfully' });
 

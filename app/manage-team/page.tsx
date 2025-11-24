@@ -168,7 +168,8 @@ export default function ManageTeamPage() {
         .eq('status', 'pending')
 
       // Send notification to the removed player
-      await supabase
+      console.log('Creating removal notification for player:', memberId)
+      const { error: notificationError } = await supabase
         .from('notifications')
         .insert([{
           user_id: memberId,
@@ -180,6 +181,12 @@ export default function ManageTeamPage() {
             team_name: team.name
           }
         }])
+
+      if (notificationError) {
+        console.error('Error creating removal notification:', notificationError)
+      } else {
+        console.log('Removal notification created successfully')
+      }
 
       loadTeamData() // Refresh data
     } catch (error) {
