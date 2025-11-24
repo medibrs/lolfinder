@@ -38,6 +38,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only team captains can register for tournaments' }, { status: 403 });
     }
 
+    // Check if team has at least 5 members (5 starters required, 6th can be sub)
+    const { count: teamMemberCount } = await supabase
+      .from('players')
+      .select('*', { count: 'exact', head: true })
+      .eq('team_id', validatedData.team_id);
+
+    if (!teamMemberCount || teamMemberCount < 5) {
+      return NextResponse.json({ 
+        error: `Your team must have at least 5 members to register for tournaments. Current: ${teamMemberCount || 0}/6` 
+      }, { status: 400 });
+    }
+
     // Check if tournament exists and is upcoming
     const { data: tournament, error: tournamentError } = await supabase
       .from('tournaments')
@@ -78,12 +90,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tournament is full' }, { status: 400 });
     }
 
-    // Create registration
+    // Create registration with pending status (requires admin approval)
     const { data: registration, error: registrationError } = await supabase
       .from('tournament_registrations')
       .insert([{
         tournament_id: validatedData.tournament_id,
         team_id: validatedData.team_id,
+        status: 'pending',
       }])
       .select()
       .single();

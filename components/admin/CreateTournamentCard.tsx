@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar, Trophy, Plus } from 'lucide-react'
+import { Calendar, Trophy, Plus, CheckCircle, XCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 
 export default function CreateTournamentCard() {
   const [loading, setLoading] = useState(false)
@@ -22,6 +23,7 @@ export default function CreateTournamentCard() {
     rules: ''
   })
   const supabase = createClient()
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,6 +60,13 @@ export default function CreateTournamentCard() {
         throw error
       }
 
+      // Show success toast
+      toast({
+        title: "Tournament Created!",
+        description: `${formData.name} has been successfully created.`,
+        duration: 5000,
+      })
+
       // Reset form
       setFormData({
         name: '',
@@ -68,8 +77,16 @@ export default function CreateTournamentCard() {
         prize_pool: '',
         rules: ''
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating tournament:', error)
+      
+      // Show error toast
+      toast({
+        title: "Failed to Create Tournament",
+        description: error.message || "An error occurred while creating the tournament.",
+        variant: "destructive",
+        duration: 5000,
+      })
     } finally {
       setLoading(false)
     }

@@ -75,6 +75,27 @@ export async function PUT(
         return NextResponse.json({ error: 'You are already in a team' }, { status: 400 });
       }
 
+      // Check if team is already full
+      const { data: teamData } = await supabase
+        .from('teams')
+        .select('team_size')
+        .eq('id', invitation.team.id)
+        .single();
+
+      const maxTeamSize = teamData?.team_size || 6;
+
+      const { count: currentMemberCount } = await supabase
+        .from('players')
+        .select('*', { count: 'exact', head: true })
+        .eq('team_id', invitation.team.id);
+
+      if (currentMemberCount && currentMemberCount >= maxTeamSize) {
+        console.log('Team is full:', currentMemberCount, '/', maxTeamSize)
+        return NextResponse.json({ 
+          error: `This team is already full (${maxTeamSize}/${maxTeamSize} members)` 
+        }, { status: 400 });
+      }
+
       // Update invitation status
       const { error: updateError } = await supabase
         .from('team_invitations')

@@ -23,9 +23,10 @@ export default function TournamentsPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
-  const [registeredTournaments, setRegisteredTournaments] = useState<string[]>([])
+  const [registrationStatuses, setRegistrationStatuses] = useState<Record<string, string>>({})
   const [registering, setRegistering] = useState<string | null>(null)
   const supabase = createClient()
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchData()
@@ -47,15 +48,18 @@ export default function TournamentsPage() {
         
         setUserTeam(teamData)
 
-        // Get registered tournaments for this team
+        // Get registered tournaments for this team with status
         if (teamData) {
           const { data: registrations } = await supabase
             .from('tournament_registrations')
-            .select('tournament_id')
+            .select('tournament_id, status')
             .eq('team_id', teamData.id)
           
-          const tournamentIds = registrations?.map(r => r.tournament_id) || []
-          setRegisteredTournaments(tournamentIds)
+          const statusMap: Record<string, string> = {}
+          registrations?.forEach(reg => {
+            statusMap[reg.tournament_id] = reg.status || 'pending'
+          })
+          setRegistrationStatuses(statusMap)
         }
       }
 
@@ -98,14 +102,34 @@ export default function TournamentsPage() {
       })
 
       if (response.ok) {
-        // Add to registered tournaments
-        setRegisteredTournaments(prev => [...prev, tournamentId])
+        // Add to registration statuses as pending
+        setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
+        
+        toast({
+          title: "Registration Submitted!",
+          description: "Your team registration is pending admin approval.",
+          duration: 5000,
+        })
       } else {
         const error = await response.json()
         console.error('Error registering for tournament:', error.error)
+        
+        toast({
+          title: "Registration Failed",
+          description: error.error || "Failed to register for tournament.",
+          variant: "destructive",
+          duration: 7000,
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error registering for tournament:', error)
+      
+      toast({
+        title: "Registration Failed",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+        duration: 5000,
+      })
     } finally {
       setRegistering(null)
     }
@@ -168,9 +192,17 @@ export default function TournamentsPage() {
                     </div>
 
                     {user && userTeam ? (
-                      registeredTournaments.includes(tournament.id) ? (
+                      registrationStatuses[tournament.id] === 'approved' ? (
                         <Button disabled className="bg-green-600">
                           ✓ Registered
+                        </Button>
+                      ) : registrationStatuses[tournament.id] === 'pending' ? (
+                        <Button disabled className="bg-yellow-600">
+                          ⏳ Pending Approval
+                        </Button>
+                      ) : registrationStatuses[tournament.id] === 'rejected' ? (
+                        <Button disabled className="bg-red-600">
+                          ✗ Registration Declined
                         </Button>
                       ) : tournamentStatus.status === 'upcoming' ? (
                         <Button 

@@ -287,11 +287,11 @@ export default function ViewTeamPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Team Size</span>
-                  <span className="font-bold">{teamMembers.length}/{team.team_size || 5}</span>
+                  <span className="font-bold">{teamMembers.length}/6</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Open Slots</span>
-                  <span className="font-bold">{(team.team_size || 5) - teamMembers.length}</span>
+                  <span className="font-bold">{6 - teamMembers.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Created</span>

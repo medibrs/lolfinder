@@ -76,12 +76,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tournament is full' }, { status: 400 });
     }
 
-    // Create registration (admin can bypass date checks)
+    // Create registration (admin can bypass date checks, auto-approved)
     const { data: registration, error: registrationError } = await supabase
       .from('tournament_registrations')
       .insert([{
         tournament_id: validatedData.tournament_id,
         team_id: validatedData.team_id,
+        status: 'approved',
       }])
       .select()
       .single();

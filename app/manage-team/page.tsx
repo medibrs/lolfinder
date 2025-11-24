@@ -28,7 +28,8 @@ export default function ManageTeamPage() {
     name: '',
     description: '',
     open_positions: [] as string[],
-    recruiting_status: 'Open' as 'Open' | 'Closed' | 'Full'
+    recruiting_status: 'Open' as 'Open' | 'Closed' | 'Full',
+    team_size: 6
   })
 
   useEffect(() => {
@@ -68,7 +69,8 @@ export default function ManageTeamPage() {
         name: teamData.name,
         description: teamData.description || '',
         open_positions: teamData.open_positions || [],
-        recruiting_status: teamData.recruiting_status
+        recruiting_status: teamData.recruiting_status,
+        team_size: teamData.team_size || 6
       })
 
       // Get team members from the view's players array or query directly
@@ -128,7 +130,8 @@ export default function ManageTeamPage() {
           name: formData.name,
           description: formData.description,
           open_positions: formData.open_positions,
-          recruiting_status: formData.recruiting_status
+          recruiting_status: formData.recruiting_status,
+          team_size: formData.team_size
         })
         .eq('id', team.id)
 
@@ -421,17 +424,37 @@ export default function ManageTeamPage() {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Recruiting Status</label>
-                      <select
-                        value={formData.recruiting_status}
-                        onChange={(e) => setFormData(prev => ({ ...prev, recruiting_status: e.target.value as any }))}
-                        className="w-full p-2 border rounded-md bg-background"
-                      >
-                        <option value="Open">Open</option>
-                        <option value="Closed">Closed</option>
-                        <option value="Full">Full</option>
-                      </select>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Recruiting Status</label>
+                        <select
+                          value={formData.recruiting_status}
+                          onChange={(e) => setFormData(prev => ({ ...prev, recruiting_status: e.target.value as any }))}
+                          className="w-full p-2 border rounded-md bg-background"
+                        >
+                          <option value="Open">Open</option>
+                          <option value="Closed">Closed</option>
+                          <option value="Full">Full</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Team Size</label>
+                        <select
+                          value={formData.team_size}
+                          onChange={(e) => setFormData(prev => ({ ...prev, team_size: parseInt(e.target.value) }))}
+                          className="w-full p-2 border rounded-md bg-background"
+                          disabled={teamMembers.length > 5}
+                        >
+                          <option value={5}>5 (No Sub)</option>
+                          <option value={6}>6 (With Sub)</option>
+                        </select>
+                        {teamMembers.length > 5 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Cannot reduce size while you have {teamMembers.length} members
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <Button onClick={handleSaveTeam} className="w-full">
@@ -624,11 +647,11 @@ export default function ManageTeamPage() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Team Size</span>
-                  <span className="font-medium">{teamMembers.length}/5</span>
+                  <span className="font-medium">{teamMembers.length}/{team.team_size || 6}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Open Slots</span>
-                  <span className="font-medium">{5 - teamMembers.length}</span>
+                  <span className="font-medium">{(team.team_size || 6) - teamMembers.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Created</span>

@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Trophy, Calendar, Users } from 'lucide-react'
+import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Trophy, Calendar, Users, Check, X, Clock } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -52,6 +52,7 @@ interface TournamentRegistration {
   team_id: string
   tournament_id: string
   registered_at: string
+  status: string
   team: Team
 }
 
@@ -228,6 +229,28 @@ export default function TournamentsTable() {
       }
     } catch (error) {
       console.error('Error adding team:', error)
+    }
+  }
+
+  const handleUpdateStatus = async (registrationId: string, newStatus: string) => {
+    if (!managingTournament) return
+
+    try {
+      const response = await fetch(`/api/tournament-registrations/${registrationId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (response.ok) {
+        // Refresh registrations to show updated status
+        await openManageDialog(managingTournament)
+      } else {
+        const error = await response.json()
+        console.error('Failed to update status:', error.error)
+      }
+    } catch (error) {
+      console.error('Error updating status:', error)
     }
   }
 
@@ -570,21 +593,46 @@ export default function TournamentsTable() {
                         key={registration.id}
                         className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition"
                       >
-                        <div>
-                          <div className="font-medium">{registration.team.name}</div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{registration.team.name}</span>
+                            {registration.status === 'approved' && (
+                              <Badge className="bg-green-600"><Check className="h-3 w-3 mr-1" />Approved</Badge>
+                            )}
+                            {registration.status === 'pending' && (
+                              <Badge className="bg-yellow-600"><Clock className="h-3 w-3 mr-1" />Pending</Badge>
+                            )}
+                            {registration.status === 'rejected' && (
+                              <Badge className="bg-red-600"><X className="h-3 w-3 mr-1" />Rejected</Badge>
+                            )}
+                          </div>
                           <div className="text-sm text-muted-foreground">
                             Registered: {new Date(registration.registered_at).toLocaleDateString()}
                             {registration.team.member_count && ` • ${registration.team.member_count} members`}
                           </div>
                         </div>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleKickTeam(registration.id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Remove
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={registration.status || 'pending'}
+                            onValueChange={(value) => handleUpdateStatus(registration.id, value)}
+                          >
+                            <SelectTrigger className="w-[130px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleKickTeam(registration.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
