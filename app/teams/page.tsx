@@ -12,10 +12,14 @@ interface Team {
   id: string
   name: string
   description?: string
-  looking_for_players: boolean
-  needed_roles: string[]
-  owner_id: string
+  captain_id: string
+  open_positions: string[]
+  team_size: string
+  recruiting_status: string
   created_at: string
+  captain?: {
+    summoner_name: string
+  }
 }
 
 export default function TeamsPage() {
@@ -33,15 +37,14 @@ export default function TeamsPage() {
     try {
       const { data, error } = await supabase
         .from('teams')
-        .select('*')
+        .select('*, captain:players!captain_id(summoner_name)')
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching teams:', error)
-        return
+        console.error('Error:', error)
+      } else {
+        setTeams(data || [])
       }
-
-      setTeams(data || [])
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -50,9 +53,9 @@ export default function TeamsPage() {
   }
 
   const filteredTeams = teams.filter(team => {
-    const matchesRole = !selectedRole || team.needed_roles.includes(selectedRole)
+    const matchesRole = !selectedRole || team.open_positions.includes(selectedRole)
     const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesLooking = team.looking_for_players
+    const matchesLooking = team.recruiting_status === 'open'
     return matchesRole && matchesSearch && matchesLooking
   })
 
@@ -114,10 +117,28 @@ export default function TeamsPage() {
                     )}
                   </div>
                   
-                  <div className="mb-4">
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {team.needed_roles.length > 0 ? (
-                        team.needed_roles.map(role => (
+                  {/* Team Info */}
+                  <div className="mb-4 space-y-2">
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-muted-foreground">Size:</span>
+                      <span className="font-medium">{team.team_size} players</span>
+                      {team.team_size === '6' && (
+                        <span className="text-xs text-muted-foreground">(5 + sub)</span>
+                      )}
+                    </div>
+                    {team.captain && (
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-muted-foreground">Captain:</span>
+                        <span className="font-medium">{team.captain.summoner_name}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Open Positions */}
+                  <div className="mb-6">
+                    <div className="flex flex-wrap gap-2">
+                      {team.open_positions.length > 0 ? (
+                        team.open_positions.map(role => (
                           <span key={role} className="bg-accent/20 text-accent px-2 py-1 rounded text-sm font-medium">
                             Need {role}
                           </span>

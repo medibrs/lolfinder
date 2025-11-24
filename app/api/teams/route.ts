@@ -8,8 +8,7 @@ const createTeamSchema = z.object({
   description: z.string().optional(),
   captain_id: z.string().uuid(),
   open_positions: z.array(z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support'])).default([]),
-  tier: z.enum(['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger']),
-  region: z.enum(['NA', 'EUW', 'EUNE', 'KR', 'BR', 'LAN', 'LAS', 'OCE', 'RU', 'TR', 'JP']),
+  team_size: z.enum(['5', '6']).default('5'),
   recruiting_status: z.enum(['Open', 'Closed', 'Full']).default('Open'),
 });
 
@@ -17,18 +16,14 @@ const createTeamSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const tier = searchParams.get('tier');
-    const region = searchParams.get('region');
+    const teamSize = searchParams.get('teamSize');
     const recruiting = searchParams.get('recruiting');
 
     let query = supabase.from('teams').select('*, captain:players!captain_id(*)');
 
     // Apply filters
-    if (tier) {
-      query = query.eq('tier', tier);
-    }
-    if (region) {
-      query = query.eq('region', region);
+    if (teamSize) {
+      query = query.eq('team_size', teamSize);
     }
     if (recruiting) {
       query = query.eq('recruiting_status', recruiting);
@@ -59,18 +54,35 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = createTeamSchema.parse(body);
 
-    // Check if captain exists
-    const { data: captain, error: captainError } = await supabase
+    // Check if captain exists, if not create a basic player profile automatically
+    const { data: existingCaptain, error: existingCaptainError } = await supabase
       .from('players')
       .select('id')
       .eq('id', validatedData.captain_id)
       .single();
 
-    if (captainError || !captain) {
-      return NextResponse.json(
-        { error: 'Captain player not found' },
-        { status: 400 }
-      );
+    if (existingCaptainError || !existingCaptain) {
+      // Create a basic player profile for the captain
+      const { data: newCaptain, error: createCaptainError } = await supabase
+        .from('players')
+        .insert([{
+          id: validatedData.captain_id,
+          summoner_name: 'Team Captain',
+          discord: 'captain#' + Math.random().toString(36).substring(7),
+          main_role: 'Top',
+          tier: 'Gold',
+          region: 'NA', // Temporary - remove this after running the SQL migration
+          looking_for_team: false
+        }])
+        .select('id')
+        .single();
+
+      if (createCaptainError || !newCaptain) {
+        return NextResponse.json(
+          { error: 'Failed to create captain profile: ' + createCaptainError.message },
+          { status: 400 }
+        );
+      }
     }
 
     const { data, error } = await supabase

@@ -10,7 +10,6 @@ import { Shield, Trophy, Users, Zap } from 'lucide-react'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster']
-const REGIONS = ['NA', 'EUW', 'EUNE', 'KR', 'JP', 'BR', 'LAN', 'LAS', 'OCE', 'RU', 'TR']
 
 const getTierColor = (tier: string) => {
   const colors: { [key: string]: string } = {
@@ -48,7 +47,6 @@ export default function SetupProfilePage() {
     main_role: '',
     secondary_role: '',
     tier: '',
-    region: '',
     opgg_link: '',
     looking_for_team: true
   })
@@ -74,7 +72,6 @@ export default function SetupProfilePage() {
               main_role: existingProfile.main_role || '',
               secondary_role: existingProfile.secondary_role || '',
               tier: existingProfile.tier || '',
-              region: existingProfile.region || '',
               opgg_link: existingProfile.opgg_link || '',
               looking_for_team: existingProfile.looking_for_team || false
             })
@@ -231,43 +228,23 @@ export default function SetupProfilePage() {
                   </div>
                 </div>
 
-                {/* Tier and Region */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
-                      Rank *
-                    </label>
-                    <select
-                      name="tier"
-                      value={formData.tier}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
-                    >
-                      <option value="">Select Rank</option>
-                      {TIERS.map(tier => (
-                        <option key={tier} value={tier}>{tier}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
-                      Region *
-                    </label>
-                    <select
-                      name="region"
-                      value={formData.region}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
-                    >
-                      <option value="">Select Region</option>
-                      {REGIONS.map(region => (
-                        <option key={region} value={region}>{region}</option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Rank */}
+                <div>
+                  <label className="block text-sm font-medium text-purple-200 mb-2">
+                    Rank *
+                  </label>
+                  <select
+                    name="tier"
+                    value={formData.tier}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                  >
+                    <option value="">Select Rank</option>
+                    {TIERS.map(tier => (
+                      <option key={tier} value={tier}>{tier}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* OP.GG Link */}

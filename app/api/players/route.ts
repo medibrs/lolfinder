@@ -10,7 +10,6 @@ const createPlayerSchema = z.object({
   secondary_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']).optional(),
   opgg_link: z.string().url().optional().or(z.literal('')),
   tier: z.enum(['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger']),
-  region: z.enum(['NA', 'EUW', 'EUNE', 'KR', 'BR', 'LAN', 'LAS', 'OCE', 'RU', 'TR', 'JP']),
   looking_for_team: z.boolean().default(false),
 });
 
@@ -20,7 +19,6 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const role = searchParams.get('role');
     const tier = searchParams.get('tier');
-    const region = searchParams.get('region');
     const lookingForTeam = searchParams.get('lookingForTeam');
 
     let query = supabase.from('players').select('*');
@@ -31,9 +29,6 @@ export async function GET(request: NextRequest) {
     }
     if (tier) {
       query = query.eq('tier', tier);
-    }
-    if (region) {
-      query = query.eq('region', region);
     }
     if (lookingForTeam === 'true') {
       query = query.eq('looking_for_team', true);

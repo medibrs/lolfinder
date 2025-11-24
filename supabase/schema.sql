@@ -11,18 +11,20 @@ CREATE TYPE registration_status_type AS ENUM ('Pending', 'Confirmed', 'Rejected'
 -- Players Table
 CREATE TABLE players (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    summoner_name VARCHAR(255) NOT NULL,
-    discord VARCHAR(255) NOT NULL,
+    summoner_name VARCHAR(255) NOT NULL UNIQUE,
+    discord VARCHAR(255) NOT NULL UNIQUE,
     main_role role_type NOT NULL,
     secondary_role role_type,
     opgg_link VARCHAR(500),
     tier tier_type NOT NULL,
-    region region_type NOT NULL,
     looking_for_team BOOLEAN DEFAULT false,
     team_id UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Team Size Type
+CREATE TYPE team_size_type AS ENUM ('5', '6');
 
 -- Teams Table
 CREATE TABLE teams (
@@ -31,8 +33,7 @@ CREATE TABLE teams (
     description TEXT,
     captain_id UUID NOT NULL,
     open_positions role_type[] DEFAULT '{}',
-    tier tier_type NOT NULL,
-    region region_type NOT NULL,
+    team_size team_size_type NOT NULL DEFAULT '5',
     recruiting_status recruiting_status_type DEFAULT 'Open',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -74,13 +75,11 @@ CREATE TABLE tournament_registrations (
 -- Create indexes for better query performance
 CREATE INDEX idx_players_main_role ON players(main_role);
 CREATE INDEX idx_players_tier ON players(tier);
-CREATE INDEX idx_players_region ON players(region);
 CREATE INDEX idx_players_looking_for_team ON players(looking_for_team);
 CREATE INDEX idx_players_team_id ON players(team_id);
 
 CREATE INDEX idx_teams_captain_id ON teams(captain_id);
-CREATE INDEX idx_teams_tier ON teams(tier);
-CREATE INDEX idx_teams_region ON teams(region);
+CREATE INDEX idx_teams_team_size ON teams(team_size);
 CREATE INDEX idx_teams_recruiting_status ON teams(recruiting_status);
 
 CREATE INDEX idx_tournaments_start_date ON tournaments(start_date);

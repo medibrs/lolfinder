@@ -10,7 +10,6 @@ const updatePlayerSchema = z.object({
   secondary_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
   opgg_link: z.string().url().optional().or(z.literal('')),
   tier: z.enum(['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger']),
-  region: z.enum(['NA', 'EUW', 'EUNE', 'KR', 'BR', 'LAN', 'LAS', 'OCE', 'RU', 'TR', 'JP']),
   looking_for_team: z.boolean(),
 });
 
