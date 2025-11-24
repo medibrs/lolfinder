@@ -151,12 +151,7 @@ export async function POST(request: NextRequest) {
         ...validatedData,
         invited_by: currentPlayer.id,
       }])
-      .select(`
-        *,
-        team:teams(id, name),
-        invited_player:players!invited_player_id(summoner_name),
-        invited_by:players!invited_by(summoner_name)
-      `)
+      .select('*')
       .single();
 
     if (error) {
@@ -168,7 +163,7 @@ export async function POST(request: NextRequest) {
       .from('notifications')
       .insert([{
         user_id: validatedData.invited_player_id,
-        type: 'team_invite',
+        type: 'team_invitation',
         title: `Team Invitation from ${team.name}`,
         message: validatedData.message || `You've been invited to join ${team.name}`,
         data: {

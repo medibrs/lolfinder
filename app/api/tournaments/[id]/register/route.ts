@@ -18,6 +18,27 @@ export async function POST(
     // Validate input
     const { team_id } = registerTeamSchema.parse(body);
 
+    // Get current user
+    const authHeader = request.headers.get('authorization');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader?.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Get player record for current user
+    const { data: currentPlayer, error: playerError } = await supabase
+      .from('players')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (playerError || !currentPlayer) {
+      return NextResponse.json({ error: 'Player profile not found' }, { status: 404 });
+    }
+
     // Check if tournament exists
     const { data: tournament, error: tournamentError } = await supabase
       .from('tournaments')
@@ -29,7 +50,7 @@ export async function POST(
       return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
     }
 
-    // Check if team exists
+    // Check if team exists and user is the captain
     const { data: team, error: teamError } = await supabase
       .from('teams')
       .select('*')
@@ -38,6 +59,21 @@ export async function POST(
 
     if (teamError || !team) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
+    }
+
+    // Verify user is the team captain
+    if (team.captain_id !== currentPlayer.id) {
+      return NextResponse.json({ error: 'Only team captains can register their team for tournaments' }, { status: 403 });
+    }
+
+    // Check if team has enough members
+    const { count: memberCount } = await supabase
+      .from('players')
+      .select('*', { count: 'exact', head: true })
+      .eq('team_id', team_id);
+
+    if (!memberCount || memberCount < 5) {
+      return NextResponse.json({ error: 'Team must have at least 5 members to register for a tournament' }, { status: 400 });
     }
 
     // Check if tournament is full

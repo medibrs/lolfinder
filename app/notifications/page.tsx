@@ -109,8 +109,16 @@ export default function NotificationsPage() {
     switch (type) {
       case 'team_invitation':
         return <Users className="w-5 h-5 text-blue-500" />
-      case 'team_join':
+      case 'team_join_request':
+        return <Users className="w-5 h-5 text-green-500" />
+      case 'team_join_accepted':
+        return <Check className="w-5 h-5 text-green-500" />
+      case 'team_join_rejected':
+        return <X className="w-5 h-5 text-red-500" />
+      case 'team_member_joined':
         return <Crown className="w-5 h-5 text-yellow-500" />
+      case 'team_member_left':
+        return <Users className="w-5 h-5 text-gray-500" />
       case 'system':
         return <AlertCircle className="w-5 h-5 text-orange-500" />
       default:
@@ -121,10 +129,20 @@ export default function NotificationsPage() {
   const handleInvitationAction = async (notification: any, action: 'accept' | 'reject') => {
     try {
       const invitationData = notification.data
-      if (!invitationData?.invitation_id) return
+      console.log('Notification data:', notification)
+      console.log('Invitation data:', invitationData)
+      
+      if (!invitationData?.invitation_id) {
+        console.error('No invitation_id found in notification data')
+        alert('Error: Invitation ID not found')
+        return
+      }
 
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
+
+      console.log('Making request to:', `/api/team-invitations/${invitationData.invitation_id}`)
+      console.log('Action:', action)
 
       const response = await fetch(`/api/team-invitations/${invitationData.invitation_id}`, {
         method: 'PUT',
@@ -135,20 +153,65 @@ export default function NotificationsPage() {
         body: JSON.stringify({ action: action }),
       })
 
+      const responseData = await response.json()
+      console.log('API Response:', { status: response.status, data: responseData })
+
       if (response.ok) {
+        alert(`Invitation ${action}ed successfully!`)
         // Mark notification as read and remove it
         await markAsRead(notification.id)
         await deleteNotification(notification.id)
         
         // Refresh notifications
         loadNotifications()
+        
+        // Reload page to update team status
+        window.location.reload()
       } else {
-        const error = await response.json()
-        alert(`Error ${action}ing invitation: ${error.error}`)
+        console.error('API Error:', responseData)
+        alert(`Error ${action}ing invitation: ${responseData.error}`)
       }
     } catch (error) {
       console.error(`Error ${action}ing invitation:`, error)
       alert(`Error ${action}ing invitation`)
+    }
+  }
+
+  const handleJoinRequestAction = async (notification: any, action: 'accept' | 'reject') => {
+    try {
+      const requestData = notification.data
+      
+      if (!requestData?.request_id) {
+        alert('Error: Join request ID not found')
+        return
+      }
+
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      const response = await fetch(`/api/team-join-requests/${requestData.request_id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ action: action }),
+      })
+
+      const responseData = await response.json()
+
+      if (response.ok) {
+        alert(`Join request ${action}ed successfully!`)
+        await markAsRead(notification.id)
+        await deleteNotification(notification.id)
+        loadNotifications()
+        window.location.reload()
+      } else {
+        alert(`Error ${action}ing join request: ${responseData.error}`)
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing join request:`, error)
+      alert(`Error ${action}ing join request`)
     }
   }
 
@@ -230,6 +293,28 @@ export default function NotificationsPage() {
                             </Button>
                             <Button
                               onClick={() => handleInvitationAction(notification, 'reject')}
+                              size="sm"
+                              variant="outline"
+                            >
+                              <X className="w-4 h-4 mr-2" />
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {/* Team Join Request Actions */}
+                        {notification.type === 'team_join_request' && !notification.read && (
+                          <div className="flex items-center gap-3">
+                            <Button
+                              onClick={() => handleJoinRequestAction(notification, 'accept')}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="w-4 h-4 mr-2" />
+                              Accept
+                            </Button>
+                            <Button
+                              onClick={() => handleJoinRequestAction(notification, 'reject')}
                               size="sm"
                               variant="outline"
                             >

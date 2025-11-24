@@ -38,6 +38,9 @@ export default function SearchPage() {
   const [teams, setTeams] = useState<Team[]>([])
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [userTeam, setUserTeam] = useState<any>(null)
+  const [pendingRequests, setPendingRequests] = useState<string[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -46,6 +49,38 @@ export default function SearchPage() {
 
   const fetchData = async () => {
     try {
+      // Get current user
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      setUser(authUser)
+
+      // Check if user is in a team
+      if (authUser) {
+        const { data: playerData } = await supabase
+          .from('players')
+          .select('team_id')
+          .eq('id', authUser.id)
+          .single()
+        
+        if (playerData?.team_id) {
+          const { data: teamData } = await supabase
+            .from('teams')
+            .select('*')
+            .eq('id', playerData.team_id)
+            .single()
+          setUserTeam(teamData)
+        }
+
+        // Fetch user's pending join requests
+        const { data: requests } = await supabase
+          .from('team_join_requests')
+          .select('team_id')
+          .eq('player_id', authUser.id)
+          .eq('status', 'pending')
+        
+        const pendingTeamIds = requests?.map(r => r.team_id) || []
+        setPendingRequests(pendingTeamIds)
+      }
+
       const [teamsResult, playersResult] = await Promise.all([
         supabase
           .from('teams')
@@ -55,25 +90,51 @@ export default function SearchPage() {
         supabase
           .from('players')
           .select('*')
-          .eq('looking_for_team', true)
           .order('created_at', { ascending: false })
       ])
 
-      if (teamsResult.error) {
-        console.error('Error fetching teams:', teamsResult.error)
-      } else {
-        setTeams(teamsResult.data || [])
-      }
+      if (teamsResult.error) console.error('Error fetching teams:', teamsResult.error)
+      if (playersResult.error) console.error('Error fetching players:', playersResult.error)
 
-      if (playersResult.error) {
-        console.error('Error fetching players:', playersResult.error)
-      } else {
-        setPlayers(playersResult.data || [])
-      }
+      setTeams(teamsResult.data || [])
+      setPlayers(playersResult.data || [])
     } catch (error) {
       console.error('Error:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRequestToJoin = async (teamId: string, teamName: string) => {
+    if (!user) return
+
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/team-join-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          team_id: teamId,
+          message: `I'd like to join ${teamName}!`
+        }),
+      })
+
+      if (response.ok) {
+        alert('Join request sent successfully!')
+        // Add to pending requests to update UI
+        setPendingRequests(prev => [...prev, teamId])
+      } else {
+        const error = await response.json()
+        alert(`Error sending join request: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error sending join request:', error)
+      alert('Error sending join request')
     }
   }
 
@@ -160,7 +221,22 @@ export default function SearchPage() {
                         Captain: {team.captain.summoner_name}
                       </p>
                     )}
-                    <Button className="w-full bg-primary hover:bg-primary/90">Apply Now</Button>
+                    {user && userTeam ? (
+                    <Button disabled className="w-full">
+                      Already in a team
+                    </Button>
+                  ) : user && pendingRequests.includes(team.id) ? (
+                    <Button disabled className="w-full bg-orange-600">
+                      Request Sent
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={() => handleRequestToJoin(team.id, team.name)}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      Request to Join
+                    </Button>
+                  )}
                   </Card>
                 ))
               ) : (

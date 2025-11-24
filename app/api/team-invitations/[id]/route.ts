@@ -44,25 +44,34 @@ export async function PUT(
     }
 
     // Get the invitation
+    console.log('Looking for invitation with ID:', id)
+    console.log('Current player ID:', currentPlayer.id)
+    
     const { data: invitation, error: invitationError } = await supabase
       .from('team_invitations')
       .select(`
         *,
-        team:teams(id, name, captain_id),
-        invited_by:players!invited_by(summoner_name)
+        team:teams(id, name, captain_id)
       `)
       .eq('id', id)
       .eq('invited_player_id', currentPlayer.id)
       .eq('status', 'pending')
       .single();
 
+    console.log('Invitation query result:', { invitation, invitationError })
+
     if (invitationError || !invitation) {
+      console.error('Invitation not found:', { invitationError, id, playerId: currentPlayer.id })
       return NextResponse.json({ error: 'Invitation not found or already processed' }, { status: 404 });
     }
 
     if (validatedData.action === 'accept') {
+      console.log('Accepting invitation for user:', currentPlayer.id)
+      console.log('Team to join:', invitation.team.id)
+      
       // Check if player is already in a team
       if (currentPlayer.team_id) {
+        console.log('Player already in team:', currentPlayer.team_id)
         return NextResponse.json({ error: 'You are already in a team' }, { status: 400 });
       }
 
@@ -73,8 +82,11 @@ export async function PUT(
         .eq('id', id);
 
       if (updateError) {
+        console.error('Error updating invitation:', updateError)
         return NextResponse.json({ error: updateError.message }, { status: 400 });
       }
+
+      console.log('Invitation updated, adding player to team...')
 
       // Add player to team
       const { error: joinError } = await supabase
@@ -86,8 +98,11 @@ export async function PUT(
         .eq('id', currentPlayer.id);
 
       if (joinError) {
+        console.error('Error adding player to team:', joinError)
         return NextResponse.json({ error: joinError.message }, { status: 400 });
       }
+
+      console.log('Player successfully added to team!')
 
       // Create notification for team captain
       await supabase

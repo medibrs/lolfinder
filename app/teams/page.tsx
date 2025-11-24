@@ -28,6 +28,8 @@ export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const [userTeam, setUserTeam] = useState<any>(null)
+  const [pendingRequests, setPendingRequests] = useState<string[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -39,6 +41,27 @@ export default function TeamsPage() {
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser()
       setUser(authUser)
+
+      // Check if user is a team captain
+      if (authUser) {
+        const { data: teamData } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('captain_id', authUser.id)
+          .single()
+        
+        setUserTeam(teamData)
+
+        // Fetch user's pending join requests
+        const { data: requests } = await supabase
+          .from('team_join_requests')
+          .select('team_id')
+          .eq('player_id', authUser.id)
+          .eq('status', 'pending')
+        
+        const pendingTeamIds = requests?.map(r => r.team_id) || []
+        setPendingRequests(pendingTeamIds)
+      }
 
       const { data, error } = await supabase
         .from('teams')
@@ -56,6 +79,39 @@ export default function TeamsPage() {
       console.error('Error:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRequestToJoin = async (teamId: string, teamName: string) => {
+    if (!user) return
+
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/team-join-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          team_id: teamId,
+          message: `I'd like to join ${teamName}!`
+        }),
+      })
+
+      if (response.ok) {
+        alert('Join request sent successfully!')
+        // Add to pending requests to update UI
+        setPendingRequests(prev => [...prev, teamId])
+      } else {
+        const error = await response.json()
+        alert(`Error sending join request: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error sending join request:', error)
+      alert('Error sending join request')
     }
   }
 
@@ -160,9 +216,20 @@ export default function TeamsPage() {
                     <Button asChild className="w-full bg-yellow-600 hover:bg-yellow-700">
                       <a href="/manage-team">Manage Team</a>
                     </Button>
+                  ) : user && userTeam ? (
+                    <Button disabled className="w-full">
+                      Already in a team
+                    </Button>
+                  ) : user && pendingRequests.includes(team.id) ? (
+                    <Button disabled className="w-full bg-orange-600">
+                      Request Sent
+                    </Button>
                   ) : (
-                    <Button className="w-full bg-primary hover:bg-primary/90">
-                      Apply Now
+                    <Button 
+                      onClick={() => handleRequestToJoin(team.id, team.name)}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      Request to Join
                     </Button>
                   )}
                 </Card>
