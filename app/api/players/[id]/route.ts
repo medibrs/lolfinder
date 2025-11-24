@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 
-// Validation schema for updates
+// Validation schema for updates (all fields required except opgg_link)
 const updatePlayerSchema = z.object({
-  summoner_name: z.string().min(1).max(255).optional(),
-  discord: z.string().min(1).max(255).optional(),
-  main_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']).optional(),
-  secondary_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']).optional(),
+  summoner_name: z.string().min(1).max(255),
+  discord: z.string().min(1).max(255),
+  main_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
+  secondary_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
   opgg_link: z.string().url().optional().or(z.literal('')),
-  tier: z.enum(['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger']).optional(),
-  region: z.enum(['NA', 'EUW', 'EUNE', 'KR', 'BR', 'LAN', 'LAS', 'OCE', 'RU', 'TR', 'JP']).optional(),
-  looking_for_team: z.boolean().optional(),
+  tier: z.enum(['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger']),
+  region: z.enum(['NA', 'EUW', 'EUNE', 'KR', 'BR', 'LAN', 'LAS', 'OCE', 'RU', 'TR', 'JP']),
+  looking_for_team: z.boolean(),
 });
 
 // GET /api/players/[id] - Get a single player

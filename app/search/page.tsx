@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 
-const ROLES = ['TOP', 'JNG', 'MID', 'ADC', 'SUP']
+const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
 interface Team {
   id: string
@@ -20,7 +20,8 @@ interface Team {
 interface Player {
   id: string
   summoner_name: string
-  role: string
+  main_role: string
+  secondary_role?: string
   discord?: string
   looking_for_team: boolean
 }
@@ -160,13 +161,21 @@ export default function SearchPage() {
             ) : (
               players.length > 0 ? (
                 players.filter(player => {
-                  const matchesRole = !selectedRole || player.role === selectedRole
+                  const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
                   const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
                   return matchesRole && matchesSearch
                 }).map(player => (
                   <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
                     <h3 className="text-2xl font-bold mb-2">{player.summoner_name}</h3>
-                    <p className="text-primary font-semibold mb-2">{player.role}</p>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-primary font-semibold">{player.main_role}</span>
+                      {player.secondary_role && (
+                        <>
+                          <span className="text-muted-foreground">/</span>
+                          <span className="text-muted-foreground">{player.secondary_role}</span>
+                        </>
+                      )}
+                    </div>
                     {player.discord && (
                       <p className="text-muted-foreground mb-4">Discord: {player.discord}</p>
                     )}

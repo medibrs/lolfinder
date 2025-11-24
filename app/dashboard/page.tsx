@@ -85,7 +85,10 @@ export default async function DashboardPage() {
               </div>
               <div className="flex items-center space-x-2">
                 {playerProfile.looking_for_team && (
-                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm font-medium">
+                  <span 
+                    className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm font-medium cursor-help"
+                    title="Looking for team"
+                  >
                     Looking for Team
                   </span>
                 )}

@@ -222,9 +222,21 @@ export default function PlayersTable() {
                   <TableCell>{player.region}</TableCell>
                   <TableCell>
                     {player.looking_for_team ? (
-                      <Badge variant="default" className="bg-green-500">Yes</Badge>
+                      <Badge 
+                        variant="default" 
+                        className="bg-green-500 cursor-help" 
+                        title="Looking for team"
+                      >
+                        Yes
+                      </Badge>
                     ) : (
-                      <Badge variant="secondary">No</Badge>
+                      <Badge 
+                        variant="secondary" 
+                        className="cursor-help" 
+                        title="Not looking for team"
+                      >
+                        No
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell>

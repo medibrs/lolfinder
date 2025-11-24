@@ -40,6 +40,8 @@ const getRoleIcon = (role: string) => {
 export default function SetupProfilePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     summoner_name: '',
     discord: '',
@@ -52,28 +54,39 @@ export default function SetupProfilePage() {
   })
 
   useEffect(() => {
-    // Check if user already has a profile (auth is handled by middleware)
-    const checkExistingProfile = async () => {
+    // Load existing profile if it exists (auth is handled by middleware)
+    const loadExistingProfile = async () => {
       try {
-        // Check if user already has a profile
+        // Get current user
         const authResponse = await fetch('/api/auth/user')
         if (authResponse.ok) {
           const { user } = await authResponse.json()
+          setUserId(user.id)
           
+          // Check if user already has a profile
           const profileResponse = await fetch(`/api/players/${user.id}`)
           if (profileResponse.ok) {
-            // User already has a profile, redirect to dashboard
-            router.push('/dashboard')
-            return
+            const existingProfile = await profileResponse.json()
+            // Load existing profile data for editing
+            setFormData({
+              summoner_name: existingProfile.summoner_name || '',
+              discord: existingProfile.discord || '',
+              main_role: existingProfile.main_role || '',
+              secondary_role: existingProfile.secondary_role || '',
+              tier: existingProfile.tier || '',
+              region: existingProfile.region || '',
+              opgg_link: existingProfile.opgg_link || '',
+              looking_for_team: existingProfile.looking_for_team || false
+            })
+            setIsEditing(true)
           }
         }
-        // If not authenticated or no profile, stay on page (middleware will handle auth)
       } catch (error) {
-        // Let middleware handle authentication errors
+        console.error('Error loading profile:', error)
       }
     }
-    checkExistingProfile()
-  }, [router])
+    loadExistingProfile()
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -88,8 +101,11 @@ export default function SetupProfilePage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/players', {
-        method: 'POST',
+      const endpoint = isEditing ? `/api/players/${userId}` : '/api/players'
+      const method = isEditing ? 'PUT' : 'POST'
+      
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -100,10 +116,10 @@ export default function SetupProfilePage() {
         router.push('/dashboard')
       } else {
         const error = await response.json()
-        console.error('Error creating profile:', error)
+        console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, error)
       }
     } catch (error) {
-      console.error('Error creating profile:', error)
+      console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, error)
     } finally {
       setLoading(false)
     }
@@ -123,16 +139,24 @@ export default function SetupProfilePage() {
           <Card className="bg-gray-900/90 backdrop-blur-sm border-purple-500/20 shadow-2xl">
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-3xl font-bold text-white">
-                Complete Your Profile
+                {isEditing ? 'Edit Your Profile' : 'Complete Your Profile'}
               </CardTitle>
               <CardDescription className="text-purple-200">
-                Set up your League of Legends player profile to join tournaments and find teams
+                {isEditing ? 'Update your League of Legends player profile' : 'Complete your League of Legends player profile to access all features'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Info */}
                 <div className="space-y-4">
+                  <div className="text-center mb-6">
+                    <p className="text-purple-200 text-sm">
+                      {isEditing ? 'Update your information below' : 'Complete your profile to access all tournament features'}
+                    </p>
+                    <p className="text-purple-300 text-xs mt-2">
+                      All fields are required except OP.GG URL
+                    </p>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-purple-200 mb-2">
                       Summoner Name *
@@ -188,12 +212,13 @@ export default function SetupProfilePage() {
 
                   <div>
                     <label className="block text-sm font-medium text-purple-200 mb-2">
-                      Secondary Role
+                      Secondary Role *
                     </label>
                     <select
                       name="secondary_role"
                       value={formData.secondary_role}
                       onChange={handleChange}
+                      required
                       className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
                     >
                       <option value="">Select Secondary Role</option>
@@ -248,7 +273,7 @@ export default function SetupProfilePage() {
                 {/* OP.GG Link */}
                 <div>
                   <label className="block text-sm font-medium text-purple-200 mb-2">
-                    OP.GG Profile URL
+                    OP.GG Profile URL (Optional)
                   </label>
                   <Input
                     type="url"
@@ -258,6 +283,9 @@ export default function SetupProfilePage() {
                     placeholder="https://op.gg/..."
                     className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                   />
+                  <p className="text-purple-300 text-xs mt-1">
+                    Help teams verify your rank and gameplay
+                  </p>
                 </div>
 
                 {/* Looking for Team */}
@@ -301,7 +329,13 @@ export default function SetupProfilePage() {
                           </Badge>
                         )}
                         {formData.looking_for_team && (
-                          <Badge variant="default" className="bg-green-500 text-xs">LFT</Badge>
+                          <Badge 
+                            variant="default" 
+                            className="bg-green-500 text-xs cursor-help" 
+                            title="Looking for team"
+                          >
+                            LFT
+                          </Badge>
                         )}
                       </div>
                     </div>
@@ -309,23 +343,13 @@ export default function SetupProfilePage() {
                 )}
 
                 {/* Submit Button */}
-                <div className="flex gap-4">
-                  <Button 
-                    type="submit" 
-                    className="flex-1 bg-purple-600 hover:bg-purple-700"
-                    disabled={loading}
-                  >
-                    {loading ? 'Creating Profile...' : 'Complete Profile'}
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
-                    onClick={() => router.push('/dashboard')}
-                  >
-                    Skip for Now
-                  </Button>
-                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                  disabled={loading}
+                >
+                  {loading ? (isEditing ? 'Updating Profile...' : 'Creating Profile...') : (isEditing ? 'Update Profile' : 'Complete Profile')}
+                </Button>
               </form>
             </CardContent>
           </Card>
