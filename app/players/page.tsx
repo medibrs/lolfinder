@@ -27,6 +27,7 @@ export default function PlayersPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
+  const [sendingInvite, setSendingInvite] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -69,9 +70,10 @@ export default function PlayersPage() {
   }
 
   const handleInvitePlayer = async (playerId: string) => {
-    if (!userTeam) return
+    if (!userTeam || sendingInvite) return
 
     try {
+      setSendingInvite(playerId)
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -99,6 +101,8 @@ export default function PlayersPage() {
       }
     } catch (error) {
       console.error('Error sending invitation:', error)
+    } finally {
+      setSendingInvite(null)
     }
   }
 
@@ -189,9 +193,10 @@ export default function PlayersPage() {
                       ) : (
                         <Button 
                           onClick={() => handleInvitePlayer(player.id)}
+                          disabled={sendingInvite === player.id}
                           className="w-full bg-yellow-600 hover:bg-yellow-700"
                         >
-                          Invite to Team
+                          {sendingInvite === player.id ? 'Sending...' : 'Invite to Team'}
                         </Button>
                       )}
                       {player.opgg_url ? (
