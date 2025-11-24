@@ -30,12 +30,17 @@ export async function PUT(
     // Get player record for current user
     const { data: currentPlayer, error: playerError } = await supabase
       .from('players')
-      .select('id, team_id, summoner_name')
+      .select('id, team_id, summoner_name, discord, main_role, tier')
       .eq('id', user.id)
       .single();
 
     if (playerError || !currentPlayer) {
-      return NextResponse.json({ error: 'Player profile not found' }, { status: 404 });
+      return NextResponse.json({ error: 'You must create a player profile before joining a team. Please complete your profile first.' }, { status: 404 });
+    }
+
+    // Check if player profile is complete
+    if (!currentPlayer.summoner_name || !currentPlayer.discord || !currentPlayer.main_role || !currentPlayer.tier) {
+      return NextResponse.json({ error: 'Please complete your player profile before joining a team.' }, { status: 400 });
     }
 
     // Get the invitation

@@ -19,6 +19,7 @@ export default function CreateTeamPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [canCreateTeam, setCanCreateTeam] = useState(true)
   const [checkingStatus, setCheckingStatus] = useState(true)
+  const [blockReason, setBlockReason] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -57,15 +58,30 @@ export default function CreateTeamPage() {
     try {
       const supabase = createClient()
       
-      // Check if user is already in a team
-      const { data: playerData } = await supabase
+      // Check if user has a complete profile
+      const { data: playerData, error: playerError } = await supabase
         .from('players')
-        .select('team_id')
+        .select('team_id, summoner_name, discord, main_role, tier')
         .eq('id', userId)
         .single()
       
+      if (playerError || !playerData) {
+        setCanCreateTeam(false)
+        setBlockReason('no_profile')
+        return
+      }
+      
+      // Check if profile is complete
+      if (!playerData.summoner_name || !playerData.discord || !playerData.main_role || !playerData.tier) {
+        setCanCreateTeam(false)
+        setBlockReason('incomplete_profile')
+        return
+      }
+      
+      // Check if user is already in a team
       if (playerData?.team_id) {
         setCanCreateTeam(false)
+        setBlockReason('already_in_team')
         return
       }
       
@@ -78,9 +94,11 @@ export default function CreateTeamPage() {
       
       if (teamData) {
         setCanCreateTeam(false)
+        setBlockReason('already_created_team')
       }
     } catch (error) {
       console.error('Error checking team eligibility:', error)
+      setCanCreateTeam(false)
     }
   }
 
@@ -156,23 +174,87 @@ export default function CreateTeamPage() {
   }
 
   if (!canCreateTeam) {
+    const getErrorContent = () => {
+      switch (blockReason) {
+        case 'no_profile':
+          return {
+            title: 'Profile Required',
+            message: 'You must create a player profile before creating a team. Please complete your profile first.',
+            actions: [
+              <Button key="profile" asChild className="bg-primary hover:bg-primary/90">
+                <Link href="/setup-profile">Create Profile</Link>
+              </Button>,
+              <Button key="home" asChild variant="outline">
+                <Link href="/">Back to Home</Link>
+              </Button>
+            ]
+          }
+        case 'incomplete_profile':
+          return {
+            title: 'Complete Profile Required',
+            message: 'Please complete your player profile before creating a team. Make sure to fill in all required fields.',
+            actions: [
+              <Button key="profile" asChild className="bg-primary hover:bg-primary/90">
+                <Link href="/setup-profile">Complete Profile</Link>
+              </Button>,
+              <Button key="home" asChild variant="outline">
+                <Link href="/">Back to Home</Link>
+              </Button>
+            ]
+          }
+        case 'already_in_team':
+          return {
+            title: 'Already in a Team',
+            message: 'You are already in a team and cannot create a new team. Each player can only be in one team at a time.',
+            actions: [
+              <Button key="team" asChild className="bg-primary hover:bg-primary/90">
+                <Link href="/teams">View Your Team</Link>
+              </Button>,
+              <Button key="home" asChild variant="outline">
+                <Link href="/">Back to Home</Link>
+              </Button>
+            ]
+          }
+        case 'already_created_team':
+          return {
+            title: 'Team Already Created',
+            message: 'You have already created a team and cannot create another. Each player can only create one team.',
+            actions: [
+              <Button key="team" asChild className="bg-primary hover:bg-primary/90">
+                <Link href="/teams">View Your Team</Link>
+              </Button>,
+              <Button key="home" asChild variant="outline">
+                <Link href="/">Back to Home</Link>
+              </Button>
+            ]
+          }
+        default:
+          return {
+            title: 'Cannot Create Team',
+            message: 'You are unable to create a team at this time.',
+            actions: [
+              <Button key="home" asChild variant="outline">
+                <Link href="/">Back to Home</Link>
+              </Button>
+            ]
+          }
+      }
+    }
+
+    const errorContent = getErrorContent()
+
     return (
       <main className="min-h-screen pt-24 pb-12">
         <div className="max-w-2xl mx-auto px-4">
           <Card className="bg-card border-border p-8">
             <div className="text-center">
               <div className="text-6xl mb-4">🚫</div>
-              <h2 className="text-3xl font-bold mb-4">Cannot Create Team</h2>
+              <h2 className="text-3xl font-bold mb-4">{errorContent.title}</h2>
               <p className="text-muted-foreground mb-8">
-                You are already in a team or have already created a team. Each player can only be in one team at a time.
+                {errorContent.message}
               </p>
               <div className="flex gap-4 justify-center flex-wrap">
-                <Button asChild className="bg-primary hover:bg-primary/90">
-                  <Link href="/teams">View Your Team</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href="/">Back to Home</Link>
-                </Button>
+                {errorContent.actions}
               </div>
             </div>
           </Card>

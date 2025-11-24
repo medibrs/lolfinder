@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Shield, Trophy, Users, Zap } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster']
@@ -56,28 +57,46 @@ export default function SetupProfilePage() {
     // Load existing profile if it exists (auth is handled by middleware)
     const loadExistingProfile = async () => {
       try {
-        // Get current user
-        const authResponse = await fetch('/api/auth/user')
-        if (authResponse.ok) {
-          const { user } = await authResponse.json()
-          setUserId(user.id)
+        const supabase = createClient()
+        
+        // Get current session first
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+        
+        console.log('Session data:', { sessionData, sessionError })
+        
+        if (sessionError || !sessionData?.session?.user) {
+          console.error('No authenticated session found:', sessionError)
+          return
+        }
+        
+        const user = sessionData.session.user
+        console.log('Session found:', user.id)
+        setUserId(user.id)
+        
+        // Check if user already has a profile
+        const { data: existingProfile, error: profileError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle() // Use maybeSingle() instead of single() to handle 0 rows
           
-          // Check if user already has a profile
-          const profileResponse = await fetch(`/api/players/${user.id}`)
-          if (profileResponse.ok) {
-            const existingProfile = await profileResponse.json()
-            // Load existing profile data for editing
-            setFormData({
-              summoner_name: existingProfile.summoner_name || '',
-              discord: existingProfile.discord || '',
-              main_role: existingProfile.main_role || '',
-              secondary_role: existingProfile.secondary_role || '',
-              tier: existingProfile.tier || '',
-              opgg_link: existingProfile.opgg_link || '',
-              looking_for_team: existingProfile.looking_for_team || false
-            })
-            setIsEditing(true)
-          }
+        console.log('Profile query result:', { existingProfile, profileError })
+        if (profileError) {
+          console.error('Profile error details:', profileError)
+        }
+        
+        if (existingProfile) { // Check if profile exists (no error check needed with maybeSingle)
+          // Load existing profile data for editing
+          setFormData({
+            summoner_name: existingProfile.summoner_name || '',
+            discord: existingProfile.discord || '',
+            main_role: existingProfile.main_role || '',
+            secondary_role: existingProfile.secondary_role || '',
+            tier: existingProfile.tier || '',
+            opgg_link: existingProfile.opgg_link || '',
+            looking_for_team: existingProfile.looking_for_team || false
+          })
+          setIsEditing(true)
         }
       } catch (error) {
         console.error('Error loading profile:', error)
