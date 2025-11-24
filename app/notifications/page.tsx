@@ -123,12 +123,16 @@ export default function NotificationsPage() {
       const invitationData = notification.data
       if (!invitationData?.invitation_id) return
 
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
       const response = await fetch(`/api/team-invitations/${invitationData.invitation_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ status: action }),
+        body: JSON.stringify({ action: action }),
       })
 
       if (response.ok) {

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown } from 'lucide-react'
+import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
@@ -132,6 +132,43 @@ export default function ManageTeamPage() {
         ? prev.open_positions.filter(r => r !== role)
         : [...prev.open_positions, role]
     }))
+  }
+
+  const handleDeleteTeam = async () => {
+    if (!confirm('Are you sure you want to delete your team? This action cannot be undone and will remove all team members.')) {
+      return
+    }
+
+    try {
+      const supabase = createClient()
+      
+      // Remove all team members (set team_id to null)
+      const { error: memberError } = await supabase
+        .from('players')
+        .update({ team_id: null, looking_for_team: true })
+        .eq('team_id', team.id)
+
+      if (memberError) {
+        console.error('Error removing team members:', memberError)
+        return
+      }
+
+      // Delete the team
+      const { error: teamError } = await supabase
+        .from('teams')
+        .delete()
+        .eq('id', team.id)
+
+      if (teamError) {
+        console.error('Error deleting team:', teamError)
+        return
+      }
+
+      // Redirect to home after successful deletion
+      router.push('/')
+    } catch (error) {
+      console.error('Error deleting team:', error)
+    }
   }
 
   if (loading) {
@@ -367,6 +404,15 @@ export default function ManageTeamPage() {
                     <Users className="w-4 h-4 mr-2" />
                     Browse Teams
                   </Link>
+                </Button>
+                
+                <Button 
+                  onClick={handleDeleteTeam}
+                  variant="destructive" 
+                  className="w-full"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Team
                 </Button>
               </CardContent>
             </Card>

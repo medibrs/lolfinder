@@ -43,6 +43,7 @@ export default function SetupProfilePage() {
   const [loading, setLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [userTeam, setUserTeam] = useState<any>(null)
   const [formData, setFormData] = useState({
     summoner_name: '',
     discord: '',
@@ -97,6 +98,17 @@ export default function SetupProfilePage() {
             looking_for_team: existingProfile.looking_for_team || false
           })
           setIsEditing(true)
+
+          // Fetch team information if player is in a team
+          if (existingProfile.team_id) {
+            const { data: teamData } = await supabase
+              .from('teams')
+              .select('*')
+              .eq('id', existingProfile.team_id)
+              .single()
+            
+            setUserTeam(teamData)
+          }
         }
       } catch (error) {
         console.error('Error loading profile:', error)
@@ -111,6 +123,38 @@ export default function SetupProfilePage() {
       ...prev, 
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value 
     }))
+  }
+
+  const handleLeaveTeam = async () => {
+    if (!confirm('Are you sure you want to leave your team?')) {
+      return
+    }
+
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/teams/leave', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      })
+
+      if (response.ok) {
+        alert('You have left the team successfully!')
+        setUserTeam(null)
+        // Reload profile to update team_id
+        window.location.reload()
+      } else {
+        const error = await response.json()
+        alert(`Error leaving team: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error leaving team:', error)
+      alert('Error leaving team')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,6 +213,27 @@ export default function SetupProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Team Information */}
+              {userTeam && (
+                <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-1">Team Status</h3>
+                      <p className="text-purple-200">
+                        You are a member of <span className="font-bold text-white">{userTeam.name}</span>
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleLeaveTeam}
+                      variant="outline"
+                      className="border-red-500 text-red-400 hover:bg-red-500/20"
+                    >
+                      Leave Team
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Info */}
                 <div className="space-y-4">
