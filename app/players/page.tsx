@@ -25,6 +25,7 @@ interface Player {
 export default function PlayersPage() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showLFTOnly, setShowLFTOnly] = useState(false)
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
@@ -124,7 +125,8 @@ export default function PlayersPage() {
     const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
     const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
     const notCurrentUser = player.id !== user?.id
-    return matchesRole && matchesSearch && notCurrentUser
+    const matchesLFT = !showLFTOnly || (player.looking_for_team && !player.team_id)
+    return matchesRole && matchesSearch && notCurrentUser && matchesLFT
   })
 
   return (
@@ -141,24 +143,34 @@ export default function PlayersPage() {
             className="bg-input border-border"
           />
           
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setSelectedRole(null)}
-              className={selectedRole === null ? 'bg-primary' : ''}
-            >
-              All
-            </Button>
-            {ROLES.map(role => (
-              <Button
-                key={role}
-                variant={selectedRole === role ? 'default' : 'outline'}
-                onClick={() => setSelectedRole(role)}
-                className={selectedRole === role ? 'bg-primary' : ''}
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setSelectedRole(null)}
+                className={selectedRole === null ? 'bg-primary' : ''}
               >
-                {role}
+                All
               </Button>
-            ))}
+              {ROLES.map(role => (
+                <Button
+                  key={role}
+                  variant={selectedRole === role ? 'default' : 'outline'}
+                  onClick={() => setSelectedRole(role)}
+                  className={selectedRole === role ? 'bg-primary' : ''}
+                >
+                  {role}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant={showLFTOnly ? 'default' : 'outline'}
+              onClick={() => setShowLFTOnly(!showLFTOnly)}
+              className={showLFTOnly ? 'bg-green-600 hover:bg-green-700 w-full sm:w-auto' : 'w-full sm:w-auto'}
+            >
+              {showLFTOnly ? '✓ LFT Only' : 'LFT Only'}
+            </Button>
           </div>
         </div>
 

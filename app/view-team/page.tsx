@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, Crown, ArrowLeft } from 'lucide-react'
+import { Users, Crown, ArrowLeft, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 
@@ -17,6 +17,7 @@ export default function ViewTeamPage() {
   const [user, setUser] = useState<any>(null)
   const [team, setTeam] = useState<any>(null)
   const [teamMembers, setTeamMembers] = useState<any[]>([])
+  const [tournaments, setTournaments] = useState<any[]>([])
   const [leaving, setLeaving] = useState(false)
 
   useEffect(() => {
@@ -75,6 +76,18 @@ export default function ViewTeamPage() {
 
         setTeamMembers(membersData || [])
       }
+
+      // Fetch tournament registrations
+      const { data: tournamentsData } = await supabase
+        .from('tournament_registrations')
+        .select(`
+          *,
+          tournament:tournaments(*)
+        `)
+        .eq('team_id', playerData.team_id)
+        .order('registered_at', { ascending: false })
+
+      setTournaments(tournamentsData || [])
     } catch (error) {
       console.error('Error loading team data:', error)
     } finally {
@@ -318,6 +331,37 @@ export default function ViewTeamPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Tournament Registrations */}
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5" />
+                  Tournaments ({tournaments.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {tournaments.length > 0 ? (
+                  <div className="space-y-3">
+                    {tournaments.map((reg: any) => (
+                      <div key={reg.id} className="p-3 border rounded-lg">
+                        <div className="font-medium">{reg.tournament?.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(reg.tournament?.start_date).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Registered: {new Date(reg.registered_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4 text-sm">
+                    No tournament registrations yet
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

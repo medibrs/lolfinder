@@ -32,7 +32,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    // Add member count to each team
+    const teamsWithCounts = await Promise.all(
+      (data || []).map(async (team) => {
+        const { count } = await supabase
+          .from('players')
+          .select('*', { count: 'exact', head: true })
+          .eq('team_id', team.id);
+        
+        return {
+          ...team,
+          member_count: count || 0,
+        };
+      })
+    );
+
+    return NextResponse.json(teamsWithCounts);
   } catch (error) {
     return NextResponse.json(
       { error: 'Internal server error' },

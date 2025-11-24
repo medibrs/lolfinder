@@ -22,6 +22,7 @@ export default function ManageTeamPage() {
   const [team, setTeam] = useState<any>(null)
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [joinRequests, setJoinRequests] = useState<any[]>([])
+  const [tournaments, setTournaments] = useState<any[]>([])
   const [editing, setEditing] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -98,6 +99,18 @@ export default function ManageTeamPage() {
         .order('created_at', { ascending: false})
 
       setJoinRequests(requestsData || [])
+
+      // Fetch tournament registrations
+      const { data: tournamentsData } = await supabase
+        .from('tournament_registrations')
+        .select(`
+          *,
+          tournament:tournaments(*)
+        `)
+        .eq('team_id', teamData.id)
+        .order('registered_at', { ascending: false })
+
+      setTournaments(tournamentsData || [])
     } catch (error) {
       console.error('Error loading team data:', error)
     } finally {
@@ -623,6 +636,44 @@ export default function ManageTeamPage() {
                     {new Date(team.created_at).toLocaleDateString()}
                   </span>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Tournament Registrations */}
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5" />
+                  Tournaments ({tournaments.length})
+                </CardTitle>
+                <CardDescription>Your team's tournament registrations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {tournaments.length > 0 ? (
+                  <div className="space-y-3">
+                    {tournaments.map((reg: any) => (
+                      <div key={reg.id} className="p-3 border rounded-lg">
+                        <div className="font-medium">{reg.tournament?.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(reg.tournament?.start_date).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Registered: {new Date(reg.registered_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-muted-foreground mb-3">No tournament registrations yet</p>
+                    <Button asChild size="sm">
+                      <Link href="/tournaments">
+                        <Trophy className="w-4 h-4 mr-2" />
+                        Browse Tournaments
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

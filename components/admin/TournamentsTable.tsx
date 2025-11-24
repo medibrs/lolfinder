@@ -40,6 +40,21 @@ interface Tournament {
   status?: 'upcoming' | 'ongoing' | 'completed'
 }
 
+interface Team {
+  id: string
+  name: string
+  captain_id: string
+  member_count?: number
+}
+
+interface TournamentRegistration {
+  id: string
+  team_id: string
+  tournament_id: string
+  registered_at: string
+  team: Team
+}
+
 export default function TournamentsTable() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,6 +63,12 @@ export default function TournamentsTable() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(null)
   const [saving, setSaving] = useState(false)
+  const [manageDialogOpen, setManageDialogOpen] = useState(false)
+  const [managingTournament, setManagingTournament] = useState<Tournament | null>(null)
+  const [registrations, setRegistrations] = useState<TournamentRegistration[]>([])
+  const [allTeams, setAllTeams] = useState<Team[]>([])
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false)
+  const [selectedTeamToAdd, setSelectedTeamToAdd] = useState<string>('')
 
   useEffect(() => {
     fetchTournaments()
@@ -152,13 +173,86 @@ export default function TournamentsTable() {
         setEditDialogOpen(false)
         setEditingTournament(null)
       } else {
-        const errorData = await response.json()
-        console.error('Failed to update tournament:', response.status, errorData)
+        const error = await response.json()
+        console.error('Failed to update tournament:', response.status, error)
       }
     } catch (error) {
       console.error('Error updating tournament:', error)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const openManageDialog = async (tournament: Tournament) => {
+    setManagingTournament(tournament)
+    setManageDialogOpen(true)
+    setLoadingRegistrations(true)
+    
+    try {
+      // Fetch registrations for this tournament
+      const regResponse = await fetch(`/api/tournaments/${tournament.id}/registrations`)
+      const regData = await regResponse.json()
+      setRegistrations(regData)
+
+      // Fetch all teams for adding
+      const teamsResponse = await fetch('/api/teams')
+      const teamsData = await teamsResponse.json()
+      setAllTeams(teamsData)
+    } catch (error) {
+      console.error('Error fetching tournament data:', error)
+    } finally {
+      setLoadingRegistrations(false)
+    }
+  }
+
+  const handleAddTeam = async () => {
+    if (!managingTournament || !selectedTeamToAdd) return
+
+    try {
+      const response = await fetch('/api/tournament-registrations/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournament_id: managingTournament.id,
+          team_id: selectedTeamToAdd,
+        }),
+      })
+
+      if (response.ok) {
+        // Refresh registrations
+        await openManageDialog(managingTournament)
+        setSelectedTeamToAdd('')
+      } else {
+        const error = await response.json()
+        console.error('Failed to add team:', error.error)
+      }
+    } catch (error) {
+      console.error('Error adding team:', error)
+    }
+  }
+
+  const handleKickTeam = async (registrationId: string) => {
+    if (!managingTournament) return
+
+    if (!confirm('Are you sure you want to remove this team from the tournament?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/tournament-registrations/${registrationId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Refresh registrations
+        await openManageDialog(managingTournament)
+        await fetchTournaments() // Update registration count
+      } else {
+        const error = await response.json()
+        console.error('Failed to kick team:', error.error)
+      }
+    } catch (error) {
+      console.error('Error kicking team:', error)
     }
   }
 
@@ -303,9 +397,9 @@ export default function TournamentsTable() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
+                        <DropdownMenuItem onClick={() => openManageDialog(tournament)}>
+                          <Users className="mr-2 h-4 w-4" />
+                          Manage Teams
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openEditDialog(tournament)}>
                           <Edit className="mr-2 h-4 w-4" />
@@ -418,6 +512,94 @@ export default function TournamentsTable() {
             </Button>
             <Button onClick={handleSaveTournament} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Teams Dialog */}
+      <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Tournament Teams</DialogTitle>
+            <DialogDescription>
+              {managingTournament?.name} - Add or remove teams from this tournament
+            </DialogDescription>
+          </DialogHeader>
+          
+          {loadingRegistrations ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Add Team Section */}
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <h3 className="font-semibold mb-3">Add Team</h3>
+                <div className="flex gap-2">
+                  <Select value={selectedTeamToAdd} onValueChange={setSelectedTeamToAdd}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a team to add..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allTeams
+                        .filter(team => !registrations.some(reg => reg.team_id === team.id))
+                        .map(team => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name} {team.member_count ? `(${team.member_count} members)` : ''}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleAddTeam} disabled={!selectedTeamToAdd}>
+                    Add Team
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Registered: {registrations.length} / {managingTournament?.max_teams}
+                </p>
+              </div>
+
+              {/* Registered Teams List */}
+              <div>
+                <h3 className="font-semibold mb-3">Registered Teams ({registrations.length})</h3>
+                {registrations.length > 0 ? (
+                  <div className="space-y-2">
+                    {registrations.map((registration) => (
+                      <div 
+                        key={registration.id}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition"
+                      >
+                        <div>
+                          <div className="font-medium">{registration.team.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Registered: {new Date(registration.registered_at).toLocaleDateString()}
+                            {registration.team.member_count && ` • ${registration.team.member_count} members`}
+                          </div>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleKickTeam(registration.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                    No teams registered yet
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManageDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
