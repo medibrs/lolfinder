@@ -56,18 +56,21 @@ export default function SearchPage() {
 
       // Check if user is in a team
       if (authUser) {
+        // First check if user is a player and get their team
         const { data: playerData } = await supabase
           .from('players')
           .select('team_id')
           .eq('id', authUser.id)
           .single()
         
+        // If player has a team, fetch the team data
         if (playerData?.team_id) {
           const { data: teamData } = await supabase
             .from('teams')
             .select('*')
             .eq('id', playerData.team_id)
             .single()
+          
           setUserTeam(teamData)
         }
 
@@ -139,6 +142,39 @@ export default function SearchPage() {
       alert('Error sending join request')
     } finally {
       setSendingRequest(null)
+    }
+  }
+
+  const handleInvitePlayer = async (playerId: string) => {
+    if (!userTeam) return
+
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/team-invitations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          team_id: userTeam.id,
+          invited_player_id: playerId,
+          message: `You've been invited to join ${userTeam.name}!`
+        }),
+      })
+
+      if (response.ok) {
+        alert('Invitation sent successfully!')
+        // Refresh data to update UI
+        fetchData()
+      } else {
+        const error = await response.json()
+        console.error('Error sending invitation:', error.error)
+      }
+    } catch (error) {
+      console.error('Error sending invitation:', error)
     }
   }
 
@@ -275,7 +311,31 @@ export default function SearchPage() {
                     {player.discord && (
                       <p className="text-muted-foreground mb-4">Discord: {player.discord}</p>
                     )}
-                    <Button className="w-full bg-primary hover:bg-primary/90">Contact Player</Button>
+                    
+                    {user && userTeam && player.id !== user.id ? (
+                      player.team_id ? (
+                        <Button disabled className="w-full">
+                          Already in a Team
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={() => handleInvitePlayer(player.id)}
+                          className="w-full bg-yellow-600 hover:bg-yellow-700"
+                        >
+                          Invite to Team
+                        </Button>
+                      )
+                    ) : player.opgg_url ? (
+                      <Button asChild className="w-full bg-primary hover:bg-primary/90">
+                        <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
+                          View OP.GG
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button disabled className="w-full">
+                        No OP.GG Linked
+                      </Button>
+                    )}
                   </Card>
                 ))
               ) : (

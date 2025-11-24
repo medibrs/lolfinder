@@ -43,15 +43,25 @@ export default function TeamsPage() {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       setUser(authUser)
 
-      // Check if user is a team captain
+      // Check if user is in a team (either as captain or member)
       if (authUser) {
-        const { data: teamData } = await supabase
-          .from('teams')
-          .select('*')
-          .eq('captain_id', authUser.id)
+        // First check if user is a player and get their team
+        const { data: playerData } = await supabase
+          .from('players')
+          .select('team_id')
+          .eq('id', authUser.id)
           .single()
         
-        setUserTeam(teamData)
+        // If player has a team, fetch the team data
+        if (playerData?.team_id) {
+          const { data: teamData } = await supabase
+            .from('teams')
+            .select('*')
+            .eq('id', playerData.team_id)
+            .single()
+          
+          setUserTeam(teamData)
+        }
 
         // Fetch user's pending join requests
         const { data: requests } = await supabase

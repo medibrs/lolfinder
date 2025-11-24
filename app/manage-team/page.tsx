@@ -238,6 +238,31 @@ export default function ManageTeamPage() {
     try {
       const supabase = createClient()
       
+      // Get all team members (excluding captain) to notify them
+      const { data: members } = await supabase
+        .from('players')
+        .select('id, summoner_name')
+        .eq('team_id', team.id)
+        .neq('id', user.id)  // Exclude captain
+      
+      // Send notifications to all team members
+      if (members && members.length > 0) {
+        const notifications = members.map(member => ({
+          user_id: member.id,
+          type: 'team_member_removed',
+          title: `${team.name} has been disbanded`,
+          message: `The team captain has disbanded ${team.name}. You are now a free agent.`,
+          data: {
+            team_id: team.id,
+            team_name: team.name
+          }
+        }))
+
+        await supabase
+          .from('notifications')
+          .insert(notifications)
+      }
+
       // Remove all team members (set team_id to null)
       const { error: memberError } = await supabase
         .from('players')
