@@ -25,11 +25,12 @@ interface Team {
 export default function TeamsPage() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [teams, setTeams] = useState<Team[]>([])
+  const [teams, setTeams] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [pendingRequests, setPendingRequests] = useState<string[]>([])
+  const [sendingRequest, setSendingRequest] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -83,9 +84,10 @@ export default function TeamsPage() {
   }
 
   const handleRequestToJoin = async (teamId: string, teamName: string) => {
-    if (!user) return
+    if (!user || sendingRequest) return
 
     try {
+      setSendingRequest(teamId)
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -112,6 +114,8 @@ export default function TeamsPage() {
     } catch (error) {
       console.error('Error sending join request:', error)
       alert('Error sending join request')
+    } finally {
+      setSendingRequest(null)
     }
   }
 
@@ -231,9 +235,10 @@ export default function TeamsPage() {
                   ) : (
                     <Button 
                       onClick={() => handleRequestToJoin(team.id, team.name)}
+                      disabled={sendingRequest === team.id}
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
-                      Request to Join
+                      {sendingRequest === team.id ? 'Sending...' : 'Request to Join'}
                     </Button>
                   )}
                 </Card>

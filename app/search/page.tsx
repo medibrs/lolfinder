@@ -35,12 +35,13 @@ export default function SearchPage() {
   const [searchType, setSearchType] = useState<'players' | 'teams'>('teams')
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [teams, setTeams] = useState<Team[]>([])
-  const [players, setPlayers] = useState<Player[]>([])
+  const [teams, setTeams] = useState<any[]>([])
+  const [players, setPlayers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [pendingRequests, setPendingRequests] = useState<string[]>([])
+  const [sendingRequest, setSendingRequest] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -106,9 +107,10 @@ export default function SearchPage() {
   }
 
   const handleRequestToJoin = async (teamId: string, teamName: string) => {
-    if (!user) return
+    if (!user || sendingRequest) return
 
     try {
+      setSendingRequest(teamId)
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -135,6 +137,8 @@ export default function SearchPage() {
     } catch (error) {
       console.error('Error sending join request:', error)
       alert('Error sending join request')
+    } finally {
+      setSendingRequest(null)
     }
   }
 
@@ -236,9 +240,10 @@ export default function SearchPage() {
                   ) : (
                     <Button 
                       onClick={() => handleRequestToJoin(team.id, team.name)}
+                      disabled={sendingRequest === team.id}
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
-                      Request to Join
+                      {sendingRequest === team.id ? 'Sending...' : 'Request to Join'}
                     </Button>
                   )}
                   </Card>

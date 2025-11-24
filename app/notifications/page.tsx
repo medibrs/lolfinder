@@ -283,7 +283,7 @@ export default function NotificationsPage() {
                         <p className="text-muted-foreground mb-3">{notification.message}</p>
                         
                         {/* Team Invitation Actions */}
-                        {notification.type === 'team_invitation' && !notification.read && (
+                        {notification.type === 'team_invitation' && notification.data?.invitation_id && (
                           <div className="flex items-center gap-3">
                             <Button
                               onClick={() => handleInvitationAction(notification, 'accept')}
@@ -305,7 +305,7 @@ export default function NotificationsPage() {
                         )}
                         
                         {/* Team Join Request Actions */}
-                        {notification.type === 'team_join_request' && !notification.read && (
+                        {notification.type === 'team_join_request' && notification.data?.request_id && (
                           <div className="flex items-center gap-3">
                             <Button
                               onClick={() => handleJoinRequestAction(notification, 'accept')}
