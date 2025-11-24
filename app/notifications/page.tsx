@@ -12,6 +12,7 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const [processingAction, setProcessingAction] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -129,22 +130,19 @@ export default function NotificationsPage() {
   }
 
   const handleInvitationAction = async (notification: any, action: 'accept' | 'reject') => {
+    if (processingAction) return
+
     try {
+      setProcessingAction(notification.id)
       const invitationData = notification.data
-      console.log('Notification data:', notification)
-      console.log('Invitation data:', invitationData)
       
       if (!invitationData?.invitation_id) {
         console.error('No invitation_id found in notification data')
-        alert('Error: Invitation ID not found')
         return
       }
 
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
-
-      console.log('Making request to:', `/api/team-invitations/${invitationData.invitation_id}`)
-      console.log('Action:', action)
 
       const response = await fetch(`/api/team-invitations/${invitationData.invitation_id}`, {
         method: 'PUT',
@@ -156,35 +154,32 @@ export default function NotificationsPage() {
       })
 
       const responseData = await response.json()
-      console.log('API Response:', { status: response.status, data: responseData })
 
       if (response.ok) {
-        alert(`Invitation ${action}ed successfully!`)
-        // Mark notification as read and remove it
-        await markAsRead(notification.id)
-        await deleteNotification(notification.id)
-        
-        // Refresh notifications
-        loadNotifications()
+        // Remove notification from UI immediately
+        setNotifications(prev => prev.filter(n => n.id !== notification.id))
         
         // Reload page to update team status
-        window.location.reload()
+        setTimeout(() => window.location.reload(), 500)
       } else {
         console.error('API Error:', responseData)
-        alert(`Error ${action}ing invitation: ${responseData.error}`)
       }
     } catch (error) {
       console.error(`Error ${action}ing invitation:`, error)
-      alert(`Error ${action}ing invitation`)
+    } finally {
+      setProcessingAction(null)
     }
   }
 
   const handleJoinRequestAction = async (notification: any, action: 'accept' | 'reject') => {
+    if (processingAction) return
+
     try {
+      setProcessingAction(notification.id)
       const requestData = notification.data
       
       if (!requestData?.request_id) {
-        alert('Error: Join request ID not found')
+        console.error('No request_id found in notification data')
         return
       }
 
@@ -203,17 +198,18 @@ export default function NotificationsPage() {
       const responseData = await response.json()
 
       if (response.ok) {
-        alert(`Join request ${action}ed successfully!`)
-        await markAsRead(notification.id)
-        await deleteNotification(notification.id)
-        loadNotifications()
-        window.location.reload()
+        // Remove notification from UI immediately
+        setNotifications(prev => prev.filter(n => n.id !== notification.id))
+        
+        // Reload page to update team status
+        setTimeout(() => window.location.reload(), 500)
       } else {
-        alert(`Error ${action}ing join request: ${responseData.error}`)
+        console.error('API Error:', responseData)
       }
     } catch (error) {
       console.error(`Error ${action}ing join request:`, error)
-      alert(`Error ${action}ing join request`)
+    } finally {
+      setProcessingAction(null)
     }
   }
 
@@ -287,19 +283,33 @@ export default function NotificationsPage() {
                           <div className="flex items-center gap-3">
                             <Button
                               onClick={() => handleInvitationAction(notification, 'accept')}
+                              disabled={processingAction === notification.id}
                               size="sm"
                               className="bg-green-600 hover:bg-green-700"
                             >
-                              <Check className="w-4 h-4 mr-2" />
-                              Accept
+                              {processingAction === notification.id ? (
+                                'Processing...'
+                              ) : (
+                                <>
+                                  <Check className="w-4 h-4 mr-2" />
+                                  Accept
+                                </>
+                              )}
                             </Button>
                             <Button
                               onClick={() => handleInvitationAction(notification, 'reject')}
+                              disabled={processingAction === notification.id}
                               size="sm"
                               variant="outline"
                             >
-                              <X className="w-4 h-4 mr-2" />
-                              Reject
+                              {processingAction === notification.id ? (
+                                'Processing...'
+                              ) : (
+                                <>
+                                  <X className="w-4 h-4 mr-2" />
+                                  Reject
+                                </>
+                              )}
                             </Button>
                           </div>
                         )}
@@ -309,19 +319,33 @@ export default function NotificationsPage() {
                           <div className="flex items-center gap-3">
                             <Button
                               onClick={() => handleJoinRequestAction(notification, 'accept')}
+                              disabled={processingAction === notification.id}
                               size="sm"
                               className="bg-green-600 hover:bg-green-700"
                             >
-                              <Check className="w-4 h-4 mr-2" />
-                              Accept
+                              {processingAction === notification.id ? (
+                                'Processing...'
+                              ) : (
+                                <>
+                                  <Check className="w-4 h-4 mr-2" />
+                                  Accept
+                                </>
+                              )}
                             </Button>
                             <Button
                               onClick={() => handleJoinRequestAction(notification, 'reject')}
+                              disabled={processingAction === notification.id}
                               size="sm"
                               variant="outline"
                             >
-                              <X className="w-4 h-4 mr-2" />
-                              Reject
+                              {processingAction === notification.id ? (
+                                'Processing...'
+                              ) : (
+                                <>
+                                  <X className="w-4 h-4 mr-2" />
+                                  Reject
+                                </>
+                              )}
                             </Button>
                           </div>
                         )}

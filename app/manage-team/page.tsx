@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getRankImage } from '@/lib/rank-utils'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -466,16 +468,28 @@ export default function ManageTeamPage() {
                   {teamMembers.map(member => (
                     <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Shield className="w-5 h-5 text-primary" />
-                        </div>
+                        <Image 
+                          src={getRankImage(member.tier)} 
+                          alt={member.tier}
+                          width={40}
+                          height={40}
+                          className="object-contain"
+                        />
                         <div>
-                          <p className="font-medium">{member.summoner_name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{member.summoner_name}</p>
+                            {member.id === team.captain_id && (
+                              <Badge className="bg-yellow-600">
+                                <Crown className="w-3 h-3 mr-1" />
+                                Captain
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             {member.main_role} • {member.tier}
                           </p>
                         </div>
-                      </div>
+                      </div>  
                       <div className="flex items-center gap-2">
                         {member.id === team.captain_id && (
                           <Badge variant="default" className="flex items-center gap-1">

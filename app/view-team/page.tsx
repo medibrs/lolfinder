@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, Crown, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getRankImage } from '@/lib/rank-utils'
 
 export default function ViewTeamPage() {
   const router = useRouter()
@@ -178,19 +180,28 @@ export default function ViewTeamPage() {
                 <div className="space-y-3">
                   {teamMembers.map((member: any) => (
                     <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{member.summoner_name}</p>
-                          {member.id === team.captain_id && (
-                            <Badge className="bg-yellow-600">
-                              <Crown className="w-3 h-3 mr-1" />
-                              Captain
-                            </Badge>
-                          )}
+                      <div className="flex items-center gap-3">
+                        <Image 
+                          src={getRankImage(member.tier)} 
+                          alt={member.tier}
+                          width={40}
+                          height={40}
+                          className="object-contain"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{member.summoner_name}</p>
+                            {member.id === team.captain_id && (
+                              <Badge className="bg-yellow-600">
+                                <Crown className="w-3 h-3 mr-1" />
+                                Captain
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {member.main_role} • {member.tier}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {member.main_role} • {member.tier}
-                        </p>
                       </div>
                     </div>
                   ))}

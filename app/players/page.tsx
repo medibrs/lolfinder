@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
+import { getRankImage } from '@/lib/rank-utils'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -157,10 +159,17 @@ export default function PlayersPage() {
             {filteredPlayers.length > 0 ? (
               filteredPlayers.map(player => (
                 <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold">{player.summoner_name}</h3>
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-start gap-4 mb-4">
+                    <Image 
+                      src={getRankImage(player.tier)} 
+                      alt={player.tier}
+                      width={64}
+                      height={64}
+                      className="object-contain"
+                    />
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold mb-2">{player.summoner_name}</h3>
+                      <div className="flex items-center gap-2 mb-2">
                         <span className="text-primary font-semibold">{player.main_role}</span>
                         {player.secondary_role && (
                           <>
@@ -169,15 +178,11 @@ export default function PlayersPage() {
                           </>
                         )}
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">Rank:</span>
+                        <span className="text-sm font-semibold">{player.tier}</span>
+                      </div>
                     </div>
-                    {player.looking_for_team && (
-                      <span 
-                        className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-medium cursor-help"
-                        title="Looking for team"
-                      >
-                        LFT
-                      </span>
-                    )}
                   </div>
                   
                   {player.discord && (
