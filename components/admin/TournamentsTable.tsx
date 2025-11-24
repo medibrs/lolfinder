@@ -147,7 +147,8 @@ export default function TournamentsTable() {
         setEditDialogOpen(false)
         setEditingTournament(null)
       } else {
-        console.error('Failed to update tournament')
+        const errorData = await response.json()
+        console.error('Failed to update tournament:', response.status, errorData)
       }
     } catch (error) {
       console.error('Error updating tournament:', error)

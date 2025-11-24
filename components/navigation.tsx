@@ -15,6 +15,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function Navigation() {
@@ -26,6 +28,7 @@ export default function Navigation() {
   const [userTeam, setUserTeam] = useState<any>(null)
   const [isCaptain, setIsCaptain] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -38,7 +41,7 @@ export default function Navigation() {
         fetchUserTeam(authUser.id)
         
         // Check if user is admin
-        const isUserAdmin = authUser.app_metadata?.role === 'admin' || authUser.raw_app_meta_data?.role === 'admin'
+        const isUserAdmin = authUser.app_metadata?.role === 'admin'
         setIsAdmin(isUserAdmin)
       }
       
@@ -182,6 +185,134 @@ export default function Navigation() {
             <div className="text-2xl font-bold text-primary">⚔️ TeamFinder</div>
           </Link>
           
+          {/* Mobile Menu */}
+          <div className="flex md:hidden items-center gap-2">
+            {user && (
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full" asChild>
+                <Link href="/notifications">
+                  <CurrentUserAvatar unreadCount={unreadCount} />
+                </Link>
+              </Button>
+            )}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px]">
+                <nav className="flex flex-col gap-3 mt-6">
+                  <Link 
+                    href="/players" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "text-lg font-medium px-4 py-2 rounded-md transition",
+                      pathname === "/players" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                    )}
+                  >
+                    Players
+                  </Link>
+                  <Link 
+                    href="/teams" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "text-lg font-medium px-4 py-2 rounded-md transition",
+                      pathname === "/teams" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                    )}
+                  >
+                    Teams
+                  </Link>
+                  <Link 
+                    href="/tournaments" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "text-lg font-medium px-4 py-2 rounded-md transition",
+                      pathname === "/tournaments" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                    )}
+                  >
+                    Tournaments
+                  </Link>
+                  <Link 
+                    href="/search" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "text-lg font-medium px-4 py-2 rounded-md transition",
+                      pathname === "/search" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                    )}
+                  >
+                    Search
+                  </Link>
+                  
+                  {user && (
+                    <>
+                      <div className="border-t my-2"></div>
+                      <Link 
+                        href="/setup-profile" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-lg font-medium px-4 py-2 rounded-md hover:bg-accent transition"
+                      >
+                        Profile
+                      </Link>
+                      {userTeam && (
+                        <Link 
+                          href={isCaptain ? "/manage-team" : "/view-team"}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="text-lg font-medium px-4 py-2 rounded-md hover:bg-accent transition"
+                        >
+                          {isCaptain ? "Manage Team" : "View Team"}
+                        </Link>
+                      )}
+                      {isAdmin && (
+                        <Link 
+                          href="/admin" 
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="text-lg font-medium px-4 py-2 rounded-md hover:bg-accent transition text-yellow-600"
+                        >
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      <Link 
+                        href="/notifications" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-lg font-medium px-4 py-2 rounded-md hover:bg-accent transition flex items-center justify-between"
+                      >
+                        <span>Notifications</span>
+                        {unreadCount > 0 && (
+                          <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-1">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </Link>
+                      <div className="border-t my-2"></div>
+                      <Button 
+                        onClick={() => {
+                          handleSignOut()
+                          setMobileMenuOpen(false)
+                        }}
+                        variant="destructive"
+                        className="w-full"
+                      >
+                        Sign Out
+                      </Button>
+                    </>
+                  )}
+                  
+                  {!user && (
+                    <>
+                      <div className="border-t my-2"></div>
+                      <Button asChild className="w-full">
+                        <Link href="/auth" onClick={() => setMobileMenuOpen(false)}>
+                          Create an Account
+                        </Link>
+                      </Button>
+                    </>
+                  )}
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-8">
             <Link 
               href="/players" 
@@ -221,7 +352,9 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {user ? (
+          {/* Desktop Avatar/Auth */}
+          <div className="hidden md:block">
+            {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -281,6 +414,7 @@ export default function Navigation() {
               <Link href="/auth">Create an Account</Link>
             </Button>
           )}
+          </div>
         </div>
       </div>
     </nav>

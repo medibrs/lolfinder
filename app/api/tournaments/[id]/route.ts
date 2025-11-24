@@ -6,8 +6,8 @@ import { z } from 'zod';
 const updateTournamentSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().optional(),
-  start_date: z.string().datetime().optional(),
-  end_date: z.string().datetime().optional(),
+  start_date: z.string().optional(),
+  end_date: z.string().optional(),
   prize_pool: z.string().optional(),
   max_teams: z.number().int().positive().optional(),
   rules: z.string().optional(),
