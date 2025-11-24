@@ -214,7 +214,13 @@ export default function ManageTeamPage() {
         loadTeamData() // Refresh data
       } else {
         const error = await response.json()
-        console.error(`Error ${action}ing join request:`, error.error)
+        // Only log if it's not the "already processed" error
+        if (error.error !== 'Join request not found or already processed') {
+          console.error(`Error ${action}ing join request:`, error.error)
+        } else {
+          // Request was already processed, just refresh
+          loadTeamData()
+        }
       }
     } catch (error) {
       console.error(`Error ${action}ing join request:`, error)

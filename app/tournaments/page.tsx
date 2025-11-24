@@ -21,14 +21,45 @@ interface Tournament {
 export default function TournamentsPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [userTeam, setUserTeam] = useState<any>(null)
+  const [registeredTournaments, setRegisteredTournaments] = useState<string[]>([])
+  const [registering, setRegistering] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
-    fetchTournaments()
+    fetchData()
   }, [])
 
-  const fetchTournaments = async () => {
+  const fetchData = async () => {
     try {
+      // Get current user
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      setUser(authUser)
+
+      // Get user's team if captain
+      if (authUser) {
+        const { data: teamData } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('captain_id', authUser.id)
+          .single()
+        
+        setUserTeam(teamData)
+
+        // Get registered tournaments for this team
+        if (teamData) {
+          const { data: registrations } = await supabase
+            .from('tournament_registrations')
+            .select('tournament_id')
+            .eq('team_id', teamData.id)
+          
+          const tournamentIds = registrations?.map(r => r.tournament_id) || []
+          setRegisteredTournaments(tournamentIds)
+        }
+      }
+
+      // Fetch tournaments
       const { data, error } = await supabase
         .from('tournaments')
         .select('*')
@@ -44,6 +75,39 @@ export default function TournamentsPage() {
       console.error('Error:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRegister = async (tournamentId: string) => {
+    if (!userTeam) return
+
+    setRegistering(tournamentId)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+
+      const response = await fetch('/api/tournament-registrations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          tournament_id: tournamentId,
+          team_id: userTeam.id,
+        }),
+      })
+
+      if (response.ok) {
+        // Add to registered tournaments
+        setRegisteredTournaments(prev => [...prev, tournamentId])
+      } else {
+        const error = await response.json()
+        console.error('Error registering for tournament:', error.error)
+      }
+    } catch (error) {
+      console.error('Error registering for tournament:', error)
+    } finally {
+      setRegistering(null)
     }
   }
 
@@ -103,9 +167,29 @@ export default function TournamentsPage() {
                       </div>
                     </div>
 
-                    <Button className="bg-primary hover:bg-primary/90">
-                      {tournamentStatus.status === 'upcoming' ? 'Register Team' : 'View Details'}
-                    </Button>
+                    {user && userTeam ? (
+                      registeredTournaments.includes(tournament.id) ? (
+                        <Button disabled className="bg-green-600">
+                          ✓ Registered
+                        </Button>
+                      ) : tournamentStatus.status === 'upcoming' ? (
+                        <Button 
+                          onClick={() => handleRegister(tournament.id)}
+                          disabled={registering === tournament.id}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          {registering === tournament.id ? 'Registering...' : 'Register Team'}
+                        </Button>
+                      ) : (
+                        <Button disabled className="bg-muted">
+                          Registration Closed
+                        </Button>
+                      )
+                    ) : (
+                      <Button disabled className="bg-muted">
+                        {user ? 'Create a Team First' : 'Sign In to Register'}
+                      </Button>
+                    )}
                   </Card>
                 )
               })

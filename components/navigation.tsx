@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -201,12 +201,13 @@ export default function Navigation() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px]">
-                <nav className="flex flex-col gap-3 mt-6">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <nav className="flex flex-col gap-2 mt-6">
                   <Link 
                     href="/players" 
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "text-lg font-medium px-4 py-2 rounded-md transition",
+                      "text-base font-medium px-3 py-2 rounded-md transition",
                       pathname === "/players" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
                     )}
                   >
@@ -216,7 +217,7 @@ export default function Navigation() {
                     href="/teams" 
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "text-lg font-medium px-4 py-2 rounded-md transition",
+                      "text-base font-medium px-3 py-2 rounded-md transition",
                       pathname === "/teams" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
                     )}
                   >
@@ -226,7 +227,7 @@ export default function Navigation() {
                     href="/tournaments" 
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "text-lg font-medium px-4 py-2 rounded-md transition",
+                      "text-base font-medium px-3 py-2 rounded-md transition",
                       pathname === "/tournaments" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
                     )}
                   >
@@ -236,7 +237,7 @@ export default function Navigation() {
                     href="/search" 
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "text-lg font-medium px-4 py-2 rounded-md transition",
+                      "text-base font-medium px-3 py-2 rounded-md transition",
                       pathname === "/search" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
                     )}
                   >
@@ -245,11 +246,11 @@ export default function Navigation() {
                   
                   {user && (
                     <>
-                      <div className="border-t my-2"></div>
+                      <div className="border-t my-1"></div>
                       <Link 
                         href="/setup-profile" 
                         onClick={() => setMobileMenuOpen(false)}
-                        className="text-lg font-medium px-4 py-2 rounded-md hover:bg-accent transition"
+                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
                       >
                         Profile
                       </Link>
@@ -257,7 +258,7 @@ export default function Navigation() {
                         <Link 
                           href={isCaptain ? "/manage-team" : "/view-team"}
                           onClick={() => setMobileMenuOpen(false)}
-                          className="text-lg font-medium px-4 py-2 rounded-md hover:bg-accent transition"
+                          className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
                         >
                           {isCaptain ? "Manage Team" : "View Team"}
                         </Link>
@@ -266,7 +267,7 @@ export default function Navigation() {
                         <Link 
                           href="/admin" 
                           onClick={() => setMobileMenuOpen(false)}
-                          className="text-lg font-medium px-4 py-2 rounded-md hover:bg-accent transition text-yellow-600"
+                          className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition text-yellow-600"
                         >
                           Admin Dashboard
                         </Link>
@@ -274,22 +275,23 @@ export default function Navigation() {
                       <Link 
                         href="/notifications" 
                         onClick={() => setMobileMenuOpen(false)}
-                        className="text-lg font-medium px-4 py-2 rounded-md hover:bg-accent transition flex items-center justify-between"
+                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center justify-between"
                       >
                         <span>Notifications</span>
                         {unreadCount > 0 && (
-                          <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-1">
+                          <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5">
                             {unreadCount}
                           </span>
                         )}
                       </Link>
-                      <div className="border-t my-2"></div>
+                      <div className="border-t my-1"></div>
                       <Button 
                         onClick={() => {
                           handleSignOut()
                           setMobileMenuOpen(false)
                         }}
                         variant="destructive"
+                        size="sm"
                         className="w-full"
                       >
                         Sign Out
@@ -299,8 +301,8 @@ export default function Navigation() {
                   
                   {!user && (
                     <>
-                      <div className="border-t my-2"></div>
-                      <Button asChild className="w-full">
+                      <div className="border-t my-1"></div>
+                      <Button asChild size="sm" className="w-full">
                         <Link href="/auth" onClick={() => setMobileMenuOpen(false)}>
                           Create an Account
                         </Link>

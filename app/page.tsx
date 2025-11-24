@@ -4,9 +4,9 @@ import { Card } from '@/components/ui/card'
 
 export default function Home() {
   return (
-    <main>
+    <main className="pt-16">
       {/* Hero Section */}
-      <section className="h-screen bg-gradient-to-b from-background to-card flex items-center justify-center px-4">
+      <section className="min-h-screen bg-gradient-to-b from-background to-card flex items-center justify-center px-4 py-20">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-bold mb-4 text-balance">
             Find Your <span className="text-primary">Perfect Team</span>

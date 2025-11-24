@@ -112,14 +112,19 @@ export default function TournamentsTable() {
 
   const filteredTournaments = tournaments.filter(tournament => {
     const matchesSearch = tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tournament.description.toLowerCase().includes(searchTerm.toLowerCase())
+                         (tournament.description || '').toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || tournament.status === statusFilter
     
     return matchesSearch && matchesStatus
   })
 
   const openEditDialog = (tournament: Tournament) => {
-    setEditingTournament(tournament)
+    // Ensure all fields have string values (not null)
+    setEditingTournament({
+      ...tournament,
+      description: tournament.description || '',
+      prize_pool: tournament.prize_pool || '',
+    })
     setEditDialogOpen(true)
   }
 
