@@ -8,7 +8,6 @@ const createTeamSchema = z.object({
   description: z.string().optional(),
   captain_id: z.string().uuid(),
   open_positions: z.array(z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support'])).default([]),
-  team_size: z.enum(['5', '6']).default('5'),
   recruiting_status: z.enum(['Open', 'Closed', 'Full']).default('Open'),
 });
 
@@ -16,15 +15,11 @@ const createTeamSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const teamSize = searchParams.get('teamSize');
     const recruiting = searchParams.get('recruiting');
 
     let query = supabase.from('teams').select('*, captain:players!captain_id(*)');
 
     // Apply filters
-    if (teamSize) {
-      query = query.eq('team_size', teamSize);
-    }
     if (recruiting) {
       query = query.eq('recruiting_status', recruiting);
     }
@@ -54,10 +49,10 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = createTeamSchema.parse(body);
 
-    // Check if captain exists, if not create a basic player profile automatically
+    // Check if captain exists and if they're already in a team
     const { data: existingCaptain, error: existingCaptainError } = await supabase
       .from('players')
-      .select('id')
+      .select('id, team_id')
       .eq('id', validatedData.captain_id)
       .single();
 
@@ -71,7 +66,6 @@ export async function POST(request: NextRequest) {
           discord: 'captain#' + Math.random().toString(36).substring(7),
           main_role: 'Top',
           tier: 'Gold',
-          region: 'NA', // Temporary - remove this after running the SQL migration
           looking_for_team: false
         }])
         .select('id')
@@ -83,8 +77,31 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    } else {
+      // Check if player is already in a team
+      if (existingCaptain.team_id) {
+        return NextResponse.json(
+          { error: 'You are already in a team and cannot create a new team' },
+          { status: 403 }
+        );
+      }
     }
 
+    // Check if captain already owns a team
+    const { data: existingTeam, error: teamCheckError } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('captain_id', validatedData.captain_id)
+      .single();
+
+    if (existingTeam && !teamCheckError) {
+      return NextResponse.json(
+        { error: 'You have already created a team and cannot create another' },
+        { status: 403 }
+      );
+    }
+
+    // Create the team
     const { data, error } = await supabase
       .from('teams')
       .insert([validatedData])
@@ -93,6 +110,22 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // Update the captain's player record to link them to the team
+    const { error: updateError } = await supabase
+      .from('players')
+      .update({ 
+        team_id: data.id,
+        looking_for_team: false 
+      })
+      .eq('id', validatedData.captain_id);
+
+    if (updateError) {
+      return NextResponse.json(
+        { error: 'Failed to link captain to team: ' + updateError.message },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json(data, { status: 201 });

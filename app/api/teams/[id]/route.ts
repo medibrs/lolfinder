@@ -7,8 +7,7 @@ const updateTeamSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().optional(),
   open_positions: z.array(z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support'])).optional(),
-  tier: z.enum(['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger']).optional(),
-  region: z.enum(['NA', 'EUW', 'EUNE', 'KR', 'BR', 'LAN', 'LAS', 'OCE', 'RU', 'TR', 'JP']).optional(),
+  team_size: z.enum(['5', '6']).optional(),
   recruiting_status: z.enum(['Open', 'Closed', 'Full']).optional(),
 });
 

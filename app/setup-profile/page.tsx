@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Shield, Trophy, Users, Zap } from 'lucide-react'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
-const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster']
+const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster']
 
 const getTierColor = (tier: string) => {
   const colors: { [key: string]: string } = {
@@ -18,6 +18,7 @@ const getTierColor = (tier: string) => {
     'Silver': 'bg-gray-400',
     'Gold': 'bg-yellow-500',
     'Platinum': 'bg-green-500',
+    'Emerald': 'bg-emerald-500',
     'Diamond': 'bg-blue-500',
     'Master': 'bg-purple-500',
     'Grandmaster': 'bg-red-500'

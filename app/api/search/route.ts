@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('query'); // search term
     const role = searchParams.get('role');
     const tier = searchParams.get('tier');
-    const region = searchParams.get('region');
     const lookingForTeam = searchParams.get('lookingForTeam');
     const recruiting = searchParams.get('recruiting');
 
@@ -35,9 +34,6 @@ export async function GET(request: NextRequest) {
       if (tier) {
         playerQuery = playerQuery.eq('tier', tier);
       }
-      if (region) {
-        playerQuery = playerQuery.eq('region', region);
-      }
       if (lookingForTeam === 'true') {
         playerQuery = playerQuery.eq('looking_for_team', true);
       }
@@ -62,12 +58,6 @@ export async function GET(request: NextRequest) {
       }
 
       // Apply filters
-      if (tier) {
-        teamQuery = teamQuery.eq('tier', tier);
-      }
-      if (region) {
-        teamQuery = teamQuery.eq('region', region);
-      }
       if (recruiting) {
         teamQuery = teamQuery.eq('recruiting_status', recruiting);
       }

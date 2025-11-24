@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 
-const ROLES = ['TOP', 'JNG', 'MID', 'ADC', 'SUP']
+const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
 interface Team {
   id: string
@@ -55,7 +55,7 @@ export default function TeamsPage() {
   const filteredTeams = teams.filter(team => {
     const matchesRole = !selectedRole || team.open_positions.includes(selectedRole)
     const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesLooking = team.recruiting_status === 'open'
+    const matchesLooking = team.recruiting_status === 'Open'
     return matchesRole && matchesSearch && matchesLooking
   })
 

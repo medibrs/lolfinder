@@ -17,6 +17,8 @@ export default function CreateTeamPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [canCreateTeam, setCanCreateTeam] = useState(true)
+  const [checkingStatus, setCheckingStatus] = useState(true)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -27,9 +29,10 @@ export default function CreateTeamPage() {
   })
 
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Get current user
+    // Get current user and check if they can create a team
     const getCurrentUser = async () => {
       try {
         const response = await fetch('/api/auth/user')
@@ -37,13 +40,49 @@ export default function CreateTeamPage() {
           const { user } = await response.json()
           setUserId(user.id)
           setFormData(prev => ({ ...prev, captain_id: user.id }))
+          
+          // Check if user already has a team or is in a team
+          await checkTeamEligibility(user.id)
         }
       } catch (error) {
         console.error('Error getting current user:', error)
+      } finally {
+        setCheckingStatus(false)
       }
     }
     getCurrentUser()
   }, [])
+
+  const checkTeamEligibility = async (userId: string) => {
+    try {
+      const supabase = createClient()
+      
+      // Check if user is already in a team
+      const { data: playerData } = await supabase
+        .from('players')
+        .select('team_id')
+        .eq('id', userId)
+        .single()
+      
+      if (playerData?.team_id) {
+        setCanCreateTeam(false)
+        return
+      }
+      
+      // Check if user already owns a team
+      const { data: teamData } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('captain_id', userId)
+        .single()
+      
+      if (teamData) {
+        setCanCreateTeam(false)
+      }
+    } catch (error) {
+      console.error('Error checking team eligibility:', error)
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -62,6 +101,7 @@ export default function CreateTeamPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
 
     try {
       const response = await fetch('/api/teams', {
@@ -75,16 +115,70 @@ export default function CreateTeamPage() {
       if (response.ok) {
         setSubmitted(true)
       } else {
-        const error = await response.json()
-        console.error('Error creating team:', error)
-        alert(`Failed to create team: ${error.error || 'Unknown error'}`)
+        const errorData = await response.json()
+        console.error('Error creating team:', errorData)
+        
+        // Handle specific error messages
+        if (errorData.error?.includes('duplicate key') || errorData.error?.includes('teams_name_key')) {
+          setError('This team name is already taken. Please choose a different name for your team.')
+        } else if (errorData.error?.includes('already in a team')) {
+          setError('You are already in a team and cannot create a new team.')
+        } else if (errorData.error?.includes('already created a team')) {
+          setError('You have already created a team and cannot create another.')
+        } else {
+          setError(errorData.error || 'Failed to create team. Please try again.')
+        }
       }
     } catch (error) {
       console.error('Error creating team:', error)
-      alert('Failed to create team. Please try again.')
+      setError('Failed to create team. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checkingStatus) {
+    return (
+      <main className="min-h-screen pt-24 pb-12">
+        <div className="max-w-2xl mx-auto px-4">
+          <Card className="bg-card border-border p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <h2 className="text-2xl font-bold mb-4">Checking Team Eligibility</h2>
+              <p className="text-muted-foreground">
+                Verifying if you can create a new team...
+              </p>
+            </div>
+          </Card>
+        </div>
+      </main>
+    )
+  }
+
+  if (!canCreateTeam) {
+    return (
+      <main className="min-h-screen pt-24 pb-12">
+        <div className="max-w-2xl mx-auto px-4">
+          <Card className="bg-card border-border p-8">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🚫</div>
+              <h2 className="text-3xl font-bold mb-4">Cannot Create Team</h2>
+              <p className="text-muted-foreground mb-8">
+                You are already in a team or have already created a team. Each player can only be in one team at a time.
+              </p>
+              <div className="flex gap-4 justify-center flex-wrap">
+                <Button asChild className="bg-primary hover:bg-primary/90">
+                  <Link href="/teams">View Your Team</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/dashboard">Back to Dashboard</Link>
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </main>
+    )
   }
 
   if (submitted) {
@@ -120,6 +214,24 @@ export default function CreateTeamPage() {
 
         <Card className="bg-card border-border p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-red-800">
+                      {error}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Team Name */}
             <div>
               <Label htmlFor="name">Team Name *</Label>

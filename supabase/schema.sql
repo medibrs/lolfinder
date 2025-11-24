@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create ENUM types
 CREATE TYPE role_type AS ENUM ('Top', 'Jungle', 'Mid', 'ADC', 'Support');
-CREATE TYPE tier_type AS ENUM ('Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger');
+CREATE TYPE tier_type AS ENUM ('Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger');
 CREATE TYPE region_type AS ENUM ('NA', 'EUW', 'EUNE', 'KR', 'BR', 'LAN', 'LAS', 'OCE', 'RU', 'TR', 'JP');
 CREATE TYPE recruiting_status_type AS ENUM ('Open', 'Closed', 'Full');
 CREATE TYPE registration_status_type AS ENUM ('Pending', 'Confirmed', 'Rejected');
