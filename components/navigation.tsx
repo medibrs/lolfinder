@@ -52,7 +52,64 @@ export default function Navigation() {
   }, [])
 
   useEffect(() => {
+    if (!user) return
+
+    // Subscribe to real-time notifications
+    const channel = supabase
+      .channel(`navigation-notifications-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          // Only increment unread count if we're NOT on the notifications page
+          if (window.location.pathname !== '/notifications') {
+            setUnreadCount(prev => prev + 1)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          // If a notification was marked as read, update the count
+          // Simplest way is to re-fetch count to be accurate
+          fetchNotifications(user.id)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchNotifications(user.id)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user])
+
+  useEffect(() => {
     if (user) {
+      if (pathname === '/notifications') {
+        setUnreadCount(0)
+      }
       fetchNotifications(user.id)
     }
   }, [pathname])
@@ -131,7 +188,13 @@ export default function Navigation() {
       }
 
       setNotifications(data || [])
-      setUnreadCount(data?.filter(n => !n.read).length || 0)
+      
+      // If we are on the notifications page, keep unread count as 0
+      if (window.location.pathname === '/notifications') {
+        setUnreadCount(0)
+      } else {
+        setUnreadCount(data?.filter(n => !n.read).length || 0)
+      }
     } catch (error) {
       console.error('Error fetching notifications:', error)
     }

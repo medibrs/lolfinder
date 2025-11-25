@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Users, MessageSquare } from 'lucide-react'
+import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Users, MessageSquare, Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -45,6 +45,7 @@ export default function TeamsTable() {
   const [messageSubject, setMessageSubject] = useState('')
   const [messageContent, setMessageContent] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
+  const [messageSent, setMessageSent] = useState(false)
 
   useEffect(() => {
     fetchTeams()
@@ -108,6 +109,7 @@ export default function TeamsTable() {
     setSelectedTeam(team)
     setMessageSubject('')
     setMessageContent('')
+    setMessageSent(false)
     setContactDialogOpen(true)
   }
 
@@ -135,18 +137,24 @@ export default function TeamsTable() {
 
       if (error) {
         console.error('Error sending message:', error)
-        alert('Failed to send message')
+        // Keep the error visible but don't use alert
+        setSendingMessage(false)
       } else {
-        alert('Message sent successfully!')
-        setContactDialogOpen(false)
-        setMessageSubject('')
-        setMessageContent('')
+        setMessageSent(true)
+        setTimeout(() => {
+          setContactDialogOpen(false)
+          setMessageSubject('')
+          setMessageContent('')
+          setMessageSent(false)
+        }, 1500)
       }
     } catch (error) {
       console.error('Error sending message:', error)
-      alert('Failed to send message')
-    } finally {
       setSendingMessage(false)
+    } finally {
+      if (!messageSent) {
+        setSendingMessage(false)
+      }
     }
   }
 
@@ -377,9 +385,15 @@ export default function TeamsTable() {
             </Button>
             <Button 
               onClick={sendMessageToCaptain} 
-              disabled={!messageContent.trim() || sendingMessage}
+              disabled={!messageContent.trim() || sendingMessage || messageSent}
+              className={messageSent ? "bg-green-600 hover:bg-green-700" : ""}
             >
-              {sendingMessage ? 'Sending...' : 'Send Message'}
+              {sendingMessage ? 'Sending...' : messageSent ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Sent!
+                </>
+              ) : 'Send Message'}
             </Button>
           </DialogFooter>
         </DialogContent>

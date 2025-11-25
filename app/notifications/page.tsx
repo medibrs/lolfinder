@@ -191,7 +191,16 @@ export default function NotificationsPage() {
         (data || []).map(notification => enrichNotification(notification))
       )
 
-      setNotifications(enrichedNotifications)
+      setNotifications(prev => {
+        // Merge fetched notifications with any real-time updates that came in while fetching
+        const fetchedIds = new Set(enrichedNotifications.map(n => n.id))
+        const newItems = prev.filter(n => !fetchedIds.has(n.id))
+        
+        const combined = [...newItems, ...enrichedNotifications].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+        return combined
+      })
 
       // Mark all unread notifications as read when visiting the page
       const unreadNotifications = data?.filter(n => !n.read) || []
