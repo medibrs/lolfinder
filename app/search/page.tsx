@@ -124,22 +124,36 @@ export default function SearchPage() {
       if (teamsResult.error) console.error('Error fetching teams:', teamsResult.error)
       if (playersResult.error) console.error('Error fetching players:', playersResult.error)
 
-      // Fetch member counts for each team
-      const teamsWithCounts = await Promise.all(
+      // Fetch member details for each team
+      const teamsWithMembers = await Promise.all(
         (teamsResult.data || []).map(async (team) => {
-          const { count } = await supabase
+          const { data: members } = await supabase
             .from('players')
-            .select('*', { count: 'exact', head: true })
+            .select('summoner_name, main_role, tier')
             .eq('team_id', team.id)
+          
+          // Calculate average rank
+          const rankOrder = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
+          const memberRanks = members?.map(m => {
+            const tierBase = m.tier?.split(' ')[0]
+            return rankOrder.indexOf(tierBase)
+          }).filter(r => r >= 0) || []
+          
+          const avgRankIndex = memberRanks.length > 0 
+            ? Math.round(memberRanks.reduce((a, b) => a + b, 0) / memberRanks.length)
+            : -1
+          const averageRank = avgRankIndex >= 0 ? rankOrder[avgRankIndex] : null
           
           return {
             ...team,
-            current_members: count || 0
+            current_members: members?.length || 0,
+            members: members || [],
+            average_rank: averageRank
           }
         })
       )
 
-      setTeams(teamsWithCounts)
+      setTeams(teamsWithMembers)
       setPlayers(playersResult.data || [])
     } catch (error) {
       console.error('Error:', error)
@@ -284,17 +298,6 @@ export default function SearchPage() {
                     {team.description && (
                       <p className="text-muted-foreground mb-4">{team.description}</p>
                     )}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {team.open_positions.length > 0 ? (
-                        team.open_positions.map(role => (
-                          <span key={role} className="bg-accent/20 text-accent px-2 py-1 rounded text-sm font-medium">
-                            {role}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Team is full</span>
-                      )}
-                    </div>
                     <div className="mb-4 space-y-1">
                       <p className="text-sm">
                         <span className="text-muted-foreground">Members: </span>
@@ -307,6 +310,42 @@ export default function SearchPage() {
                         <p className="text-sm text-muted-foreground">
                           Captain: {team.captain.summoner_name}
                         </p>
+                      )}
+                      {team.average_rank && (
+                        <p className="text-sm">
+                          <span className="text-muted-foreground">Avg Rank: </span>
+                          <span className="font-medium">{team.average_rank}</span>
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Team Roster */}
+                    {team.members && team.members.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs text-muted-foreground mb-2">Roster:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {team.members.map((member: any, idx: number) => (
+                            <span 
+                              key={idx} 
+                              className="bg-muted/50 text-xs px-2 py-1 rounded"
+                            >
+                              {member.tier?.split(' ')[0]} {member.main_role}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Open Positions */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {team.open_positions.length > 0 ? (
+                        team.open_positions.map((role: string) => (
+                          <span key={role} className="bg-accent/20 text-accent px-2 py-1 rounded text-sm font-medium">
+                            Need {role}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Not recruiting</span>
                       )}
                     </div>
                     {user && userTeam?.id === team.id ? (

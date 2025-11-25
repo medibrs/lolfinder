@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     
     const createNotificationSchema = z.object({
       user_id: z.string().uuid(),
-      type: z.enum(['team_invite', 'team_join_request', 'team_leave', 'team_member_joined', 'team_member_left']),
+      type: z.enum(['team_invitation', 'team_join_request', 'team_leave', 'team_member_joined', 'team_member_left']),
       title: z.string().min(1).max(255),
       message: z.string().min(1),
       data: z.object({}).optional(),

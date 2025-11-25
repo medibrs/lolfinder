@@ -10,7 +10,7 @@ import Link from 'next/link'
 
 interface Notification {
   id: string
-  type: 'team_invite' | 'team_join_request' | 'team_leave' | 'team_member_joined' | 'team_member_left'
+  type: 'team_invitation' | 'team_join_request' | 'team_leave' | 'team_member_joined' | 'team_member_left'
   title: string
   message: string
   read: boolean
@@ -121,7 +121,7 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'team_invite':
+      case 'team_invitation':
         return <UserPlus className="h-4 w-4 text-blue-500" />
       case 'team_member_joined':
         return <Users className="h-4 w-4 text-green-500" />
@@ -203,7 +203,7 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
                         {formatTimeAgo(notification.created_at)}
                       </p>
 
-                      {notification.type === 'team_invite' && notification.data.invitation_id && (
+                      {notification.type === 'team_invitation' && notification.data.invitation_id && (
                         <div className="flex gap-2 mt-3">
                           <Button
                             size="sm"
