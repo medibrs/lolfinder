@@ -36,6 +36,7 @@ export async function PUT(
     }
 
     // Get registration with team and tournament details
+    console.log('Fetching registration with id:', id)
     const { data: registration, error: regError } = await supabase
       .from('tournament_registrations')
       .select(`
@@ -46,10 +47,14 @@ export async function PUT(
       .eq('id', id)
       .single();
 
+    console.log('Registration fetch result:', { registration, regError })
+
     if (regError || !registration) {
+      console.error('Registration not found:', regError)
       return NextResponse.json({ error: 'Registration not found' }, { status: 404 });
     }
 
+    console.log('Updating status to:', validatedData.status)
     // Update status
     const { error: updateError } = await supabase
       .from('tournament_registrations')
@@ -57,8 +62,11 @@ export async function PUT(
       .eq('id', id);
 
     if (updateError) {
+      console.error('Error updating status:', updateError)
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
+    
+    console.log('Status updated successfully to:', validatedData.status)
 
     // Create notification for team captain based on status
     if (validatedData.status === 'approved') {

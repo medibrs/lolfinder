@@ -20,10 +20,16 @@ export async function GET(
       return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
     }
 
-    // Get all registrations with team details
+    // Get all registrations with team and captain details
     const { data, error } = await supabase
       .from('tournament_registrations')
-      .select('*, team:teams(*)')
+      .select(`
+        *,
+        team:teams(
+          *,
+          captain:players!captain_id(id, summoner_name)
+        )
+      `)
       .eq('tournament_id', tournamentId)
       .order('registered_at', { ascending: false });
 
