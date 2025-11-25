@@ -13,6 +13,7 @@ export function getRankImage(tier: string): string {
     'master': '/master.webp',
     'grandmaster': '/grandmaster.webp',
     'challenger': '/challenger.webp',
+    'unranked': '/unranked.png',
   }
   
   // Extract base rank (e.g., "Gold II" -> "gold")

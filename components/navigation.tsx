@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { CurrentUserAvatar } from '@/components/current-user-avatar'
@@ -232,7 +233,14 @@ export default function Navigation() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
-              <div className="text-2xl font-bold text-primary">⚔️ TeamFinder</div>
+              <Image 
+                src="/logo.png" 
+                alt="TeamFinder" 
+                width={180} 
+                height={48} 
+                className="h-12 w-auto object-contain"
+                priority
+              />
             </Link>
             <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
           </div>
@@ -246,7 +254,14 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="text-2xl font-bold text-primary">⚔️ TeamFinder</div>
+            <Image 
+              src="/logo.png" 
+              alt="TeamFinder" 
+              width={180} 
+              height={48} 
+              className="h-12 w-auto object-contain"
+              priority
+            />
           </Link>
           
           {/* Mobile Menu */}

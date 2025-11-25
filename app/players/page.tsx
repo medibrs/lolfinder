@@ -248,7 +248,9 @@ export default function PlayersPage() {
                       className="object-contain"
                     />
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-2xl font-bold mb-2 truncate" title={player.summoner_name}>{player.summoner_name}</h3>
+                      <h3 className="text-xl font-bold mb-2 truncate" title={player.summoner_name}>
+                        {player.summoner_name.split('#')[0]}
+                      </h3>
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-primary font-semibold">{player.main_role}</span>
                         {player.secondary_role && (

@@ -243,17 +243,19 @@ export default function ViewTeamPage() {
                 <div className="space-y-3">
                   {teamMembers.map((member: any) => (
                     <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <Image 
                           src={getRankImage(member.tier)} 
                           alt={member.tier}
                           width={40}
                           height={40}
-                          className="object-contain"
+                          className="object-contain shrink-0"
                         />
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">{member.summoner_name}</p>
+                            <p className="font-medium truncate" title={member.summoner_name}>
+                              {member.summoner_name.split('#')[0]}
+                            </p>
                             {member.id === team.captain_id && (
                               <Badge className="bg-yellow-600">
                                 <Crown className="w-3 h-3 mr-1" />
