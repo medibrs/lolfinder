@@ -115,7 +115,7 @@ export default function ManageTeamPage() {
 
       setJoinRequests(requestsData || [])
 
-      // Fetch tournament registrations (only approved)
+      // Fetch tournament registrations (only approved - check both 'approved' and legacy 'Confirmed')
       console.log('Fetching tournaments for team:', teamData.id)
       const { data: tournamentsData, error: tournamentsError } = await supabase
         .from('tournament_registrations')
@@ -124,7 +124,7 @@ export default function ManageTeamPage() {
           tournament:tournaments(*)
         `)
         .eq('team_id', teamData.id)
-        .eq('status', 'approved')
+        .in('status', ['approved', 'Confirmed'])
         .order('registered_at', { ascending: false })
 
       console.log('Tournaments query result:', { tournamentsData, tournamentsError })

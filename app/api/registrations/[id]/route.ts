@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 
 const updateRegistrationSchema = z.object({
-  status: z.enum(['Pending', 'Confirmed', 'Rejected']),
+  status: z.enum(['pending', 'approved', 'rejected']),
 });
 
 // PUT /api/registrations/[id] - Update registration status

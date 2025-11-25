@@ -7,7 +7,11 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Users } from 'lucide-react'
+import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Users, MessageSquare } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { createClient } from '@/lib/supabase/client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +40,11 @@ export default function TeamsTable() {
   const [searchTerm, setSearchTerm] = useState('')
   const [tierFilter, setTierFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [contactDialogOpen, setContactDialogOpen] = useState(false)
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
+  const [messageSubject, setMessageSubject] = useState('')
+  const [messageContent, setMessageContent] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
 
   useEffect(() => {
     fetchTeams()
@@ -92,6 +101,52 @@ export default function TeamsTable() {
       } catch (error) {
         console.error('Error deleting team:', error)
       }
+    }
+  }
+
+  const openContactDialog = (team: Team) => {
+    setSelectedTeam(team)
+    setMessageSubject('')
+    setMessageContent('')
+    setContactDialogOpen(true)
+  }
+
+  const sendMessageToCaptain = async () => {
+    if (!selectedTeam || !messageContent.trim()) return
+
+    setSendingMessage(true)
+    try {
+      const supabase = createClient()
+      
+      // Create a notification for the team captain
+      const { error } = await supabase
+        .from('notifications')
+        .insert([{
+          user_id: selectedTeam.captain_id,
+          type: 'admin_message',
+          title: messageSubject || 'Message from Admin',
+          message: messageContent,
+          data: {
+            team_id: selectedTeam.id,
+            team_name: selectedTeam.name,
+            from: 'admin'
+          }
+        }])
+
+      if (error) {
+        console.error('Error sending message:', error)
+        alert('Failed to send message')
+      } else {
+        alert('Message sent successfully!')
+        setContactDialogOpen(false)
+        setMessageSubject('')
+        setMessageContent('')
+      }
+    } catch (error) {
+      console.error('Error sending message:', error)
+      alert('Failed to send message')
+    } finally {
+      setSendingMessage(false)
     }
   }
 
@@ -258,6 +313,10 @@ export default function TeamsTable() {
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Team
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openContactDialog(team)}>
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Contact Team
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           className="text-destructive"
@@ -281,6 +340,50 @@ export default function TeamsTable() {
           </div>
         )}
       </CardContent>
+
+      {/* Contact Team Dialog */}
+      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Contact Team Captain</DialogTitle>
+            <DialogDescription>
+              Send a message to {selectedTeam?.captain_name || 'the captain'} of {selectedTeam?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="subject">Subject</Label>
+              <Input
+                id="subject"
+                placeholder="Message subject (optional)"
+                value={messageSubject}
+                onChange={(e) => setMessageSubject(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="message">Message</Label>
+              <Textarea
+                id="message"
+                placeholder="Type your message here..."
+                value={messageContent}
+                onChange={(e) => setMessageContent(e.target.value)}
+                rows={5}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setContactDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={sendMessageToCaptain} 
+              disabled={!messageContent.trim() || sendingMessage}
+            >
+              {sendingMessage ? 'Sending...' : 'Send Message'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

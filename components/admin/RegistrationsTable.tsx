@@ -21,7 +21,7 @@ interface Registration {
   id: string
   tournament_id: string
   team_id: string
-  status: 'Pending' | 'Confirmed' | 'Rejected'
+  status: 'pending' | 'approved' | 'rejected'
   registered_at: string
   tournament_name?: string
   team_name?: string
@@ -87,7 +87,7 @@ export default function RegistrationsTable() {
     return matchesSearch && matchesStatus
   })
 
-  const updateRegistrationStatus = async (registrationId: string, newStatus: 'Confirmed' | 'Rejected' | 'Pending') => {
+  const updateRegistrationStatus = async (registrationId: string, newStatus: 'approved' | 'rejected' | 'pending') => {
     try {
       await fetch(`/api/registrations/${registrationId}`, {
         method: 'PUT',
@@ -107,20 +107,20 @@ export default function RegistrationsTable() {
 
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
-      'Pending': 'bg-yellow-500',
-      'Confirmed': 'bg-green-500',
-      'Rejected': 'bg-red-500'
+      'pending': 'bg-yellow-500',
+      'approved': 'bg-green-500',
+      'rejected': 'bg-red-500'
     }
     return colors[status] || 'bg-gray-500'
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Pending':
+      case 'pending':
         return <Clock className="h-4 w-4" />
-      case 'Confirmed':
+      case 'approved':
         return <CheckCircle className="h-4 w-4" />
-      case 'Rejected':
+      case 'rejected':
         return <XCircle className="h-4 w-4" />
       default:
         return <Clock className="h-4 w-4" />
@@ -180,9 +180,9 @@ export default function RegistrationsTable() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Confirmed">Confirmed</SelectItem>
-              <SelectItem value="Rejected">Rejected</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -241,19 +241,19 @@ export default function RegistrationsTable() {
                           View Details
                         </DropdownMenuItem>
                         
-                        {registration.status === 'Pending' && (
+                        {registration.status === 'pending' && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               className="text-green-600"
-                              onClick={() => updateRegistrationStatus(registration.id, 'Confirmed')}
+                              onClick={() => updateRegistrationStatus(registration.id, 'approved')}
                             >
                               <CheckCircle className="mr-2 h-4 w-4" />
                               Approve Registration
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-red-600"
-                              onClick={() => updateRegistrationStatus(registration.id, 'Rejected')}
+                              onClick={() => updateRegistrationStatus(registration.id, 'rejected')}
                             >
                               <XCircle className="mr-2 h-4 w-4" />
                               Reject Registration
@@ -261,12 +261,12 @@ export default function RegistrationsTable() {
                           </>
                         )}
                         
-                        {registration.status !== 'Pending' && (
+                        {registration.status !== 'pending' && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               className="text-yellow-600"
-                              onClick={() => updateRegistrationStatus(registration.id, 'Pending')}
+                              onClick={() => updateRegistrationStatus(registration.id, 'pending')}
                             >
                               <Clock className="mr-2 h-4 w-4" />
                               Set to Pending

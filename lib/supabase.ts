@@ -14,7 +14,7 @@ export type Role = 'Top' | 'Jungle' | 'Mid' | 'ADC' | 'Support';
 export type Tier = 'Iron' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Master' | 'Grandmaster' | 'Challenger';
 export type Region = 'NA' | 'EUW' | 'EUNE' | 'KR' | 'BR' | 'LAN' | 'LAS' | 'OCE' | 'RU' | 'TR' | 'JP';
 export type RecruitingStatus = 'Open' | 'Closed' | 'Full';
-export type RegistrationStatus = 'Pending' | 'Confirmed' | 'Rejected';
+export type RegistrationStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Player {
   id: string;

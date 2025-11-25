@@ -60,8 +60,10 @@ export default function TournamentsPage() {
           
           const statusMap: Record<string, string> = {}
           registrations?.forEach(reg => {
-            // Normalize status to lowercase for consistent comparison
-            statusMap[reg.tournament_id] = (reg.status || 'pending').toLowerCase()
+            // Normalize status to lowercase and map 'confirmed' to 'approved' for consistency
+            let status = (reg.status || 'pending').toLowerCase()
+            if (status === 'confirmed') status = 'approved'
+            statusMap[reg.tournament_id] = status
           })
           setRegistrationStatuses(statusMap)
         }

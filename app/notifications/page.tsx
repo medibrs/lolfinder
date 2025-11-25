@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Bell, Check, X, Users, Crown, AlertCircle } from 'lucide-react'
+import { Bell, Check, X, Users, Crown, AlertCircle, MessageSquare, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function NotificationsPage() {
@@ -35,11 +35,13 @@ export default function NotificationsPage() {
               filter: `user_id=eq.${authUser.id}`
             },
             async (payload) => {
-              // Add new notification directly to state
+              // Add new notification directly to state immediately
               const newNotification = payload.new as any
-              // Enrich the notification if needed
+              setNotifications(prev => [newNotification, ...prev])
+              
+              // Enrich the notification in the background
               const enriched = await enrichNotification(newNotification)
-              setNotifications(prev => [enriched, ...prev])
+              setNotifications(prev => prev.map(n => n.id === enriched.id ? enriched : n))
             }
           )
           .on(
@@ -289,6 +291,12 @@ export default function NotificationsPage() {
         return <X className="w-5 h-5 text-orange-500" />
       case 'system':
         return <AlertCircle className="w-5 h-5 text-orange-500" />
+      case 'admin_message':
+        return <MessageSquare className="w-5 h-5 text-purple-500" />
+      case 'tournament_approved':
+        return <Trophy className="w-5 h-5 text-green-500" />
+      case 'tournament_rejected':
+        return <Trophy className="w-5 h-5 text-red-500" />
       default:
         return <Bell className="w-5 h-5 text-gray-500" />
     }
@@ -456,7 +464,11 @@ export default function NotificationsPage() {
             notifications.map(notification => (
               <Card 
                 key={notification.id} 
-                className={`bg-card border-border ${!notification.read ? 'border-primary/50' : ''}`}
+                className={`bg-card border-border ${
+                  !notification.read ? 'border-primary/50' : ''
+                } ${
+                  notification.type === 'admin_message' ? 'border-purple-500/50 bg-purple-500/5' : ''
+                }`}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
@@ -469,6 +481,11 @@ export default function NotificationsPage() {
                           <h3 className="font-semibold">{notification.title}</h3>
                           {!notification.read && (
                             <Badge variant="default" className="text-xs">New</Badge>
+                          )}
+                          {notification.type === 'admin_message' && (
+                            <Badge variant="secondary" className="bg-purple-500/10 text-purple-500 border-purple-500/20">
+                              Admin
+                            </Badge>
                           )}
                         </div>
                         <p className="text-muted-foreground mb-3">{notification.message}</p>

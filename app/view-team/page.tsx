@@ -77,7 +77,7 @@ export default function ViewTeamPage() {
         setTeamMembers(membersData || [])
       }
 
-      // Fetch tournament registrations (only approved)
+      // Fetch tournament registrations (only approved - check both 'approved' and legacy 'Confirmed')
       const { data: tournamentsData } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -85,7 +85,7 @@ export default function ViewTeamPage() {
           tournament:tournaments(*)
         `)
         .eq('team_id', playerData.team_id)
-        .eq('status', 'approved')
+        .in('status', ['approved', 'Confirmed'])
         .order('registered_at', { ascending: false })
 
       setTournaments(tournamentsData || [])
