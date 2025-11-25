@@ -101,10 +101,10 @@ export default function AuthPage() {
       </div>
 
       <div className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center p-4">
-        <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
+        <div className="w-full max-w-6xl lg:grid lg:grid-cols-2 gap-8 items-center">
           
-          {/* Left Side - Hero Content */}
-          <div className="text-center lg:text-left space-y-6 text-white">
+          {/* Left Side - Hero Content (hidden on mobile) */}
+          <div className="hidden lg:block text-left space-y-6 text-white">
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-6xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                 LoL Tournaments
