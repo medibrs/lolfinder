@@ -96,6 +96,14 @@ export async function PUT(
         }, { status: 400 });
       }
 
+      // Delete any old non-pending invitations to avoid unique constraint violation
+      await supabase
+        .from('team_invitations')
+        .delete()
+        .eq('team_id', invitation.team.id)
+        .eq('invited_player_id', currentPlayer.id)
+        .neq('status', 'pending');
+
       // Update invitation status
       const { error: updateError } = await supabase
         .from('team_invitations')
