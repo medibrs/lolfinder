@@ -17,22 +17,166 @@ export default function NotificationsPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    loadNotifications()
+    const initializeNotifications = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser) {
+        setUser(authUser)
+        loadNotificationsForUser(authUser.id)
+        
+        // Set up real-time subscription - no polling, instant updates via WebSocket
+        const channel = supabase
+          .channel(`notifications-page-${authUser.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${authUser.id}`
+            },
+            async (payload) => {
+              // Add new notification directly to state
+              const newNotification = payload.new as any
+              // Enrich the notification if needed
+              const enriched = await enrichNotification(newNotification)
+              setNotifications(prev => [enriched, ...prev])
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${authUser.id}`
+            },
+            (payload) => {
+              // Update notification in state directly
+              const updatedNotification = payload.new as any
+              setNotifications(prev => 
+                prev.map(n => n.id === updatedNotification.id 
+                  ? { ...n, ...updatedNotification } 
+                  : n
+                )
+              )
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${authUser.id}`
+            },
+            (payload) => {
+              // Remove notification from state directly
+              const deletedId = payload.old.id
+              setNotifications(prev => prev.filter(n => n.id !== deletedId))
+            }
+          )
+          .subscribe()
+
+        return () => {
+          supabase.removeChannel(channel)
+        }
+      } else {
+        setLoading(false)
+      }
+    }
+    
+    initializeNotifications()
   }, [])
 
-  const loadNotifications = async () => {
-    try {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) {
-        return
+  // Helper function to enrich a single notification with player/team data
+  const enrichNotification = async (notification: any) => {
+    // For join requests - fetch player info if not already present
+    if (notification.type === 'team_join_request' && notification.data?.player_id && !notification.data?.player) {
+      const { data: playerData } = await supabase
+        .from('players')
+        .select('id, summoner_name, tier, main_role, secondary_role, opgg_link')
+        .eq('id', notification.data.player_id)
+        .single()
+      
+      if (playerData) {
+        notification.data.player = playerData
+      }
+    }
+    
+    // For invitations - fetch inviter and team info if not already present
+    if (notification.type === 'team_invitation') {
+      const teamId = notification.data?.team_id
+      
+      // Fetch inviter info if missing
+      if (!notification.data?.inviter && notification.data?.invitation_id) {
+        const { data: invitationData } = await supabase
+          .from('team_invitations')
+          .select('invited_by')
+          .eq('id', notification.data.invitation_id)
+          .single()
+        
+        if (invitationData?.invited_by) {
+          const { data: inviterData } = await supabase
+            .from('players')
+            .select('id, summoner_name, tier, main_role, secondary_role, opgg_link')
+            .eq('id', invitationData.invited_by)
+            .single()
+          
+          if (inviterData) {
+            notification.data.inviter = inviterData
+          }
+        }
       }
       
-      setUser(authUser)
+      // Fetch team info if missing
+      if (!notification.data?.team && teamId) {
+        const { data: teamData } = await supabase
+          .from('teams')
+          .select('id, name, team_size, open_positions')
+          .eq('id', teamId)
+          .single()
+        
+        const { data: teamMembers } = await supabase
+          .from('players')
+          .select('summoner_name, main_role, tier')
+          .eq('team_id', teamId)
+        
+        if (teamData) {
+          const memberCount = teamMembers?.length || 0
+          const filledRoles = teamMembers?.map(m => m.main_role).filter(Boolean) || []
+          
+          const rankOrder = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
+          const memberRanks = teamMembers?.map(m => {
+            const tierBase = m.tier?.split(' ')[0]
+            return rankOrder.indexOf(tierBase)
+          }).filter(r => r >= 0) || []
+          
+          const avgRankIndex = memberRanks.length > 0 
+            ? Math.round(memberRanks.reduce((a, b) => a + b, 0) / memberRanks.length)
+            : -1
+          const averageRank = avgRankIndex >= 0 ? rankOrder[avgRankIndex] : 'Unknown'
+          
+          notification.data.team = {
+            member_count: memberCount,
+            max_size: teamData.team_size || 6,
+            average_rank: averageRank,
+            open_positions: teamData.open_positions || [],
+            filled_roles: filledRoles,
+            members: teamMembers || []
+          }
+        }
+      }
+    }
+    
+    return notification
+  }
 
+  const loadNotificationsForUser = async (userId: string) => {
+    try {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', authUser.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -42,90 +186,7 @@ export default function NotificationsPage() {
 
       // Enrich notifications with player data for join requests and invitations
       const enrichedNotifications = await Promise.all(
-        (data || []).map(async (notification) => {
-          // For join requests - fetch player info if not already present
-          if (notification.type === 'team_join_request' && notification.data?.player_id && !notification.data?.player) {
-            const { data: playerData } = await supabase
-              .from('players')
-              .select('id, summoner_name, tier, main_role, secondary_role, opgg_link')
-              .eq('id', notification.data.player_id)
-              .single()
-            
-            if (playerData) {
-              notification.data.player = playerData
-            }
-          }
-          
-          // For invitations - fetch inviter and team info if not already present
-          if (notification.type === 'team_invitation') {
-            const teamId = notification.data?.team_id
-            
-            // Fetch inviter info if missing
-            if (!notification.data?.inviter && notification.data?.invitation_id) {
-              const { data: invitationData } = await supabase
-                .from('team_invitations')
-                .select('invited_by')
-                .eq('id', notification.data.invitation_id)
-                .single()
-              
-              if (invitationData?.invited_by) {
-                const { data: inviterData } = await supabase
-                  .from('players')
-                  .select('id, summoner_name, tier, main_role, secondary_role, opgg_link')
-                  .eq('id', invitationData.invited_by)
-                  .single()
-                
-                if (inviterData) {
-                  notification.data.inviter = inviterData
-                }
-              }
-            }
-            
-            // Fetch team info if missing
-            if (!notification.data?.team && teamId) {
-              // Get team details
-              const { data: teamData } = await supabase
-                .from('teams')
-                .select('id, name, team_size, open_positions')
-                .eq('id', teamId)
-                .single()
-              
-              // Get team members
-              const { data: teamMembers } = await supabase
-                .from('players')
-                .select('summoner_name, main_role, tier')
-                .eq('team_id', teamId)
-              
-              if (teamData) {
-                const memberCount = teamMembers?.length || 0
-                const filledRoles = teamMembers?.map(m => m.main_role).filter(Boolean) || []
-                
-                // Calculate average rank
-                const rankOrder = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
-                const memberRanks = teamMembers?.map(m => {
-                  const tierBase = m.tier?.split(' ')[0]
-                  return rankOrder.indexOf(tierBase)
-                }).filter(r => r >= 0) || []
-                
-                const avgRankIndex = memberRanks.length > 0 
-                  ? Math.round(memberRanks.reduce((a, b) => a + b, 0) / memberRanks.length)
-                  : -1
-                const averageRank = avgRankIndex >= 0 ? rankOrder[avgRankIndex] : 'Unknown'
-                
-                notification.data.team = {
-                  member_count: memberCount,
-                  max_size: teamData.team_size || 6,
-                  average_rank: averageRank,
-                  open_positions: teamData.open_positions || [],
-                  filled_roles: filledRoles,
-                  members: teamMembers || []
-                }
-              }
-            }
-          }
-          
-          return notification
-        })
+        (data || []).map(notification => enrichNotification(notification))
       )
 
       setNotifications(enrichedNotifications)
@@ -136,7 +197,7 @@ export default function NotificationsPage() {
         await supabase
           .from('notifications')
           .update({ read: true })
-          .eq('user_id', authUser.id)
+          .eq('user_id', userId)
           .eq('read', false)
         
         // Update local state

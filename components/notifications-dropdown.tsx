@@ -37,19 +37,61 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
   useEffect(() => {
     fetchNotifications()
     
-    // Set up real-time subscription
+    // Set up real-time subscription - no polling, instant updates via WebSocket
     const channel = supabase
-      .channel('notifications')
+      .channel(`notifications-dropdown-${userId}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${userId}`
         },
-        () => {
-          fetchNotifications()
+        (payload) => {
+          // Add new notification directly to state - no API call needed
+          const newNotification = payload.new as Notification
+          setNotifications(prev => [newNotification, ...prev].slice(0, 10))
+          setUnreadCount(prev => prev + 1)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          // Update notification in state directly
+          const updatedNotification = payload.new as Notification
+          setNotifications(prev => 
+            prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+          )
+          // Recalculate unread count
+          setNotifications(prev => {
+            setUnreadCount(prev.filter(n => !n.read).length)
+            return prev
+          })
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          // Remove notification from state directly
+          const deletedId = payload.old.id
+          setNotifications(prev => {
+            const updated = prev.filter(n => n.id !== deletedId)
+            setUnreadCount(updated.filter(n => !n.read).length)
+            return updated
+          })
         }
       )
       .subscribe()
