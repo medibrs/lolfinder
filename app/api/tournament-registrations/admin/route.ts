@@ -91,6 +91,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: registrationError.message }, { status: 400 });
     }
 
+    // Send notification to team captain
+    await supabase
+      .from('notifications')
+      .insert([{
+        user_id: team.captain_id,
+        type: 'tournament_approved',
+        title: `Tournament Registration Approved!`,
+        message: `Your team "${team.name}" has been approved for ${tournament.name}!`,
+        data: {
+          tournament_id: tournament.id,
+          tournament_name: tournament.name,
+          team_id: team.id,
+          registration_id: registration.id,
+        }
+      }]);
+
     return NextResponse.json(registration, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

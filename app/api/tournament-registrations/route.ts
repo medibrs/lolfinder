@@ -68,16 +68,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tournament registration is closed' }, { status: 400 });
     }
 
-    // Check if team is already registered
+    // Check if team has any existing registration
     const { data: existingRegistration } = await supabase
       .from('tournament_registrations')
       .select('*')
       .eq('tournament_id', validatedData.tournament_id)
       .eq('team_id', validatedData.team_id)
-      .single();
+      .maybeSingle();
 
     if (existingRegistration) {
-      return NextResponse.json({ error: 'Team is already registered for this tournament' }, { status: 400 });
+      // If pending or approved, block registration
+      if (existingRegistration.status === 'pending') {
+        return NextResponse.json({ error: 'Team registration is pending approval' }, { status: 400 });
+      }
+      if (existingRegistration.status === 'approved') {
+        return NextResponse.json({ error: 'Team is already registered for this tournament' }, { status: 400 });
+      }
+      
+      // If rejected, update the existing record to pending instead of creating new
+      if (existingRegistration.status === 'rejected') {
+        const { data: updatedRegistration, error: updateError } = await supabase
+          .from('tournament_registrations')
+          .update({ 
+            status: 'pending',
+            registered_at: new Date().toISOString()
+          })
+          .eq('id', existingRegistration.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          return NextResponse.json({ error: updateError.message }, { status: 400 });
+        }
+
+        return NextResponse.json(updatedRegistration, { status: 201 });
+      }
     }
 
     // Check if tournament is full

@@ -103,7 +103,7 @@ export default function ManageTeamPage() {
 
       setJoinRequests(requestsData || [])
 
-      // Fetch tournament registrations
+      // Fetch tournament registrations (only approved)
       const { data: tournamentsData } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -111,6 +111,7 @@ export default function ManageTeamPage() {
           tournament:tournaments(*)
         `)
         .eq('team_id', teamData.id)
+        .eq('status', 'approved')
         .order('registered_at', { ascending: false })
 
       setTournaments(tournamentsData || [])

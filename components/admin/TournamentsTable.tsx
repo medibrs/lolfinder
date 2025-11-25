@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Trophy, Calendar, Users, Check, X, Clock } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import {
   Dialog,
   DialogContent,
@@ -236,13 +237,20 @@ export default function TournamentsTable() {
     if (!managingTournament) return
 
     try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
       const response = await fetch(`/api/tournament-registrations/${registrationId}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify({ status: newStatus }),
       })
 
       if (response.ok) {
+        console.log('Status updated successfully, notification should be sent')
         // Refresh registrations to show updated status
         await openManageDialog(managingTournament)
       } else {

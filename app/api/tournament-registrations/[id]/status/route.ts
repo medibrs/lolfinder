@@ -62,7 +62,8 @@ export async function PUT(
 
     // Create notification for team captain based on status
     if (validatedData.status === 'approved') {
-      await supabase
+      console.log('Creating approval notification for captain:', registration.team.captain_id)
+      const { error: notifError } = await supabase
         .from('notifications')
         .insert([{
           user_id: registration.team.captain_id,
@@ -76,8 +77,15 @@ export async function PUT(
             registration_id: id,
           }
         }]);
+      
+      if (notifError) {
+        console.error('Error creating approval notification:', notifError)
+      } else {
+        console.log('Approval notification created successfully')
+      }
     } else if (validatedData.status === 'rejected') {
-      await supabase
+      console.log('Creating rejection notification for captain:', registration.team.captain_id)
+      const { error: notifError } = await supabase
         .from('notifications')
         .insert([{
           user_id: registration.team.captain_id,
@@ -91,6 +99,12 @@ export async function PUT(
             registration_id: id,
           }
         }]);
+      
+      if (notifError) {
+        console.error('Error creating rejection notification:', notifError)
+      } else {
+        console.log('Rejection notification created successfully')
+      }
     }
 
     return NextResponse.json({ message: 'Status updated successfully', status: validatedData.status });

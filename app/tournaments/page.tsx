@@ -88,7 +88,13 @@ export default function TournamentsPage() {
   const handleRegister = async (tournamentId: string) => {
     if (!userTeam) return
 
+    // Prevent double-clicking
+    if (registering === tournamentId) return
+
     setRegistering(tournamentId)
+    setErrorMessage('')
+    setSuccessMessage('')
+
     try {
       const { data: { session } } = await supabase.auth.getSession()
 
@@ -108,7 +114,6 @@ export default function TournamentsPage() {
         // Add to registration statuses as pending
         setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
         setSuccessMessage('Registration submitted! Your team registration is pending admin approval.')
-        setErrorMessage('')
         
         // Clear success message after 5 seconds
         setTimeout(() => setSuccessMessage(''), 5000)
@@ -116,12 +121,10 @@ export default function TournamentsPage() {
         const error = await response.json()
         console.error('Error registering for tournament:', error.error)
         setErrorMessage(error.error || "Failed to register for tournament.")
-        setSuccessMessage('')
       }
     } catch (error: any) {
       console.error('Error registering for tournament:', error)
       setErrorMessage(error.message || "An unexpected error occurred.")
-      setSuccessMessage('')
     } finally {
       setRegistering(null)
     }
