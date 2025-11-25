@@ -10,7 +10,7 @@ import { Shield, Trophy, Users, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
-const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
+const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger', 'Unranked']
 
 const getTierColor = (tier: string) => {
   const colors: { [key: string]: string } = {
@@ -23,7 +23,8 @@ const getTierColor = (tier: string) => {
     'Diamond': 'bg-blue-500',
     'Master': 'bg-purple-500',
     'Grandmaster': 'bg-red-500',
-    'Challenger': 'bg-cyan-400'
+    'Challenger': 'bg-cyan-400',
+    'Unranked': 'bg-gray-600'
   }
   return colors[tier] || 'bg-gray-500'
 }
@@ -50,10 +51,10 @@ export default function SetupProfilePage() {
     discord: '',
     main_role: '',
     secondary_role: '',
-    tier: '',
-    opgg_url: '',
     looking_for_team: true
   })
+  const [riotError, setRiotError] = useState<string | null>(null)
+  const [fetchedTier, setFetchedTier] = useState<string | null>(null)
 
   useEffect(() => {
     // Load existing profile if it exists (auth is handled by middleware)
@@ -94,10 +95,9 @@ export default function SetupProfilePage() {
             discord: existingProfile.discord || '',
             main_role: existingProfile.main_role || '',
             secondary_role: existingProfile.secondary_role || '',
-            tier: existingProfile.tier || '',
-            opgg_url: existingProfile.opgg_url || '',
             looking_for_team: existingProfile.looking_for_team || false
           })
+          setFetchedTier(existingProfile.tier || null)
           setIsEditing(true)
 
           // Fetch team information if player is in a team
@@ -159,6 +159,7 @@ export default function SetupProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setRiotError(null)
 
     try {
       console.log('Submit data:', { isEditing, userId, formData })
@@ -169,39 +170,26 @@ export default function SetupProfilePage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       
-      // Auto-prepend https:// to opgg_url if it doesn't have a protocol
-      let processedFormData = { ...formData }
-      if (processedFormData.opgg_url && processedFormData.opgg_url.trim() !== '') {
-        const opggLink = processedFormData.opgg_url.trim()
-        if (!opggLink.startsWith('http://') && !opggLink.startsWith('https://')) {
-          processedFormData.opgg_url = `https://${opggLink}`
-        }
-      }
-      
       const response = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify(processedFormData),
+        body: JSON.stringify(formData),
       })
 
       if (response.ok) {
         router.push('/')
       } else {
-        console.error(`Error ${isEditing ? 'updating' : 'creating'} profile - Status:`, response.status)
-        const errorText = await response.text()
-        console.error('Response body:', errorText)
-        try {
-          const error = JSON.parse(errorText)
-          console.error('Parsed error:', error)
-        } catch {
-          console.error('Could not parse error response')
-        }
+        const errorData = await response.json()
+        console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, errorData)
+        // Show Riot API validation errors to the user
+        setRiotError(errorData.error || 'Failed to save profile')
       }
     } catch (error) {
       console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, error)
+      setRiotError('An unexpected error occurred')
     } finally {
       setLoading(false)
     }
@@ -257,22 +245,26 @@ export default function SetupProfilePage() {
                       {isEditing ? 'Update your information below' : 'Complete your profile to access all tournament features'}
                     </p>
                     <p className="text-purple-300 text-xs mt-2">
-                      All fields are required except OP.GG URL
+                      All fields are required. Rank and OP.GG are auto-fetched from Riot API.
                     </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-purple-200 mb-2">
-                      Summoner Name *
+                      Riot ID *
                     </label>
                     <Input
                       type="text"
                       name="summoner_name"
                       value={formData.summoner_name}
                       onChange={handleChange}
-                      placeholder="Your in-game name"
+                      placeholder="GameName#TagLine (e.g., Player#EUW)"
                       required
                       className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                     />
+                    <p className="text-xs text-gray-400 mt-1">Enter your Riot ID in the format: GameName#TagLine</p>
+                    {riotError && (
+                      <p className="text-xs text-red-400 mt-1">{riotError}</p>
+                    )}
                   </div>
 
                   <div>
@@ -334,43 +326,15 @@ export default function SetupProfilePage() {
                   </div>
                 </div>
 
-                {/* Rank */}
-                <div>
-                  <label className="block text-sm font-medium text-purple-200 mb-2">
-                    Rank *
-                  </label>
-                  <select
-                    name="tier"
-                    value={formData.tier}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
-                  >
-                    <option value="">Select Rank</option>
-                    {TIERS.map(tier => (
-                      <option key={tier} value={tier}>{tier}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* OP.GG Link */}
-                <div>
-                  <label className="block text-sm font-medium text-purple-200 mb-2">
-                    OP.GG Profile URL (Optional)
-                  </label>
-                  <Input
-                    type="text"
-                    name="opgg_url"
-                    value={formData.opgg_url}
-                    onChange={handleChange}
-                    placeholder="op.gg/lol/summoners/euw/YourName-TAG or https://op.gg/..."
-                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">You can paste the full URL or just op.gg/...</p>
-                  <p className="text-purple-300 text-xs mt-1">
-                    Help teams verify your rank and gameplay
-                  </p>
-                </div>
+                {/* Rank Info - Auto-fetched */}
+                {fetchedTier && (
+                  <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3">
+                    <p className="text-sm text-purple-200">
+                      Current Rank: <Badge className={`${getTierColor(fetchedTier)} text-white text-xs ml-2`}>{fetchedTier}</Badge>
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">Rank and OP.GG link are automatically fetched from Riot API</p>
+                  </div>
+                )}
 
                 {/* Looking for Team */}
                 <div className="flex items-center space-x-3">
@@ -407,9 +371,9 @@ export default function SetupProfilePage() {
                         {formData.main_role && (
                           <span title={formData.main_role}>{getRoleIcon(formData.main_role)}</span>
                         )}
-                        {formData.tier && (
-                          <Badge className={`${getTierColor(formData.tier)} text-white text-xs`}>
-                            {formData.tier}
+                        {fetchedTier && (
+                          <Badge className={`${getTierColor(fetchedTier)} text-white text-xs`}>
+                            {fetchedTier}
                           </Badge>
                         )}
                         {formData.looking_for_team && (

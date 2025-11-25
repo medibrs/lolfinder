@@ -11,7 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Types for database tables
 export type Role = 'Top' | 'Jungle' | 'Mid' | 'ADC' | 'Support';
-export type Tier = 'Iron' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Master' | 'Grandmaster' | 'Challenger';
+export type Tier = 'Iron' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Emerald' | 'Diamond' | 'Master' | 'Grandmaster' | 'Challenger' | 'Unranked';
 export type Region = 'NA' | 'EUW' | 'EUNE' | 'KR' | 'BR' | 'LAN' | 'LAS' | 'OCE' | 'RU' | 'TR' | 'JP';
 export type RecruitingStatus = 'Open' | 'Closed' | 'Full';
 export type RegistrationStatus = 'pending' | 'approved' | 'rejected';
@@ -22,11 +22,12 @@ export interface Player {
   discord: string;
   main_role: Role;
   secondary_role?: Role;
-  opgg_link?: string;
+  opgg_url?: string;
   tier: Tier;
-  region: Region;
   looking_for_team: boolean;
   team_id?: string;
+  puuid?: string;
+  summoner_level?: number;
   created_at: string;
   updated_at: string;
 }

@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
+import { validateAndFetchRiotData } from '@/lib/riot';
 
-// Validation schema
+// Validation schema - tier and opgg_url are now auto-fetched from Riot API
 const createPlayerSchema = z.object({
   summoner_name: z.string().min(1).max(255),
   discord: z.string().min(1).max(255),
   main_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
   secondary_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']).optional(),
-  opgg_url: z.string().optional().or(z.literal('')),
-  tier: z.enum(['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']),
   looking_for_team: z.boolean().default(false),
 });
 
@@ -69,10 +68,29 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = createPlayerSchema.parse(body);
 
+    // Validate summoner name via Riot API and fetch tier/opgg
+    let riotData;
+    try {
+      riotData = await validateAndFetchRiotData(validatedData.summoner_name);
+    } catch (riotError: any) {
+      return NextResponse.json(
+        { error: riotError.message || 'Failed to validate summoner name' },
+        { status: 400 }
+      );
+    }
+
     // Use the authenticated user's ID as the player ID
     const playerData = {
-      ...validatedData,
-      id: user.id
+      id: user.id,
+      summoner_name: riotData.summonerName,
+      discord: validatedData.discord,
+      main_role: validatedData.main_role,
+      secondary_role: validatedData.secondary_role,
+      looking_for_team: validatedData.looking_for_team,
+      tier: riotData.tier,
+      opgg_url: riotData.opggUrl,
+      puuid: riotData.puuid,
+      summoner_level: riotData.summonerLevel,
     };
 
     const { data, error } = await supabase
@@ -93,6 +111,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    console.error('Error creating player:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
