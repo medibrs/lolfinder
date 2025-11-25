@@ -29,8 +29,9 @@ export default function TeamsPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
-  const [pendingRequests, setPendingRequests] = useState<string[]>([])
+  const [pendingRequests, setPendingRequests] = useState<Record<string, string>>({})
   const [sendingRequest, setSendingRequest] = useState<string | null>(null)
+  const [cancellingRequest, setCancellingRequest] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -66,12 +67,15 @@ export default function TeamsPage() {
         // Fetch user's pending join requests
         const { data: requests } = await supabase
           .from('team_join_requests')
-          .select('team_id')
+          .select('id, team_id')
           .eq('player_id', authUser.id)
           .eq('status', 'pending')
         
-        const pendingTeamIds = requests?.map(r => r.team_id) || []
-        setPendingRequests(pendingTeamIds)
+        const pendingMap: Record<string, string> = {}
+        requests?.forEach(r => {
+          pendingMap[r.team_id] = r.id
+        })
+        setPendingRequests(pendingMap)
       }
 
       const { data, error } = await supabase
@@ -142,8 +146,9 @@ export default function TeamsPage() {
       })
 
       if (response.ok) {
+        const data = await response.json()
         // Add to pending requests to update UI
-        setPendingRequests(prev => [...prev, teamId])
+        setPendingRequests(prev => ({ ...prev, [teamId]: data.id }))
       } else {
         const error = await response.json()
         console.error('Error sending join request:', error.error)
@@ -152,6 +157,40 @@ export default function TeamsPage() {
       console.error('Error sending join request:', error)
     } finally {
       setSendingRequest(null)
+    }
+  }
+
+  const handleCancelRequest = async (teamId: string) => {
+    const requestId = pendingRequests[teamId]
+    if (!requestId || cancellingRequest) return
+
+    try {
+      setCancellingRequest(teamId)
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch(`/api/team-join-requests/${requestId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      })
+
+      if (response.ok) {
+        // Remove from pending requests
+        setPendingRequests(prev => {
+          const updated = { ...prev }
+          delete updated[teamId]
+          return updated
+        })
+      } else {
+        const error = await response.json()
+        console.error('Error cancelling request:', error.error)
+      }
+    } catch (error) {
+      console.error('Error cancelling request:', error)
+    } finally {
+      setCancellingRequest(null)
     }
   }
 
@@ -290,9 +329,13 @@ export default function TeamsPage() {
                     <Button disabled className="w-full">
                       Team is Full
                     </Button>
-                  ) : user && pendingRequests.includes(team.id) ? (
-                    <Button disabled className="w-full bg-orange-600">
-                      Request Sent
+                  ) : user && pendingRequests[team.id] ? (
+                    <Button 
+                      onClick={() => handleCancelRequest(team.id)}
+                      disabled={cancellingRequest === team.id}
+                      className="w-full bg-orange-600 hover:bg-orange-700"
+                    >
+                      {cancellingRequest === team.id ? 'Cancelling...' : 'Cancel Request'}
                     </Button>
                   ) : (
                     <Button 

@@ -241,7 +241,7 @@ export async function DELETE(
       .from('team_invitations')
       .select(`
         *,
-        team:teams(captain_id)
+        team:teams(id, name, captain_id)
       `)
       .eq('id', id)
       .eq('status', 'pending')
@@ -255,15 +255,26 @@ export async function DELETE(
       return NextResponse.json({ error: 'Only team captains can cancel invitations' }, { status: 403 });
     }
 
-    // Delete the invitation
-    const { error: deleteError } = await supabase
+    // Update invitation status to cancelled instead of deleting
+    const { error: updateError } = await supabase
       .from('team_invitations')
-      .delete()
+      .update({ status: 'cancelled' })
       .eq('id', id);
 
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 400 });
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
+
+    // Update the notification to show it's been cancelled
+    await supabase
+      .from('notifications')
+      .update({
+        type: 'team_invitation_cancelled',
+        title: `Invitation Cancelled`,
+        message: `The invitation to join ${invitation.team.name} has been withdrawn by the team captain.`,
+      })
+      .eq('type', 'team_invitation')
+      .filter('data->>invitation_id', 'eq', id);
 
     return NextResponse.json({ message: 'Invitation cancelled' });
   } catch (error) {

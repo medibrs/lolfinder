@@ -110,7 +110,7 @@ export async function POST(
       .insert([{
         tournament_id: tournamentId,
         team_id: team_id,
-        status: 'Pending'
+        status: 'pending'
       }])
       .select()
       .single();

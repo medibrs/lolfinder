@@ -31,7 +31,8 @@ export default function PlayersPage() {
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
-  const [sentInvites, setSentInvites] = useState<string[]>([])
+  const [sentInvites, setSentInvites] = useState<Record<string, string>>({})
+  const [cancellingInvite, setCancellingInvite] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -77,12 +78,15 @@ export default function PlayersPage() {
         if (teamData) {
           const { data: invitations } = await supabase
             .from('team_invitations')
-            .select('invited_player_id')
+            .select('id, invited_player_id')
             .eq('team_id', teamData.id)
             .eq('status', 'pending')
           
-          const invitedPlayerIds = invitations?.map(inv => inv.invited_player_id) || []
-          setSentInvites(invitedPlayerIds)
+          const inviteMap: Record<string, string> = {}
+          invitations?.forEach(inv => {
+            inviteMap[inv.invited_player_id] = inv.id
+          })
+          setSentInvites(inviteMap)
         }
       }
 
@@ -126,8 +130,9 @@ export default function PlayersPage() {
       })
 
       if (response.ok) {
+        const data = await response.json()
         // Add to sent invites immediately
-        setSentInvites(prev => [...prev, playerId])
+        setSentInvites(prev => ({ ...prev, [playerId]: data.id }))
       } else {
         const error = await response.json()
         console.error('Error sending invitation:', error.error)
@@ -136,6 +141,39 @@ export default function PlayersPage() {
       console.error('Error sending invitation:', error)
     } finally {
       setSendingInvite(null)
+    }
+  }
+
+  const handleCancelInvite = async (playerId: string) => {
+    const inviteId = sentInvites[playerId]
+    if (!inviteId || cancellingInvite) return
+
+    try {
+      setCancellingInvite(playerId)
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch(`/api/team-invitations/${inviteId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      })
+
+      if (response.ok) {
+        setSentInvites(prev => {
+          const updated = { ...prev }
+          delete updated[playerId]
+          return updated
+        })
+      } else {
+        const error = await response.json()
+        console.error('Error cancelling invite:', error.error)
+      }
+    } catch (error) {
+      console.error('Error cancelling invite:', error)
+    } finally {
+      setCancellingInvite(null)
     }
   }
 
@@ -237,14 +275,13 @@ export default function PlayersPage() {
                         <Button disabled className="w-full">
                           Already in a Team
                         </Button>
-                      ) : sentInvites.includes(player.id) ? (
+                      ) : sentInvites[player.id] ? (
                         <Button 
-                          onClick={() => handleInvitePlayer(player.id)}
-                          disabled={sendingInvite === player.id}
+                          onClick={() => handleCancelInvite(player.id)}
+                          disabled={cancellingInvite === player.id}
                           className="w-full bg-orange-600 hover:bg-orange-700"
-                          title="Click to resend invitation"
                         >
-                          {sendingInvite === player.id ? 'Sending...' : 'Invite Sent (Click to Resend)'}
+                          {cancellingInvite === player.id ? 'Cancelling...' : 'Cancel Invite'}
                         </Button>
                       ) : (
                         <Button 

@@ -224,6 +224,8 @@ export default function NotificationsPage() {
         return <Users className="w-5 h-5 text-gray-500" />
       case 'team_member_removed':
         return <X className="w-5 h-5 text-red-500" />
+      case 'team_invitation_cancelled':
+        return <X className="w-5 h-5 text-orange-500" />
       case 'system':
         return <AlertCircle className="w-5 h-5 text-orange-500" />
       default:
@@ -508,7 +510,7 @@ export default function NotificationsPage() {
                           </div>
                         )}
                         
-                        {/* Team Invitation Actions */}
+                        {/* Team Invitation Actions - only show for pending invitations */}
                         {notification.type === 'team_invitation' && notification.data?.invitation_id && (
                           <div className="flex items-center gap-3">
                             <Button

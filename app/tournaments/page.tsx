@@ -60,7 +60,8 @@ export default function TournamentsPage() {
           
           const statusMap: Record<string, string> = {}
           registrations?.forEach(reg => {
-            statusMap[reg.tournament_id] = reg.status || 'pending'
+            // Normalize status to lowercase for consistent comparison
+            statusMap[reg.tournament_id] = (reg.status || 'pending').toLowerCase()
           })
           setRegistrationStatuses(statusMap)
         }
@@ -120,6 +121,12 @@ export default function TournamentsPage() {
       } else {
         const error = await response.json()
         console.error('Error registering for tournament:', error.error)
+        
+        // If it's a duplicate registration error, update the status to pending
+        if (error.error?.includes('pending') || error.error?.includes('already')) {
+          setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
+        }
+        
         setErrorMessage(error.error || "Failed to register for tournament.")
       }
     } catch (error: any) {

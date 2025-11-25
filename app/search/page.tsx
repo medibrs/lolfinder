@@ -42,10 +42,12 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
-  const [pendingRequests, setPendingRequests] = useState<string[]>([])
+  const [pendingRequests, setPendingRequests] = useState<Record<string, string>>({})
   const [sendingRequest, setSendingRequest] = useState<string | null>(null)
+  const [cancellingRequest, setCancellingRequest] = useState<string | null>(null)
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
-  const [sentInvites, setSentInvites] = useState<string[]>([])
+  const [sentInvites, setSentInvites] = useState<Record<string, string>>({})
+  const [cancellingInvite, setCancellingInvite] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -81,12 +83,15 @@ export default function SearchPage() {
         // Fetch user's pending join requests
         const { data: requests } = await supabase
           .from('team_join_requests')
-          .select('team_id')
+          .select('id, team_id')
           .eq('player_id', authUser.id)
           .eq('status', 'pending')
         
-        const pendingTeamIds = requests?.map(r => r.team_id) || []
-        setPendingRequests(pendingTeamIds)
+        const pendingMap: Record<string, string> = {}
+        requests?.forEach(r => {
+          pendingMap[r.team_id] = r.id
+        })
+        setPendingRequests(pendingMap)
 
         // Fetch pending invitations sent by this team
         if (playerData?.team_id) {
@@ -99,12 +104,15 @@ export default function SearchPage() {
           if (teamData && teamData.captain_id === authUser.id) {
             const { data: invitations } = await supabase
               .from('team_invitations')
-              .select('invited_player_id')
+              .select('id, invited_player_id')
               .eq('team_id', teamData.id)
               .eq('status', 'pending')
             
-            const invitedPlayerIds = invitations?.map(inv => inv.invited_player_id) || []
-            setSentInvites(invitedPlayerIds)
+            const inviteMap: Record<string, string> = {}
+            invitations?.forEach(inv => {
+              inviteMap[inv.invited_player_id] = inv.id
+            })
+            setSentInvites(inviteMap)
           }
         }
       }
@@ -183,8 +191,9 @@ export default function SearchPage() {
       })
 
       if (response.ok) {
+        const data = await response.json()
         // Add to pending requests to update UI
-        setPendingRequests(prev => [...prev, teamId])
+        setPendingRequests(prev => ({ ...prev, [teamId]: data.id }))
       } else {
         const error = await response.json()
         console.error('Error sending join request:', error.error)
@@ -193,6 +202,39 @@ export default function SearchPage() {
       console.error('Error sending join request:', error)
     } finally {
       setSendingRequest(null)
+    }
+  }
+
+  const handleCancelRequest = async (teamId: string) => {
+    const requestId = pendingRequests[teamId]
+    if (!requestId || cancellingRequest) return
+
+    try {
+      setCancellingRequest(teamId)
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch(`/api/team-join-requests/${requestId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      })
+
+      if (response.ok) {
+        setPendingRequests(prev => {
+          const updated = { ...prev }
+          delete updated[teamId]
+          return updated
+        })
+      } else {
+        const error = await response.json()
+        console.error('Error cancelling request:', error.error)
+      }
+    } catch (error) {
+      console.error('Error cancelling request:', error)
+    } finally {
+      setCancellingRequest(null)
     }
   }
 
@@ -218,8 +260,8 @@ export default function SearchPage() {
       })
 
       if (response.ok) {
-        // Refresh data to update UI
-        fetchData()
+        const data = await response.json()
+        setSentInvites(prev => ({ ...prev, [playerId]: data.id }))
       } else {
         const error = await response.json()
         console.error('Error sending invitation:', error.error)
@@ -228,6 +270,39 @@ export default function SearchPage() {
       console.error('Error sending invitation:', error)
     } finally {
       setSendingInvite(null)
+    }
+  }
+
+  const handleCancelInvite = async (playerId: string) => {
+    const inviteId = sentInvites[playerId]
+    if (!inviteId || cancellingInvite) return
+
+    try {
+      setCancellingInvite(playerId)
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch(`/api/team-invitations/${inviteId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      })
+
+      if (response.ok) {
+        setSentInvites(prev => {
+          const updated = { ...prev }
+          delete updated[playerId]
+          return updated
+        })
+      } else {
+        const error = await response.json()
+        console.error('Error cancelling invite:', error.error)
+      }
+    } catch (error) {
+      console.error('Error cancelling invite:', error)
+    } finally {
+      setCancellingInvite(null)
     }
   }
 
@@ -360,9 +435,13 @@ export default function SearchPage() {
                     <Button disabled className="w-full">
                       Team is Full
                     </Button>
-                  ) : user && pendingRequests.includes(team.id) ? (
-                    <Button disabled className="w-full bg-orange-600">
-                      Request Sent
+                  ) : user && pendingRequests[team.id] ? (
+                    <Button 
+                      onClick={() => handleCancelRequest(team.id)}
+                      disabled={cancellingRequest === team.id}
+                      className="w-full bg-orange-600 hover:bg-orange-700"
+                    >
+                      {cancellingRequest === team.id ? 'Cancelling...' : 'Cancel Request'}
                     </Button>
                   ) : (
                     <Button 
@@ -425,9 +504,13 @@ export default function SearchPage() {
                         <Button disabled className="w-full">
                           Already in a Team
                         </Button>
-                      ) : sentInvites.includes(player.id) ? (
-                        <Button disabled className="w-full bg-orange-600">
-                          Invite Sent
+                      ) : sentInvites[player.id] ? (
+                        <Button 
+                          onClick={() => handleCancelInvite(player.id)}
+                          disabled={cancellingInvite === player.id}
+                          className="w-full bg-orange-600 hover:bg-orange-700"
+                        >
+                          {cancellingInvite === player.id ? 'Cancelling...' : 'Cancel Invite'}
                         </Button>
                       ) : (
                         <Button 

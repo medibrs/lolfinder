@@ -2,6 +2,71 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 
+// DELETE /api/team-join-requests/[id] - Cancel own join request (for players)
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // Get current user
+    const authHeader = req.headers.get('authorization');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader?.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Get player record for current user
+    const { data: currentPlayer, error: playerError } = await supabase
+      .from('players')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (playerError || !currentPlayer) {
+      return NextResponse.json({ error: 'Player profile not found' }, { status: 404 });
+    }
+
+    // Get the join request and verify it belongs to the current user
+    const { data: request, error: requestError } = await supabase
+      .from('team_join_requests')
+      .select('*')
+      .eq('id', id)
+      .eq('player_id', currentPlayer.id)
+      .eq('status', 'pending')
+      .single();
+
+    if (requestError || !request) {
+      return NextResponse.json({ error: 'Join request not found or already processed' }, { status: 404 });
+    }
+
+    // Delete the join request
+    const { error: deleteError } = await supabase
+      .from('team_join_requests')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      return NextResponse.json({ error: deleteError.message }, { status: 400 });
+    }
+
+    // Delete the notification sent to the team captain
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('type', 'team_join_request')
+      .filter('data->>request_id', 'eq', id);
+
+    return NextResponse.json({ message: 'Join request cancelled' });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 // PUT /api/team-join-requests/[id] - Accept or reject a join request
 export async function PUT(
   req: NextRequest,

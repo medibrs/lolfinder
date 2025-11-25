@@ -77,16 +77,17 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existingRegistration) {
+      const status = existingRegistration.status?.toLowerCase();
       // If pending or approved, block registration
-      if (existingRegistration.status === 'pending') {
+      if (status === 'pending') {
         return NextResponse.json({ error: 'Team registration is pending approval' }, { status: 400 });
       }
-      if (existingRegistration.status === 'approved') {
+      if (status === 'approved') {
         return NextResponse.json({ error: 'Team is already registered for this tournament' }, { status: 400 });
       }
       
       // If rejected, update the existing record to pending instead of creating new
-      if (existingRegistration.status === 'rejected') {
+      if (status === 'rejected') {
         const { data: updatedRegistration, error: updateError } = await supabase
           .from('tournament_registrations')
           .update({ 
@@ -127,6 +128,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (registrationError) {
+      // Handle unique constraint violation
+      if (registrationError.code === '23505' || registrationError.message.includes('unique constraint')) {
+        return NextResponse.json({ error: 'Your team already has a pending registration for this tournament' }, { status: 400 });
+      }
       return NextResponse.json({ error: registrationError.message }, { status: 400 });
     }
 

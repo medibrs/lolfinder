@@ -9,6 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
@@ -32,6 +43,7 @@ export default function ManageTeamPage() {
     team_size: 6,
     substitute_id: null as string | null
   })
+  const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null)
 
   useEffect(() => {
     loadTeamData()
@@ -604,7 +616,7 @@ export default function ManageTeamPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleRemoveMember(member.id)}
+                          onClick={() => setMemberToRemove({ id: member.id, name: member.summoner_name })}
                         >
                           <UserMinus className="w-4 h-4" />
                         </Button>
@@ -764,6 +776,32 @@ export default function ManageTeamPage() {
           </div>
         </div>
       </div>
+
+      {/* Remove Member Confirmation Dialog */}
+      <AlertDialog open={!!memberToRemove} onOpenChange={(open) => !open && setMemberToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove <span className="font-semibold text-foreground">{memberToRemove?.name}</span> from the team? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={() => {
+                if (memberToRemove) {
+                  handleRemoveMember(memberToRemove.id)
+                  setMemberToRemove(null)
+                }
+              }}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 }
