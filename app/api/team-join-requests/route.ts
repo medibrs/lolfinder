@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Get player record for current user
     const { data: currentPlayer, error: playerError } = await supabase
       .from('players')
-      .select('id, team_id, summoner_name, discord, main_role, tier')
+      .select('id, team_id, summoner_name, discord, main_role, secondary_role, tier, opgg_link')
       .eq('id', user.id)
       .single();
 
@@ -93,20 +93,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Create notification for team captain
+    // Create notification for team captain with detailed player info
     await supabase
       .from('notifications')
       .insert([{
         user_id: team.captain_id,
         type: 'team_join_request',
         title: `Join Request from ${currentPlayer.summoner_name}`,
-        message: validatedData.message || `${currentPlayer.summoner_name} wants to join your team`,
+        message: `${currentPlayer.summoner_name} (${currentPlayer.tier} ${currentPlayer.main_role}) wants to join your team`,
         data: {
           request_id: data.id,
           team_id: team.id,
           team_name: team.name,
-          player_id: currentPlayer.id,
-          player_name: currentPlayer.summoner_name
+          player: {
+            id: currentPlayer.id,
+            summoner_name: currentPlayer.summoner_name,
+            tier: currentPlayer.tier,
+            main_role: currentPlayer.main_role,
+            secondary_role: currentPlayer.secondary_role,
+            opgg_link: currentPlayer.opgg_link
+          }
         }
       }]);
 

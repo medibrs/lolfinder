@@ -39,7 +39,51 @@ export default function NotificationsPage() {
         return
       }
 
-      setNotifications(data || [])
+      // Enrich notifications with player data for join requests and invitations
+      const enrichedNotifications = await Promise.all(
+        (data || []).map(async (notification) => {
+          // For join requests - fetch player info if not already present
+          if (notification.type === 'team_join_request' && notification.data?.player_id && !notification.data?.player) {
+            const { data: playerData } = await supabase
+              .from('players')
+              .select('id, summoner_name, tier, main_role, secondary_role, opgg_link')
+              .eq('id', notification.data.player_id)
+              .single()
+            
+            if (playerData) {
+              notification.data.player = playerData
+            }
+          }
+          
+          // For invitations - fetch inviter info if not already present
+          if (notification.type === 'team_invitation' && !notification.data?.inviter) {
+            // Try to get the invitation to find who sent it
+            if (notification.data?.invitation_id) {
+              const { data: invitationData } = await supabase
+                .from('team_invitations')
+                .select('invited_by')
+                .eq('id', notification.data.invitation_id)
+                .single()
+              
+              if (invitationData?.invited_by) {
+                const { data: inviterData } = await supabase
+                  .from('players')
+                  .select('id, summoner_name, tier, main_role, secondary_role, opgg_link')
+                  .eq('id', invitationData.invited_by)
+                  .single()
+                
+                if (inviterData) {
+                  notification.data.inviter = inviterData
+                }
+              }
+            }
+          }
+          
+          return notification
+        })
+      )
+
+      setNotifications(enrichedNotifications)
 
       // Mark all unread notifications as read when visiting the page
       const unreadNotifications = data?.filter(n => !n.read) || []
@@ -290,6 +334,70 @@ export default function NotificationsPage() {
                           )}
                         </div>
                         <p className="text-muted-foreground mb-3">{notification.message}</p>
+                        
+                        {/* Display detailed user info for invitations */}
+                        {notification.type === 'team_invitation' && notification.data?.inviter && (
+                          <div className="bg-muted/50 rounded-lg p-3 mb-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div>
+                                  <p className="font-medium">{notification.data.inviter.summoner_name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {notification.data.inviter.tier} • {notification.data.inviter.main_role}
+                                    {notification.data.inviter.secondary_role && ` / ${notification.data.inviter.secondary_role}`}
+                                  </p>
+                                </div>
+                              </div>
+                              {notification.data.inviter.opgg_link && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                >
+                                  <a
+                                    href={notification.data.inviter.opgg_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    View OP.GG
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Display detailed user info for join requests */}
+                        {notification.type === 'team_join_request' && notification.data?.player && (
+                          <div className="bg-muted/50 rounded-lg p-3 mb-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div>
+                                  <p className="font-medium">{notification.data.player.summoner_name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {notification.data.player.tier} • {notification.data.player.main_role}
+                                    {notification.data.player.secondary_role && ` / ${notification.data.player.secondary_role}`}
+                                  </p>
+                                </div>
+                              </div>
+                              {notification.data.player.opgg_link && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                >
+                                  <a
+                                    href={notification.data.player.opgg_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    View OP.GG
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                         
                         {/* Team Invitation Actions */}
                         {notification.type === 'team_invitation' && notification.data?.invitation_id && (

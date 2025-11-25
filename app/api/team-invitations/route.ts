@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     // Get player record for current user
     const { data: currentPlayer, error: playerError } = await supabase
       .from('players')
-      .select('id, team_id, summoner_name, discord, main_role, tier')
+      .select('id, team_id, summoner_name, discord, main_role, secondary_role, tier, opgg_link')
       .eq('id', user.id)
       .single();
 
@@ -181,18 +181,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Create notification for invited player
+    // Create notification for invited player with detailed inviter info
     const { error: notificationError } = await supabase
       .from('notifications')
       .insert([{
         user_id: validatedData.invited_player_id,
         type: 'team_invitation',
         title: `Team Invitation from ${team.name}`,
-        message: validatedData.message || `You've been invited to join ${team.name}`,
+        message: `${currentPlayer.summoner_name} (${currentPlayer.tier} ${currentPlayer.main_role}) invites you to join ${team.name}`,
         data: {
           invitation_id: data.id,
           team_id: team.id,
           team_name: team.name,
+          inviter: {
+            id: currentPlayer.id,
+            summoner_name: currentPlayer.summoner_name,
+            tier: currentPlayer.tier,
+            main_role: currentPlayer.main_role,
+            secondary_role: currentPlayer.secondary_role,
+            opgg_link: currentPlayer.opgg_link
+          }
         }
       }]);
 
