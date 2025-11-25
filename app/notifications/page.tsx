@@ -13,6 +13,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [processingAction, setProcessingAction] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -191,10 +192,11 @@ export default function NotificationsPage() {
 
     try {
       setProcessingAction(notification.id)
+      setErrorMessage(null)
       const invitationData = notification.data
       
       if (!invitationData?.invitation_id) {
-        console.error('No invitation_id found in notification data')
+        setErrorMessage('Invalid invitation data')
         return
       }
 
@@ -219,10 +221,16 @@ export default function NotificationsPage() {
         // Reload page to update team status
         setTimeout(() => window.location.reload(), 500)
       } else {
-        console.error('API Error:', responseData)
+        // Show error message to user
+        setErrorMessage(responseData.error || 'Failed to process invitation')
+        
+        // Auto-clear error after 5 seconds
+        setTimeout(() => setErrorMessage(null), 5000)
       }
     } catch (error) {
       console.error(`Error ${action}ing invitation:`, error)
+      setErrorMessage('An unexpected error occurred')
+      setTimeout(() => setErrorMessage(null), 5000)
     } finally {
       setProcessingAction(null)
     }
@@ -233,10 +241,11 @@ export default function NotificationsPage() {
 
     try {
       setProcessingAction(notification.id)
+      setErrorMessage(null)
       const requestData = notification.data
       
       if (!requestData?.request_id) {
-        console.error('No request_id found in notification data')
+        setErrorMessage('Invalid request data')
         return
       }
 
@@ -261,10 +270,16 @@ export default function NotificationsPage() {
         // Reload page to update team status
         setTimeout(() => window.location.reload(), 500)
       } else {
-        console.error('API Error:', responseData)
+        // Show error message to user
+        setErrorMessage(responseData.error || 'Failed to process request')
+        
+        // Auto-clear error after 5 seconds
+        setTimeout(() => setErrorMessage(null), 5000)
       }
     } catch (error) {
       console.error(`Error ${action}ing join request:`, error)
+      setErrorMessage('An unexpected error occurred')
+      setTimeout(() => setErrorMessage(null), 5000)
     } finally {
       setProcessingAction(null)
     }
@@ -311,6 +326,22 @@ export default function NotificationsPage() {
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
           </p>
         </div>
+
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <p className="text-red-500 font-medium">{errorMessage}</p>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="ml-auto"
+              onClick={() => setErrorMessage(null)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
 
         {/* Notifications List */}
         <div className="space-y-4">

@@ -72,7 +72,7 @@ export async function PUT(
       // Check if player is already in a team
       if (currentPlayer.team_id) {
         console.log('Player already in team:', currentPlayer.team_id)
-        return NextResponse.json({ error: 'You are already in a team' }, { status: 400 });
+        return NextResponse.json({ error: 'You are already in a team. Leave your current team first to accept this invitation.' }, { status: 400 });
       }
 
       // Check if team is already full
