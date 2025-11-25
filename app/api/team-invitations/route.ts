@@ -166,7 +166,49 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existingInvitation) {
-      // Already has a pending invitation, just return it
+      // Already has a pending invitation - delete old notification and create a new one (resend)
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', validatedData.invited_player_id)
+        .eq('type', 'team_invitation')
+        .filter('data->>invitation_id', 'eq', existingInvitation.id);
+
+      // Create fresh notification for the existing invitation
+      await supabase
+        .from('notifications')
+        .insert([{
+          user_id: validatedData.invited_player_id,
+          type: 'team_invitation',
+          title: `Team Invitation from ${team.name}`,
+          message: `${currentPlayer.summoner_name} (${currentPlayer.tier} ${currentPlayer.main_role}) invites you to join ${team.name}`,
+          data: {
+            invitation_id: existingInvitation.id,
+            team_id: team.id,
+            team_name: team.name,
+            team: {
+              member_count: memberCount,
+              max_size: maxSize,
+              average_rank: averageRank,
+              open_positions: team.open_positions || [],
+              filled_roles: filledRoles,
+              members: teamMembers?.map(m => ({
+                summoner_name: m.summoner_name,
+                main_role: m.main_role,
+                tier: m.tier
+              })) || []
+            },
+            inviter: {
+              id: currentPlayer.id,
+              summoner_name: currentPlayer.summoner_name,
+              tier: currentPlayer.tier,
+              main_role: currentPlayer.main_role,
+              secondary_role: currentPlayer.secondary_role,
+              opgg_link: currentPlayer.opgg_link
+            }
+          }
+        }]);
+
       return NextResponse.json(existingInvitation, { status: 200 });
     }
 
