@@ -225,7 +225,7 @@ export default function AuthPage() {
                       divider: 'text-xs text-purple-300 my-2',
                     },
                   }}
-                  providers={['discord', 'google']}
+                  providers={[]}
                   redirectTo={`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`}
                   theme="dark"
                   localization={{
@@ -304,7 +304,12 @@ export default function AuthPage() {
                     Terms of Service
                   </a>{' '}
                   and{' '}
-                  <a href="#" className="text-purple-400 hover:text-purple-300">
+                  <a 
+                    href="https://www.termsfeed.com/live/9fc90b22-8e00-4dc8-8a16-47e88d3a59e0" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-400 hover:text-purple-300"
+                  >
                     Privacy Policy
                   </a>
                 </p>
