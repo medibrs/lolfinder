@@ -353,7 +353,7 @@ export default function Navigation() {
                 pathname === "/search" && "text-primary font-medium"
               )}
             >
-              Search
+              Join/Invite
             </Link>
           </div>
 
