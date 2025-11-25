@@ -29,7 +29,8 @@ export default function ManageTeamPage() {
     description: '',
     open_positions: [] as string[],
     recruiting_status: 'Open' as 'Open' | 'Closed' | 'Full',
-    team_size: 6
+    team_size: 6,
+    substitute_id: null as string | null
   })
 
   useEffect(() => {
@@ -65,29 +66,29 @@ export default function ManageTeamPage() {
       console.log('Team data with players:', teamData)
 
       setTeam(teamData)
+
+      // Always query players directly to get is_substitute field
+      console.log('Querying players directly for team:', teamData.id)
+      const { data: membersData, error: membersError } = await supabase
+        .from('players')
+        .select('*')
+        .eq('team_id', teamData.id)
+
+      console.log('Direct query result:', { membersData, membersError })
+      setTeamMembers(membersData || [])
+      
+      // Find the substitute player from the queried members
+      const substituteMember = membersData?.find((p: any) => p.is_substitute)
+      console.log('Found substitute:', substituteMember)
+      
       setFormData({
         name: teamData.name,
         description: teamData.description || '',
         open_positions: teamData.open_positions || [],
         recruiting_status: teamData.recruiting_status,
-        team_size: teamData.team_size || 6
+        team_size: teamData.team_size || 6,
+        substitute_id: substituteMember?.id || null
       })
-
-      // Get team members from the view's players array or query directly
-      if (teamData.players && Array.isArray(teamData.players)) {
-        console.log('Players from view:', teamData.players)
-        setTeamMembers(teamData.players)
-      } else {
-        // Fallback: query players directly
-        console.log('Querying players directly for team:', teamData.id)
-        const { data: membersData, error: membersError } = await supabase
-          .from('players')
-          .select('*')
-          .eq('team_id', teamData.id)
-
-        console.log('Direct query result:', { membersData, membersError })
-        setTeamMembers(membersData || [])
-      }
 
       // Fetch pending join requests
       const { data: requestsData } = await supabase
@@ -138,6 +139,33 @@ export default function ManageTeamPage() {
       if (error) {
         console.error('Error updating team:', error)
         return
+      }
+
+      // Update substitute status for all players
+      console.log('Updating substitute, selected ID:', formData.substitute_id)
+      
+      // First, remove substitute status from all players
+      const { error: clearError } = await supabase
+        .from('players')
+        .update({ is_substitute: false })
+        .eq('team_id', team.id)
+      
+      if (clearError) {
+        console.error('Error clearing substitutes:', clearError)
+      }
+
+      // Then set the selected player as substitute (if any)
+      if (formData.substitute_id) {
+        const { error: setError } = await supabase
+          .from('players')
+          .update({ is_substitute: true })
+          .eq('id', formData.substitute_id)
+        
+        if (setError) {
+          console.error('Error setting substitute:', setError)
+        } else {
+          console.log('Successfully set substitute:', formData.substitute_id)
+        }
       }
 
       setEditing(false)
@@ -457,6 +485,30 @@ export default function ManageTeamPage() {
                       </div>
                     </div>
 
+                    {/* Substitute Selection - Only show if team has 6 members */}
+                    {teamMembers.length === 6 && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Substitute Player</label>
+                        <select
+                          value={formData.substitute_id || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, substitute_id: e.target.value || null }))}
+                          className="w-full p-2 border rounded-md bg-background"
+                        >
+                          <option value="">No Substitute</option>
+                          {teamMembers
+                            .filter(member => member.id !== team.captain_id)
+                            .map(member => (
+                              <option key={member.id} value={member.id}>
+                                {member.summoner_name} ({member.main_role})
+                              </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Select which player will be the substitute
+                        </p>
+                      </div>
+                    )}
+
                     <Button onClick={handleSaveTeam} className="w-full">
                       Save Changes
                     </Button>
@@ -524,29 +576,26 @@ export default function ManageTeamPage() {
                                 Captain
                               </Badge>
                             )}
+                            {member.is_substitute && (
+                              <Badge className="bg-blue-600">
+                                Sub
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {member.main_role} • {member.tier}
                           </p>
                         </div>
                       </div>  
-                      <div className="flex items-center gap-2">
-                        {member.id === team.captain_id && (
-                          <Badge variant="default" className="flex items-center gap-1">
-                            <Crown className="w-3 h-3" />
-                            Captain
-                          </Badge>
-                        )}
-                        {member.id !== team.captain_id && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRemoveMember(member.id)}
-                          >
-                            <UserMinus className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
+                      {member.id !== team.captain_id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRemoveMember(member.id)}
+                        >
+                          <UserMinus className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                   

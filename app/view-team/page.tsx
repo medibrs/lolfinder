@@ -259,6 +259,11 @@ export default function ViewTeamPage() {
                                 Captain
                               </Badge>
                             )}
+                            {member.is_substitute && (
+                              <Badge className="bg-blue-600">
+                                Sub
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {member.main_role} • {member.tier}

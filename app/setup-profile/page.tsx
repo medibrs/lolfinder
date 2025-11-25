@@ -88,7 +88,20 @@ export default function SetupProfilePage() {
         }
         
         if (existingProfile) { // Check if profile exists (no error check needed with maybeSingle)
-          // Load existing profile data for editing
+          // Check if profile is complete
+          const isProfileComplete = existingProfile.summoner_name && 
+                                   existingProfile.discord && 
+                                   existingProfile.main_role && 
+                                   existingProfile.tier;
+          
+          if (isProfileComplete) {
+            // Profile is complete, redirect to home
+            console.log('Profile already complete, redirecting to home')
+            router.push('/')
+            return
+          }
+          
+          // Profile exists but incomplete, load for editing
           setFormData({
             summoner_name: existingProfile.summoner_name || '',
             discord: existingProfile.discord || '',

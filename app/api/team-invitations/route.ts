@@ -132,13 +132,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Player is already in a team' }, { status: 400 });
     }
 
-    // Delete any old pending invitations (cleanup stale data)
-    await supabase
+    // First, check if there's already a pending invitation
+    const { data: existingInvitation } = await supabase
+      .from('team_invitations')
+      .select('id, status')
+      .eq('team_id', validatedData.team_id)
+      .eq('invited_player_id', validatedData.invited_player_id)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (existingInvitation) {
+      // Already has a pending invitation, just return it
+      return NextResponse.json(existingInvitation, { status: 200 });
+    }
+
+    // Delete any old non-pending invitations (accepted/rejected)
+    const { error: deleteError } = await supabase
       .from('team_invitations')
       .delete()
       .eq('team_id', validatedData.team_id)
       .eq('invited_player_id', validatedData.invited_player_id)
-      .eq('status', 'pending');
+      .neq('status', 'pending');
+
+    if (deleteError) {
+      console.error('Error deleting old invitations:', deleteError);
+    }
 
     // Delete old unread notifications for invitations from this team
     await supabase
@@ -149,7 +167,7 @@ export async function POST(request: NextRequest) {
       .eq('read', false)
       .filter('data->>team_id', 'eq', validatedData.team_id);
 
-    // Create invitation
+    // Create new invitation
     const { data, error } = await supabase
       .from('team_invitations')
       .insert([{

@@ -302,11 +302,13 @@ export default function Navigation() {
                   {!user && (
                     <>
                       <div className="border-t my-1"></div>
-                      <Button asChild size="sm" className="w-full">
-                        <Link href="/auth" onClick={() => setMobileMenuOpen(false)}>
-                          Create an Account
-                        </Link>
-                      </Button>
+                      {pathname !== '/auth' && (
+                        <Button asChild size="sm" className="w-full">
+                          <Link href="/auth" onClick={() => setMobileMenuOpen(false)}>
+                            Sign In
+                          </Link>
+                        </Button>
+                      )}
                     </>
                   )}
                 </nav>
@@ -412,9 +414,11 @@ export default function Navigation() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild className="bg-primary hover:bg-primary/90">
-              <Link href="/auth">Create an Account</Link>
-            </Button>
+            pathname !== '/auth' && (
+              <Button asChild className="bg-primary hover:bg-primary/90">
+                <Link href="/auth">Sign In</Link>
+              </Button>
+            )
           )}
           </div>
         </div>

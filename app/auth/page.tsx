@@ -153,7 +153,7 @@ export default function AuthPage() {
             <Card className="w-full max-w-sm lg:max-w-md bg-gray-900/90 backdrop-blur-sm border-purple-500/20 shadow-2xl max-h-[80vh] overflow-y-auto">
               <CardHeader className="space-y-1 text-center pb-4">
                 <CardTitle className="text-xl lg:text-2xl font-bold text-white">
-                  {view === 'sign_in' ? 'Welcome Back' : 'Create Account'}
+                  {view === 'sign_in' ? 'Welcome Back' : 'Sign Up'}
                 </CardTitle>
                 <CardDescription className="text-purple-200 text-sm">
                   {view === 'sign_in' 
@@ -183,7 +183,7 @@ export default function AuthPage() {
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    Create Account
+                    Sign Up
                   </button>
                 </div>
 
