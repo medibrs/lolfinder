@@ -56,10 +56,12 @@ export default function NotificationsPage() {
             }
           }
           
-          // For invitations - fetch inviter info if not already present
-          if (notification.type === 'team_invitation' && !notification.data?.inviter) {
-            // Try to get the invitation to find who sent it
-            if (notification.data?.invitation_id) {
+          // For invitations - fetch inviter and team info if not already present
+          if (notification.type === 'team_invitation') {
+            const teamId = notification.data?.team_id
+            
+            // Fetch inviter info if missing
+            if (!notification.data?.inviter && notification.data?.invitation_id) {
               const { data: invitationData } = await supabase
                 .from('team_invitations')
                 .select('invited_by')
@@ -75,6 +77,48 @@ export default function NotificationsPage() {
                 
                 if (inviterData) {
                   notification.data.inviter = inviterData
+                }
+              }
+            }
+            
+            // Fetch team info if missing
+            if (!notification.data?.team && teamId) {
+              // Get team details
+              const { data: teamData } = await supabase
+                .from('teams')
+                .select('id, name, team_size, open_positions')
+                .eq('id', teamId)
+                .single()
+              
+              // Get team members
+              const { data: teamMembers } = await supabase
+                .from('players')
+                .select('summoner_name, main_role, tier')
+                .eq('team_id', teamId)
+              
+              if (teamData) {
+                const memberCount = teamMembers?.length || 0
+                const filledRoles = teamMembers?.map(m => m.main_role).filter(Boolean) || []
+                
+                // Calculate average rank
+                const rankOrder = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
+                const memberRanks = teamMembers?.map(m => {
+                  const tierBase = m.tier?.split(' ')[0]
+                  return rankOrder.indexOf(tierBase)
+                }).filter(r => r >= 0) || []
+                
+                const avgRankIndex = memberRanks.length > 0 
+                  ? Math.round(memberRanks.reduce((a, b) => a + b, 0) / memberRanks.length)
+                  : -1
+                const averageRank = avgRankIndex >= 0 ? rankOrder[avgRankIndex] : 'Unknown'
+                
+                notification.data.team = {
+                  member_count: memberCount,
+                  max_size: teamData.team_size || 6,
+                  average_rank: averageRank,
+                  open_positions: teamData.open_positions || [],
+                  filled_roles: filledRoles,
+                  members: teamMembers || []
                 }
               }
             }
@@ -366,35 +410,69 @@ export default function NotificationsPage() {
                         </div>
                         <p className="text-muted-foreground mb-3">{notification.message}</p>
                         
-                        {/* Display detailed user info for invitations */}
-                        {notification.type === 'team_invitation' && notification.data?.inviter && (
-                          <div className="bg-muted/50 rounded-lg p-3 mb-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div>
-                                  <p className="font-medium">{notification.data.inviter.summoner_name}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {notification.data.inviter.tier} • {notification.data.inviter.main_role}
-                                    {notification.data.inviter.secondary_role && ` / ${notification.data.inviter.secondary_role}`}
-                                  </p>
-                                </div>
+                        {/* Display detailed team info for invitations */}
+                        {notification.type === 'team_invitation' && notification.data?.team && (
+                          <div className="bg-muted/50 rounded-lg p-3 mb-3 space-y-3">
+                            {/* Team Stats */}
+                            <div className="flex flex-wrap gap-4 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Team Size:</span>{' '}
+                                <span className="font-medium">{notification.data.team.member_count}/{notification.data.team.max_size}</span>
                               </div>
-                              {notification.data.inviter.opgg_link && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  asChild
-                                >
-                                  <a
-                                    href={notification.data.inviter.opgg_link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    View OP.GG
-                                  </a>
-                                </Button>
+                              <div>
+                                <span className="text-muted-foreground">Avg Rank:</span>{' '}
+                                <span className="font-medium">{notification.data.team.average_rank}</span>
+                              </div>
+                              {notification.data.team.open_positions?.length > 0 && (
+                                <div>
+                                  <span className="text-muted-foreground">Looking for:</span>{' '}
+                                  <span className="font-medium text-green-500">
+                                    {notification.data.team.open_positions.join(', ')}
+                                  </span>
+                                </div>
                               )}
                             </div>
+                            
+                            {/* Current Team Members */}
+                            {notification.data.team.members?.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-2">Current Roster:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {notification.data.team.members.map((member: any, idx: number) => (
+                                    <Badge key={idx} variant="secondary" className="text-xs">
+                                      {member.summoner_name} • {member.tier?.split(' ')[0]} {member.main_role}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Inviter Info */}
+                            {notification.data.inviter && (
+                              <div className="pt-2 border-t border-border">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Invited by:</p>
+                                    <p className="font-medium">{notification.data.inviter.summoner_name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {notification.data.inviter.tier} • {notification.data.inviter.main_role}
+                                      {notification.data.inviter.secondary_role && ` / ${notification.data.inviter.secondary_role}`}
+                                    </p>
+                                  </div>
+                                  {notification.data.inviter.opgg_link && (
+                                    <Button variant="outline" size="sm" asChild>
+                                      <a
+                                        href={notification.data.inviter.opgg_link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        View OP.GG
+                                      </a>
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                         

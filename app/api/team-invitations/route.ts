@@ -101,10 +101,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Please complete your player profile before sending team invitations.' }, { status: 400 });
     }
 
-    // Verify user is the captain of the team
+    // Verify user is the captain of the team and get team details
     const { data: team, error: teamError } = await supabase
       .from('teams')
-      .select('id, name, captain_id')
+      .select('id, name, captain_id, team_size, open_positions, recruiting_status')
       .eq('id', validatedData.team_id)
       .single();
 
@@ -115,6 +115,30 @@ export async function POST(request: NextRequest) {
     if (team.captain_id !== currentPlayer.id) {
       return NextResponse.json({ error: 'Only team captains can send invitations' }, { status: 403 });
     }
+
+    // Get team members with their roles and ranks
+    const { data: teamMembers } = await supabase
+      .from('players')
+      .select('id, summoner_name, main_role, tier')
+      .eq('team_id', validatedData.team_id);
+
+    const memberCount = teamMembers?.length || 0;
+    const maxSize = team.team_size || 6;
+    
+    // Get filled roles
+    const filledRoles = teamMembers?.map(m => m.main_role).filter(Boolean) || [];
+    
+    // Calculate average rank (simplified)
+    const rankOrder = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger'];
+    const memberRanks = teamMembers?.map(m => {
+      const tierBase = m.tier?.split(' ')[0];
+      return rankOrder.indexOf(tierBase);
+    }).filter(r => r >= 0) || [];
+    
+    const avgRankIndex = memberRanks.length > 0 
+      ? Math.round(memberRanks.reduce((a, b) => a + b, 0) / memberRanks.length)
+      : -1;
+    const averageRank = avgRankIndex >= 0 ? rankOrder[avgRankIndex] : 'Unknown';
 
     // Check if invited player exists and is not already in a team
     const { data: invitedPlayer, error: invitedPlayerError } = await supabase
@@ -181,7 +205,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Create notification for invited player with detailed inviter info
+    // Create notification for invited player with detailed team and inviter info
     const { error: notificationError } = await supabase
       .from('notifications')
       .insert([{
@@ -193,6 +217,18 @@ export async function POST(request: NextRequest) {
           invitation_id: data.id,
           team_id: team.id,
           team_name: team.name,
+          team: {
+            member_count: memberCount,
+            max_size: maxSize,
+            average_rank: averageRank,
+            open_positions: team.open_positions || [],
+            filled_roles: filledRoles,
+            members: teamMembers?.map(m => ({
+              summoner_name: m.summoner_name,
+              main_role: m.main_role,
+              tier: m.tier
+            })) || []
+          },
           inviter: {
             id: currentPlayer.id,
             summoner_name: currentPlayer.summoner_name,
