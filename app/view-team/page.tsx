@@ -34,13 +34,11 @@ export default function ViewTeamPage() {
         router.push('/auth')
         return
       }
-      
-      setUser(authUser)
 
-      // Get player's team
+      // Get player's team and summoner name
       const { data: playerData } = await supabase
         .from('players')
-        .select('team_id')
+        .select('team_id, summoner_name')
         .eq('id', authUser.id)
         .single()
 
@@ -48,6 +46,8 @@ export default function ViewTeamPage() {
         router.push('/teams')
         return
       }
+      
+      setUser({ ...authUser, summoner_name: playerData.summoner_name })
 
       // Get team data using the view
       const { data: teamData, error: teamError } = await supabase
@@ -122,8 +122,8 @@ export default function ViewTeamPage() {
         .insert({
           user_id: team.captain_id,
           type: 'team_member_left',
-          title: `${user.email?.split('@')[0] || 'A player'} left your team`,
-          message: `A team member has left ${team.name}. You now have ${teamMembers.length - 1} members.`,
+          title: `${user.summoner_name || 'A player'} left your team`,
+          message: `${user.summoner_name || 'A team member'} has left ${team.name}. You now have ${teamMembers.length - 1} members.`,
           data: {
             team_id: team.id,
             team_name: team.name,
