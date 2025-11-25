@@ -242,7 +242,7 @@ export default function Navigation() {
                       pathname === "/search" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
                     )}
                   >
-                    Search
+                    Join/Invite
                   </Link>
                   
                   {user && (
