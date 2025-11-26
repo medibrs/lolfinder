@@ -7,7 +7,9 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
+import { cache, CacheConfig } from '@/lib/cache'
 import { getRankImage } from '@/lib/rank-utils'
+import { Skeleton } from '@/components/ui/skeleton'
 import RoleIcon from '@/components/RoleIcon'
 import {
   Tooltip,
@@ -49,6 +51,7 @@ export default function SearchPage() {
   const [teams, setTeams] = useState<any[]>([])
   const [players, setPlayers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [pendingRequests, setPendingRequests] = useState<Record<string, string>>({})
@@ -61,6 +64,30 @@ export default function SearchPage() {
 
   useEffect(() => {
     checkAuthAndFetchData()
+    
+    // Refetch data when page becomes visible
+    const handleVisibilityChange = async () => {
+      if (!document.hidden) {
+        // Invalidate cache to force fresh data when page becomes visible
+        await cache.invalidate('search_teams', 'search')
+        await cache.invalidate('search_players', 'search')
+        fetchData()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Also refetch every 30 seconds to keep data fresh
+    const interval = setInterval(async () => {
+      await cache.invalidate('search_teams', 'search')
+      await cache.invalidate('search_players', 'search')
+      fetchData()
+    }, 30000)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(interval)
+    }
   }, [])
 
   const checkAuthAndFetchData = async () => {
@@ -137,6 +164,30 @@ export default function SearchPage() {
         }
       }
 
+      // Use cache for search data
+      const teamsCacheKey = 'search_teams'
+      const playersCacheKey = 'search_players'
+      const cacheOptions = {
+        ttl: 3 * 60 * 1000, // 3 minutes cache for search data
+        namespace: 'search'
+      }
+
+      // Try to get from cache first
+      const [cachedTeams, cachedPlayers] = await Promise.all([
+        cache.get<any[]>(teamsCacheKey, cacheOptions),
+        cache.get<any[]>(playersCacheKey, cacheOptions)
+      ])
+
+      if (cachedTeams || cachedPlayers) {
+        console.log('🎯 Search Cache HIT - Loading from cache')
+        if (cachedTeams) setTeams(cachedTeams)
+        if (cachedPlayers) setPlayers(cachedPlayers)
+        setLoading(false) // Hide loading immediately when cache is available
+      } else {
+        console.log('❌ Search Cache MISS - Loading from database')
+      }
+
+      // Always fetch fresh data in background
       const [teamsResult, playersResult] = await Promise.all([
         supabase
           .from('teams')
@@ -183,10 +234,17 @@ export default function SearchPage() {
 
       setTeams(teamsWithMembers)
       setPlayers(playersResult.data || [])
+      
+      // Update cache with fresh data
+      await Promise.all([
+        cache.set(teamsCacheKey, teamsWithMembers, cacheOptions),
+        cache.set(playersCacheKey, playersResult.data || [], cacheOptions)
+      ])
+      console.log('💾 Search Cache SET - Stored fresh search data in cache')
     } catch (error) {
       console.error('Error:', error)
     } finally {
-      setLoading(false)
+      setInitialLoad(false) // Mark initial load as complete
     }
   }
 
@@ -214,6 +272,10 @@ export default function SearchPage() {
         const data = await response.json()
         // Add to pending requests to update UI
         setPendingRequests(prev => ({ ...prev, [teamId]: data.id }))
+        
+        // Invalidate search cache to refresh data
+        await cache.invalidate('search_teams', 'search')
+        await cache.invalidate('search_players', 'search')
       } else {
         const error = await response.json()
         console.error('Error sending join request:', error.error)
@@ -247,6 +309,10 @@ export default function SearchPage() {
           delete updated[teamId]
           return updated
         })
+        
+        // Invalidate search cache to refresh data
+        await cache.invalidate('search_teams', 'search')
+        await cache.invalidate('search_players', 'search')
       } else {
         const error = await response.json()
         console.error('Error cancelling request:', error.error)
@@ -282,6 +348,10 @@ export default function SearchPage() {
       if (response.ok) {
         const data = await response.json()
         setSentInvites(prev => ({ ...prev, [playerId]: data.id }))
+        
+        // Invalidate search cache to refresh data
+        await cache.invalidate('search_teams', 'search')
+        await cache.invalidate('search_players', 'search')
       } else {
         const error = await response.json()
         console.error('Error sending invitation:', error.error)
@@ -319,6 +389,10 @@ export default function SearchPage() {
           delete updated[playerId]
           return updated
         })
+        
+        // Invalidate search cache to refresh data
+        await cache.invalidate('search_teams', 'search')
+        await cache.invalidate('search_players', 'search')
       } else {
         const error = await response.json()
         console.error('Error cancelling invite:', error.error)
@@ -379,19 +453,100 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        {initialLoad ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Skeleton loaders for teams/players */}
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="bg-card border-border p-6">
+                {searchType === 'teams' ? (
+                  // Team skeleton
+                  <>
+                    <div className="mb-4">
+                      <Skeleton className="h-8 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                    
+                    {/* Team Info Skeleton */}
+                    <div className="mb-4 space-y-2">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-12" />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                    </div>
+                    
+                    {/* Team Roster Skeleton */}
+                    <div className="mb-4">
+                      <Skeleton className="h-3 w-16 mb-2" />
+                      <div className="flex flex-wrap gap-1.5">
+                        {[...Array(5)].map((_, j) => (
+                          <Skeleton key={j} className="h-6 w-16 rounded" />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Open Positions Skeleton */}
+                    <div className="mb-4">
+                      <div className="flex flex-wrap gap-2">
+                        {[...Array(3)].map((_, j) => (
+                          <Skeleton key={j} className="h-8 w-20 rounded" />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Action Button Skeleton */}
+                    <Skeleton className="h-10 w-full rounded" />
+                  </>
+                ) : (
+                  // Player skeleton
+                  <>
+                    <div className="flex items-start gap-4 mb-4">
+                      <Skeleton className="w-16 h-16 rounded" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
+                      </div>
+                    </div>
+                    
+                    {/* Player Details Skeleton */}
+                    <div className="space-y-3">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </>
+                )}
+              </Card>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {searchType === 'teams' ? (
               teams.length > 0 ? (
-                teams.filter(team => {
-                  const matchesRole = !selectedRole || team.open_positions.includes(selectedRole)
-                  const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase())
-                  return matchesRole && matchesSearch
-                }).map(team => (
+                (() => {
+                  const filteredTeams = teams.filter(team => {
+                    const matchesRole = !selectedRole || team.open_positions.includes(selectedRole)
+                    const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase())
+                    return matchesRole && matchesSearch
+                  })
+                  
+                  // Sort to put user's team first
+                  const sortedTeams = [...filteredTeams].sort((a, b) => {
+                    // Put user's team first
+                    if (userTeam && a.id === userTeam.id) return -1
+                    if (userTeam && b.id === userTeam.id) return 1
+                    return 0
+                  })
+                  
+                  return sortedTeams.map(team => (
                   <Card key={team.id} className="bg-card border-border p-6 hover:border-primary transition">
                     <h3 className="text-2xl font-bold mb-2">{team.name}</h3>
                     {team.description && (
@@ -478,6 +633,7 @@ export default function SearchPage() {
                   )}
                   </Card>
                 ))
+                })()
               ) : (
                 <div className="col-span-full text-center py-12">
                   <p className="text-muted-foreground">No teams found looking for players.</p>
@@ -495,10 +651,16 @@ export default function SearchPage() {
                   const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
                   const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
                   
+                  // Filter out players who are already in any team
+                  const isNotInTeam = !player.team_id
+                  
+                  // Filter out the current user
+                  const isNotCurrentUser = player.id !== user?.id
+                  
                   // END OF TEMPORARY TEST PROFILE FILTER - REMOVE ABOVE LOGIC WHEN GOING PUBLIC
                   const isRealProfile = !isTestProfile;
                   
-                  return matchesSearch && matchesRole && isRealProfile
+                  return matchesSearch && matchesRole && isRealProfile && isNotInTeam && isNotCurrentUser
                 }).map(player => (
                   <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
                     <div className="flex items-start gap-4 mb-4">
@@ -553,11 +715,7 @@ export default function SearchPage() {
                     )}
                     
                     {user && userTeam && player.id !== user.id ? (
-                      player.team_id ? (
-                        <Button disabled className="w-full">
-                          Already in a Team
-                        </Button>
-                      ) : sentInvites[player.id] ? (
+                      sentInvites[player.id] ? (
                         <Button 
                           onClick={() => handleCancelInvite(player.id)}
                           disabled={cancellingInvite === player.id}

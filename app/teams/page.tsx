@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
+import { cache, CacheConfig } from '@/lib/cache'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -29,6 +31,7 @@ export default function TeamsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [teams, setTeams] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [pendingRequests, setPendingRequests] = useState<Record<string, string>>({})
@@ -38,6 +41,28 @@ export default function TeamsPage() {
 
   useEffect(() => {
     checkAuthAndFetchTeams()
+    
+    // Refetch data when page becomes visible
+    const handleVisibilityChange = async () => {
+      if (!document.hidden) {
+        // Invalidate cache to force fresh data when page becomes visible
+        await cache.invalidate('all_teams', 'teams')
+        fetchTeams()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Also refetch every 30 seconds to keep data fresh, but invalidate cache first
+    const interval = setInterval(async () => {
+      await cache.invalidate('all_teams', 'teams')
+      fetchTeams()
+    }, 30000)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(interval)
+    }
   }, [])
 
   const checkAuthAndFetchTeams = async () => {
@@ -91,6 +116,24 @@ export default function TeamsPage() {
         setPendingRequests(pendingMap)
       }
 
+      // Use cache for teams data
+      const cacheKey = 'all_teams'
+      const cacheOptions = {
+        ttl: 3 * 60 * 1000, // 3 minutes cache for team data
+        namespace: 'teams'
+      }
+
+      // Try to get from cache first
+      const cachedTeams = await cache.get<any[]>(cacheKey, cacheOptions)
+      if (cachedTeams) {
+        console.log('🎯 Teams Cache HIT - Loading teams from cache')
+        setTeams(cachedTeams)
+        setLoading(false) // Hide loading immediately when cache is available
+      } else {
+        console.log('❌ Teams Cache MISS - Loading teams from database')
+      }
+
+      // Always fetch fresh data in background
       const { data, error } = await supabase
         .from('teams')
         .select('*, captain:players!captain_id(summoner_name)')
@@ -131,10 +174,14 @@ export default function TeamsPage() {
       )
 
       setTeams(teamsWithMembers)
+      
+      // Update cache with fresh data
+      await cache.set(cacheKey, teamsWithMembers, cacheOptions)
+      console.log('💾 Teams Cache SET - Stored fresh team data in cache')
     } catch (error) {
       console.error('Error:', error)
     } finally {
-      setLoading(false)
+      setInitialLoad(false) // Mark initial load as complete
     }
   }
 
@@ -169,6 +216,9 @@ export default function TeamsPage() {
         const data = await response.json()
         // Add to pending requests to update UI
         setPendingRequests(prev => ({ ...prev, [teamId]: data.id }))
+        
+        // Invalidate teams cache to refresh data
+        await cache.invalidate('all_teams', 'teams')
       } else {
         const error = await response.json()
         console.error('Error sending join request:', error.error)
@@ -203,6 +253,9 @@ export default function TeamsPage() {
           delete updated[teamId]
           return updated
         })
+        
+        // Invalidate teams cache to refresh data
+        await cache.invalidate('all_teams', 'teams')
       } else {
         const error = await response.json()
         console.error('Error cancelling request:', error.error)
@@ -268,9 +321,55 @@ export default function TeamsPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        {initialLoad ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Skeleton loaders for teams */}
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="bg-card border-border p-6">
+                <div className="mb-4">
+                  <Skeleton className="h-8 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+                
+                {/* Team Info Skeleton */}
+                <div className="mb-4 space-y-2">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+                
+                {/* Team Roster Skeleton */}
+                <div className="mb-4">
+                  <Skeleton className="h-3 w-16 mb-2" />
+                  <div className="flex flex-wrap gap-1.5">
+                    {[...Array(5)].map((_, j) => (
+                      <Skeleton key={j} className="h-6 w-16 rounded" />
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Open Positions Skeleton */}
+                <div className="mb-6">
+                  <div className="flex flex-wrap gap-2">
+                    {[...Array(3)].map((_, j) => (
+                      <Skeleton key={j} className="h-8 w-20 rounded" />
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Action Button Skeleton */}
+                <Skeleton className="h-10 w-full rounded" />
+              </Card>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

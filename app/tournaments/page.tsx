@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { cache, CacheConfig } from '@/lib/cache'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
 import { CheckCircle, XCircle } from 'lucide-react'
 
 interface Tournament {
@@ -23,6 +25,7 @@ interface Tournament {
 export default function TournamentsPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [registrationStatuses, setRegistrationStatuses] = useState<Record<string, string>>({})
@@ -33,6 +36,28 @@ export default function TournamentsPage() {
 
   useEffect(() => {
     fetchData()
+    
+    // Refetch data when page becomes visible
+    const handleVisibilityChange = async () => {
+      if (!document.hidden) {
+        // Invalidate cache to force fresh data when page becomes visible
+        await cache.invalidate('all_tournaments', 'tournaments')
+        fetchData()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Also refetch every 60 seconds to keep data fresh (tournaments change less frequently)
+    const interval = setInterval(async () => {
+      await cache.invalidate('all_tournaments', 'tournaments')
+      fetchData()
+    }, 60000)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(interval)
+    }
   }, [])
 
   const fetchData = async () => {
@@ -69,7 +94,24 @@ export default function TournamentsPage() {
         }
       }
 
-      // Fetch tournaments
+      // Use cache for tournaments data
+      const cacheKey = 'all_tournaments'
+      const cacheOptions = {
+        ttl: 5 * 60 * 1000, // 5 minutes cache for tournament data (less frequent changes)
+        namespace: 'tournaments'
+      }
+
+      // Try to get from cache first
+      const cachedTournaments = await cache.get<Tournament[]>(cacheKey, cacheOptions)
+      if (cachedTournaments) {
+        console.log('🎯 Tournaments Cache HIT - Loading tournaments from cache')
+        setTournaments(cachedTournaments)
+        setLoading(false) // Hide loading immediately when cache is available
+      } else {
+        console.log('❌ Tournaments Cache MISS - Loading tournaments from database')
+      }
+
+      // Always fetch fresh data in background
       const { data, error } = await supabase
         .from('tournaments')
         .select('*')
@@ -81,10 +123,14 @@ export default function TournamentsPage() {
       }
 
       setTournaments(data || [])
+      
+      // Update cache with fresh data
+      await cache.set(cacheKey, data || [], cacheOptions)
+      console.log('💾 Tournaments Cache SET - Stored fresh tournament data in cache')
     } catch (error) {
       console.error('Error:', error)
     } finally {
-      setLoading(false)
+      setInitialLoad(false) // Mark initial load as complete
     }
   }
 
@@ -117,6 +163,9 @@ export default function TournamentsPage() {
         // Add to registration statuses as pending
         setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
         setSuccessMessage('Registration submitted! Your team registration is pending admin approval.')
+        
+        // Invalidate tournaments cache to refresh data
+        await cache.invalidate('all_tournaments', 'tournaments')
         
         // Clear success message after 5 seconds
         setTimeout(() => setSuccessMessage(''), 5000)
@@ -179,9 +228,46 @@ export default function TournamentsPage() {
           </Alert>
         )}
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        {initialLoad ? (
+          <div className="grid grid-cols-1 gap-4">
+            {/* Skeleton loaders for tournaments */}
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="relative border-zinc-800 overflow-hidden p-0">
+                {/* Tournament Header Skeleton */}
+                <div className="relative h-28 md:h-32 bg-muted/30">
+                  <div className="relative h-full flex flex-col justify-end p-4 md:p-6">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <Skeleton className="h-6 md:h-8 w-3/4" />
+                        <Skeleton className="h-6 w-20 rounded" />
+                      </div>
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tournament Details Skeleton */}
+                <div className="relative px-4 md:px-6 py-3 bg-zinc-900/60 border-t border-zinc-700/50">
+                  <div className="grid grid-cols-3 gap-2 md:gap-8 mb-3">
+                    <div className="text-center md:text-left">
+                      <Skeleton className="h-3 w-8 mb-1" />
+                      <Skeleton className="h-4 w-12" />
+                    </div>
+                    <div className="text-center md:text-left">
+                      <Skeleton className="h-3 w-8 mb-1" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <div className="text-center md:text-left">
+                      <Skeleton className="h-3 w-8 mb-1" />
+                      <Skeleton className="h-4 w-8" />
+                    </div>
+                  </div>
+
+                  {/* Registration Button Skeleton */}
+                  <Skeleton className="h-10 w-full rounded" />
+                </div>
+              </Card>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">

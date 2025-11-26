@@ -9,7 +9,9 @@ import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 import { getProfileIconUrl } from '@/lib/ddragon'
+import { cache, CacheConfig } from '@/lib/cache'
 import RoleIcon from '@/components/RoleIcon'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Tooltip,
   TooltipContent,
@@ -45,6 +47,7 @@ export default function PlayersPage() {
   const [showLFTOnly, setShowLFTOnly] = useState(false)
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
@@ -57,16 +60,19 @@ export default function PlayersPage() {
     checkAuthAndFetchPlayers()
     
     // Refetch invitations when page becomes visible (to catch rejected/accepted invites)
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (!document.hidden) {
+        // Invalidate cache to force fresh data when page becomes visible
+        await cache.invalidate('all_players', 'players')
         fetchPlayers()
       }
     }
     
     document.addEventListener('visibilitychange', handleVisibilityChange)
     
-    // Also refetch every 30 seconds to keep data fresh
-    const interval = setInterval(() => {
+    // Also refetch every 30 seconds to keep data fresh, but invalidate cache first
+    const interval = setInterval(async () => {
+      await cache.invalidate('all_players', 'players')
       fetchPlayers()
     }, 30000)
     
@@ -136,6 +142,29 @@ const fetchPlayers = async () => {
         }
       }
 
+      // Use cache for players data
+      const cacheKey = 'all_players'
+      const cacheOptions = {
+        ttl: 3 * 60 * 1000, // 3 minutes cache for player data
+        namespace: 'players'
+      }
+
+      // Try to get from cache first
+      const cachedPlayers = await cache.get<Player[]>(cacheKey, cacheOptions)
+      if (cachedPlayers) {
+        console.log('🎯 Cache HIT - Loading players from cache')
+        setPlayers(cachedPlayers)
+        setLoading(false) // Hide loading immediately when cache is available
+        
+        // Fetch profile icon URLs for cached players
+        if (cachedPlayers.length > 0) {
+          await fetchProfileIconUrls(cachedPlayers)
+        }
+      } else {
+        console.log('❌ Cache MISS - Loading players from database')
+      }
+
+      // Always fetch fresh data in background
       const { data, error } = await supabase
         .from('players')
         .select('*')
@@ -143,19 +172,30 @@ const fetchPlayers = async () => {
 
       if (error) {
         console.error('Error fetching players:', error)
+        if (!cachedPlayers) {
+          // If no cached data and error occurred, set empty array
+          setPlayers([])
+        }
         return
       }
 
-      setPlayers(data || [])
+      const freshPlayers = data || []
       
-      // Fetch profile icon URLs for all players
-      if (data && data.length > 0) {
-        await fetchProfileIconUrls(data);
+      // Update cache with fresh data
+      await cache.set(cacheKey, freshPlayers, cacheOptions)
+      console.log('💾 Cache SET - Stored fresh player data in cache')
+      
+      // Update state with fresh data
+      setPlayers(freshPlayers)
+      
+      // Fetch profile icon URLs for fresh players
+      if (freshPlayers.length > 0) {
+        await fetchProfileIconUrls(freshPlayers)
       }
     } catch (error) {
       console.error('Error:', error)
     } finally {
-      setLoading(false)
+      setInitialLoad(false) // Mark initial load as complete
     }
   }
 
@@ -184,6 +224,9 @@ const fetchPlayers = async () => {
         const data = await response.json()
         // Add to sent invites immediately
         setSentInvites(prev => ({ ...prev, [playerId]: data.id }))
+        
+        // Invalidate players cache to refresh data
+        await cache.invalidate('all_players', 'players')
       } else {
         const error = await response.json()
         console.error('Error sending invitation:', error.error)
@@ -221,6 +264,9 @@ const fetchPlayers = async () => {
           delete updated[playerId]
           return updated
         })
+        
+        // Invalidate players cache to refresh data
+        await cache.invalidate('all_players', 'players')
       } else {
         const error = await response.json()
         console.error('Error cancelling invite:', error.error)
@@ -295,9 +341,26 @@ const fetchPlayers = async () => {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        {initialLoad ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Skeleton loaders */}
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="bg-card border-border p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <Skeleton className="w-16 h-16 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-1/3" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </Card>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
