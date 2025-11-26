@@ -276,7 +276,7 @@ export default function PlayersPage() {
                     <div className="relative">
                       {player.profile_icon_id ? (
                         <Image 
-                          src={`https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/${player.profile_icon_id}.png`}
+                          src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${player.profile_icon_id}.png`}
                           alt="Profile Icon"
                           width={64}
                           height={64}
