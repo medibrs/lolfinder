@@ -13,46 +13,81 @@ export default function Home() {
   const [userTeam, setUserTeam] = useState<any>(null)
   const [isCaptain, setIsCaptain] = useState(false)
   const [playerProfile, setPlayerProfile] = useState<any>(null)
+  const [sessionChecked, setSessionChecked] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
+    let mounted = true
+    
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      
-      if (user) {
-        // Fetch user's player profile (includes Riot Games name)
-        const { data: profileData } = await supabase
-          .from('players')
-          .select('*')
-          .eq('user_id', user.id)
-          .single()
+      try {
+        // First check if we have an existing session
+        const { data: { session } } = await supabase.auth.getSession()
         
-        if (profileData) {
-          setPlayerProfile(profileData)
-        }
+        if (mounted) {
+          if (session?.user) {
+            setUser(session.user)
+            setSessionChecked(true)
+            
+            // Fetch user's player profile (includes Riot Games name)
+            const { data: profileData } = await supabase
+              .from('players')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .single()
+            
+            if (profileData) {
+              setPlayerProfile(profileData)
+            }
 
-        // Fetch user's team
-        const { data: playerData } = await supabase
-          .from('players')
-          .select('teams(*)')
-          .eq('user_id', user.id)
-          .single()
-        
-        if (playerData?.teams && Array.isArray(playerData.teams) && playerData.teams.length > 0) {
-          const team = playerData.teams[0]
-          setUserTeam(team)
-          setIsCaptain(team.captain_id === user.id)
+            // Fetch user's team
+            const { data: playerData } = await supabase
+              .from('players')
+              .select('teams(*)')
+              .eq('user_id', session.user.id)
+              .single()
+            
+            if (playerData?.teams && Array.isArray(playerData.teams) && playerData.teams.length > 0) {
+              const team = playerData.teams[0]
+              setUserTeam(team)
+              setIsCaptain(team.captain_id === session.user.id)
+            }
+          } else {
+            setUser(null)
+            setSessionChecked(true)
+          }
+        }
+      } catch (error) {
+        console.error('Error checking auth session:', error)
+        if (mounted) {
+          setUser(null)
+          setSessionChecked(true)
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false)
         }
       }
-      
-      setLoading(false)
     }
 
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
+        setUser(session?.user ?? null)
+        setSessionChecked(true)
+        setLoading(false)
+      }
+    })
+
     getUser()
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
-  if (loading) {
+  if (loading || !sessionChecked) {
     return (
       <div className="min-h-screen pt-16 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
