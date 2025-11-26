@@ -209,6 +209,8 @@ export class BrowserNotificationManager {
   }
 
   getNotificationContent(notification: any): NotificationData {
+    console.log('🔔 Processing notification:', notification)
+    
     const baseContent: NotificationData = {
       title: 'New Notification',
       body: notification.message || 'You have a new notification',
@@ -259,8 +261,28 @@ export class BrowserNotificationManager {
           data: { ...baseContent.data, type: 'join_request' }
         }
 
+      case 'player_left':
+        return {
+          ...baseContent,
+          title: '👋 Player Left Team',
+          body: `${notification.data?.player_name || 'A player'} has left your team`,
+          data: { ...baseContent.data, type: 'player_left' }
+        }
+
+      case 'team_update':
+        return {
+          ...baseContent,
+          title: '🔄 Team Update',
+          body: notification.message || 'Your team has been updated',
+          data: { ...baseContent.data, type: 'team_update' }
+        }
+
       default:
-        return baseContent
+        console.log('🔔 Unknown notification type, using default:', notification.type)
+        return {
+          ...baseContent,
+          body: notification.message || `New notification: ${notification.type || 'unknown type'}`
+        }
     }
   }
 }

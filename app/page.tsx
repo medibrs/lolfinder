@@ -1,9 +1,55 @@
+"use client"
+
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Trophy, Users, Target, Zap, Shield, Crown } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Trophy, Users, Target, Zap, Shield, Crown, Bell, Settings, Plus, Search, Calendar, User } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [userTeam, setUserTeam] = useState<any>(null)
+  const [isCaptain, setIsCaptain] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      
+      if (user) {
+        // Fetch user's team
+        const { data: playerData } = await supabase
+          .from('players')
+          .select('teams(*)')
+          .eq('user_id', user.id)
+          .single()
+        
+        if (playerData?.teams && Array.isArray(playerData.teams) && playerData.teams.length > 0) {
+          const team = playerData.teams[0]
+          setUserTeam(team)
+          setIsCaptain(team.captain_id === user.id)
+        }
+      }
+      
+      setLoading(false)
+    }
+
+    getUser()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-16 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  // If user is not authenticated, show landing page
+  if (!user) {
   return (
     <main className="pt-16">
       {/* Hero Section */}
@@ -207,6 +253,252 @@ export default function Home() {
             <Button asChild size="lg" variant="outline" className="text-lg px-8 py-6">
               <Link href="/tournaments">Browse Tournaments</Link>
             </Button>
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}
+
+  // If user is authenticated, show personalized dashboard
+  return (
+    <main className="pt-16 min-h-screen">
+      {/* Welcome Header */}
+      <section className="bg-gradient-to-b from-primary/5 to-background px-4 py-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                Welcome back, {user.email?.split('@')[0]}! 👋
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Ready to dominate the Rift? Here's what's happening with your team.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button asChild variant="outline">
+                <Link href="/settings">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href="/notifications">
+                  <Bell className="w-4 h-4 mr-2" />
+                  Notifications
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Actions */}
+      <section className="px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Link href="/teams" className="block p-6">
+                <Users className="w-8 h-8 text-primary mb-3" />
+                <h3 className="font-semibold mb-1">Browse Teams</h3>
+                <p className="text-sm text-muted-foreground">Find teams looking for players</p>
+              </Link>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Link href="/tournaments" className="block p-6">
+                <Trophy className="w-8 h-8 text-primary mb-3" />
+                <h3 className="font-semibold mb-1">Tournaments</h3>
+                <p className="text-sm text-muted-foreground">View upcoming competitions</p>
+              </Link>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Link href="/search" className="block p-6">
+                <Search className="w-8 h-8 text-primary mb-3" />
+                <h3 className="font-semibold mb-1">Search Players</h3>
+                <p className="text-sm text-muted-foreground">Find teammates by rank/role</p>
+              </Link>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Link href="/players" className="block p-6">
+                <User className="w-8 h-8 text-primary mb-3" />
+                <h3 className="font-semibold mb-1">Player Directory</h3>
+                <p className="text-sm text-muted-foreground">Browse all players</p>
+              </Link>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Team Status */}
+      <section className="px-4 py-8 bg-card/30">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-bold mb-6">Your Team Status</h2>
+          
+          {userTeam ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Crown className="w-5 h-5" />
+                  {userTeam.name}
+                  {isCaptain && <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Captain</span>}
+                </CardTitle>
+                <CardDescription>
+                  {userTeam.description || 'No description provided'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <h4 className="font-semibold mb-2">Team Actions</h4>
+                    <div className="space-y-2">
+                      {isCaptain && (
+                        <Button asChild variant="outline" size="sm" className="w-full">
+                          <Link href="/manage-team">Manage Team</Link>
+                        </Button>
+                      )}
+                      <Button asChild variant="outline" size="sm" className="w-full">
+                        <Link href={`/teams/${userTeam.id}`}>View Team Page</Link>
+                      </Button>
+                      <Button asChild variant="outline" size="sm" className="w-full">
+                        <Link href="/tournaments">Find Tournaments</Link>
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">Quick Stats</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Rank:</span>
+                        <span>{userTeam.rank || 'Unranked'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Region:</span>
+                        <span>{userTeam.region || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Members:</span>
+                        <span>{userTeam.current_size || 0}/5</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">Looking For</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {userTeam.looking_for ? (
+                        userTeam.looking_for.split(',').map((role: string, idx: number) => (
+                          <span key={idx} className="text-xs bg-secondary px-2 py-1 rounded">
+                            {role.trim()}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Not recruiting</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Plus className="w-5 h-5" />
+                    Create a Team
+                  </CardTitle>
+                  <CardDescription>
+                    Start your own team and recruit players
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button asChild className="w-full">
+                    <Link href="/create-team">Create New Team</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Search className="w-5 h-5" />
+                    Join a Team
+                  </CardTitle>
+                  <CardDescription>
+                    Find existing teams looking for players
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/teams">Browse Teams</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Recent Activity */}
+      <section className="px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-bold mb-6">What's New</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Calendar className="w-5 h-5" />
+                  Upcoming Tournaments
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  Check out the latest tournaments you can join with your team.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/tournaments">View All</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Target className="w-5 h-5" />
+                  Looking for Players
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  Teams are actively looking for players in your rank range.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/teams">Find Teams</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Zap className="w-5 h-5" />
+                  Recent Matches
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  Stay updated with the latest tournament results and matches.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/tournaments">View Results</Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
