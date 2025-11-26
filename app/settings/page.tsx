@@ -49,34 +49,7 @@ export default function SettingsPage() {
     console.log('🧪 Test notification result:', success)
   }
 
-  const testFaviconBadge = async () => {
-    console.log('🏷️ Testing favicon badge...')
-    
-    // Test with different counts
-    await faviconBadge.setBadge(1)
-    console.log('🏷️ Favicon badge set to 1')
-    
-    setTimeout(async () => {
-      await faviconBadge.setBadge(5)
-      console.log('🏷️ Favicon badge set to 5')
-    }, 2000)
-    
-    setTimeout(async () => {
-      await faviconBadge.setBadge(99)
-      console.log('🏷️ Favicon badge set to 99')
-    }, 4000)
-    
-    setTimeout(async () => {
-      await faviconBadge.setBadge(150)
-      console.log('🏷️ Favicon badge set to 150 (should show 99+)')
-    }, 6000)
-    
-    setTimeout(async () => {
-      faviconBadge.clear()
-      console.log('🏷️ Favicon badge cleared')
-    }, 8000)
-  }
-
+  
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
     setPasswordError('')
@@ -203,14 +176,6 @@ export default function SettingsPage() {
                     className="w-full sm:w-auto"
                   >
                     Test Notification
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={testFaviconBadge}
-                    className="w-full sm:w-auto"
-                  >
-                    Test Badge
                   </Button>
                   <div className="w-full sm:w-auto">
                     <NotificationToggle />

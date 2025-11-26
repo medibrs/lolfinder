@@ -69,17 +69,14 @@ export class FaviconBadge {
       position = 'top-right'
     } = options
 
-    // Clear canvas
-    this.ctx.clearRect(0, 0, size, size)
-
-    // Calculate badge properties
-    const badgeSize = Math.floor(size * 0.5)
+    // Calculate badge properties - make it smaller to not cover the favicon
+    const badgeSize = Math.floor(size * 0.35) // Reduced from 0.5 to 0.35
     const badgeRadius = badgeSize / 2
-    const fontSize = Math.floor(badgeSize * 0.6)
+    const fontSize = Math.floor(badgeSize * 0.7) // Slightly larger font relative to badge
 
-    // Calculate badge position
+    // Calculate badge position - position it more to the edge
     let badgeX = 0, badgeY = 0
-    const padding = 2
+    const padding = 1 // Reduced padding
 
     switch (position) {
       case 'top-right':
@@ -100,11 +97,23 @@ export class FaviconBadge {
         break
     }
 
+    // Add shadow for better visibility
+    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
+    this.ctx.shadowBlur = 2
+    this.ctx.shadowOffsetX = 1
+    this.ctx.shadowOffsetY = 1
+
     // Draw badge circle
     this.ctx.beginPath()
     this.ctx.arc(badgeX, badgeY, badgeRadius, 0, 2 * Math.PI)
     this.ctx.fillStyle = backgroundColor
     this.ctx.fill()
+
+    // Reset shadow for text
+    this.ctx.shadowColor = 'transparent'
+    this.ctx.shadowBlur = 0
+    this.ctx.shadowOffsetX = 0
+    this.ctx.shadowOffsetY = 0
 
     // Draw count text
     this.ctx.fillStyle = color
@@ -115,9 +124,11 @@ export class FaviconBadge {
     let displayText = count.toString()
     if (count > 99) {
       displayText = '99+'
+      // Use even smaller font for 99+
+      this.ctx.font = `bold ${fontSize - 2}px system-ui, -apple-system, sans-serif`
     } else if (count > 9) {
       // Adjust font size for two-digit numbers
-      this.ctx.font = `bold ${fontSize - 2}px system-ui, -apple-system, sans-serif`
+      this.ctx.font = `bold ${fontSize - 1}px system-ui, -apple-system, sans-serif`
     }
 
     this.ctx.fillText(displayText, badgeX, badgeY)
@@ -139,7 +150,10 @@ export class FaviconBadge {
       
       // Clear canvas and draw favicon
       this.ctx.clearRect(0, 0, this.faviconSize, this.faviconSize)
-      this.ctx.drawImage(img, 0, 0, this.faviconSize, this.faviconSize)
+      
+      // Draw favicon centered and properly sized
+      const faviconSize = this.faviconSize
+      this.ctx.drawImage(img, 0, 0, faviconSize, faviconSize)
 
       // Draw badge if count > 0
       if (count > 0) {

@@ -24,6 +24,7 @@ export class BrowserNotificationManager {
 
   async requestPermission(): Promise<NotificationPermission> {
     if (typeof Notification === 'undefined') {
+      console.log('🔕 Notifications not supported on this device/browser')
       return 'default'
     }
 
@@ -32,11 +33,21 @@ export class BrowserNotificationManager {
     }
 
     try {
+      // On mobile, permissions often need to be requested from a user gesture
+      console.log('🔐 Requesting notification permission...')
+      
+      // Check if we're in a secure context (required for notifications)
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        console.warn('⚠️ Notifications require HTTPS on most devices')
+      }
+
       const permission = await Notification.requestPermission()
       this.permission = permission
+      
+      console.log('🔐 Permission result:', permission)
       return permission
     } catch (error) {
-      console.error('Error requesting notification permission:', error)
+      console.error('❌ Error requesting notification permission:', error)
       return 'default'
     }
   }
@@ -49,76 +60,136 @@ export class BrowserNotificationManager {
     return this.permission === 'granted'
   }
 
-  async showNotification(data: NotificationData): Promise<boolean> {
-    console.log('🔔 Attempting to show browser notification:', data)
+  async showNotification(notification: NotificationOptions): Promise<boolean> {
+    console.log('🔔 Attempting to show browser notification:', notification)
     
     if (!this.isSupported()) {
-      console.log('❌ Browser notifications not supported')
+      console.log('❌ Browser notifications not supported on this device')
       return false
     }
 
-    console.log('✅ Browser notifications supported, permission:', this.permission)
-
-    if (this.permission !== 'granted') {
-      console.log('🔐 Requesting notification permission...')
-      const permission = await this.requestPermission()
-      console.log('🔐 Permission result:', permission)
-      if (permission !== 'granted') {
-        console.log('❌ Notification permission not granted')
-        return false
-      }
+    const permission = await this.requestPermission()
+    
+    if (permission !== 'granted') {
+      console.log('❌ Browser notifications not permitted:', permission)
+      return false
     }
 
+    console.log('✅ Browser notifications supported, permission: granted')
+
     try {
-      console.log('📱 Creating notification with:', {
-        title: data.title,
-        body: data.body,
-        icon: data.icon,
-        tag: data.tag
-      })
-      
-      const notification = new Notification(data.title, {
-        body: data.body,
-        icon: data.icon || '/favicon.ico',
-        badge: data.badge || '/favicon.ico',
-        tag: data.tag,
-        data: data.data,
-        requireInteraction: true, // Keep notification visible until user interacts
-        silent: false, // Play sound if supported
-      })
+      const notificationContent = this.getNotificationContent(notification)
+      console.log('📱 Creating notification with:', notificationContent)
 
-      console.log('✅ Notification created successfully')
-
-      // Auto-close after 8 seconds
-      setTimeout(() => {
-        notification.close()
-      }, 8000)
-
-      // Handle click events
-      notification.onclick = (event) => {
-        console.log('🖱️ Notification clicked')
-        event.preventDefault() // Prevent default browser behavior
-        window.focus() // Bring window to front
-        notification.close()
-        
-        // Navigate to relevant page based on notification type
-        if (data.data?.type === 'tournament_approved' || data.data?.type === 'tournament_rejected') {
-          window.location.href = '/tournaments'
-        } else if (data.data?.type === 'team_invitation') {
-          window.location.href = '/teams'
-        } else if (data.data?.type === 'admin_message') {
-          window.location.href = '/notifications'
-        } else {
-          window.location.href = '/notifications'
-        }
+      // Mobile-specific notification options
+      const notificationOptions: NotificationOptions & {
+        requireInteraction?: boolean;
+        silent?: boolean;
+        vibrate?: number[];
+      } = {
+        body: notificationContent.body,
+        icon: notificationContent.icon,
+        badge: notificationContent.badge,
+        tag: notificationContent.tag,
+        requireInteraction: notificationContent.requireInteraction,
+        silent: false,
+        // Add vibration for mobile devices
+        vibrate: [200, 100, 200],
       }
+
+      const browserNotification = new Notification(notificationContent.title, notificationOptions)
+
+      // Handle click
+      browserNotification.onclick = () => {
+        console.log('🔔 Notification clicked')
+        if (notificationContent.url) {
+          window.location.href = notificationContent.url
+        }
+        browserNotification.close()
+      }
+
+      // Mobile: Auto-close after 4 seconds (shorter for mobile)
+      const closeTime = this.isMobile() ? 4000 : 5000
+      setTimeout(() => {
+        if (browserNotification) {
+          browserNotification.close()
+        }
+      }, closeTime)
 
       console.log('✅ Browser notification shown successfully')
       return true
     } catch (error) {
       console.error('❌ Error showing browser notification:', error)
+      
+      // Fallback for mobile: show an in-app notification
+      if (this.isMobile()) {
+        this.showMobileFallback(notification)
+      }
+      
       return false
     }
+  }
+
+  private isMobile(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  }
+
+  private showMobileFallback(notification: NotificationOptions): void {
+    console.log('📱 Showing mobile fallback notification')
+    
+    // Create a simple in-app notification banner
+    const fallback = document.createElement('div')
+    fallback.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      z-index: 9999;
+      font-family: system-ui, -apple-system, sans-serif;
+      animation: slideDown 0.3s ease-out;
+    `
+    
+    fallback.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-weight: 600; margin-bottom: 4px;">${notification.title}</div>
+          <div style="font-size: 14px; opacity: 0.9;">${notification.body}</div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" style="
+          background: rgba(255,255,255,0.2);
+          border: none;
+          color: white;
+          padding: 8px;
+          border-radius: 6px;
+          cursor: pointer;
+          margin-left: 12px;
+        ">✕</button>
+      </div>
+    `
+    
+    // Add animation
+    const style = document.createElement('style')
+    style.textContent = `
+      @keyframes slideDown {
+        from { transform: translateY(-100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+    `
+    document.head.appendChild(style)
+    
+    document.body.appendChild(fallback)
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (fallback.parentElement) {
+        fallback.remove()
+      }
+    }, 5000)
   }
 
   getNotificationContent(notification: any): NotificationData {

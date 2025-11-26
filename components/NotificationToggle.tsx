@@ -20,19 +20,29 @@ export default function NotificationToggle() {
 
     setIsLoading(true)
     try {
+      console.log('🔐 Requesting notification permission...')
       const result = await notificationManager.requestPermission()
       setPermission(result)
       
       if (result === 'granted') {
+        console.log('✅ Permission granted, showing test notification')
         // Show a test notification
         await notificationManager.showNotification({
           title: 'Notifications Enabled! 🔔',
           body: 'You\'ll now receive updates about tournaments and team invitations.',
           tag: 'test-notification'
         })
+      } else if (result === 'denied') {
+        console.log('❌ Permission denied by user')
+        // Show a message about enabling in browser settings
+        alert('Notifications were blocked. Please enable them in your browser settings to receive updates.')
+      } else {
+        console.log('⚠️ Permission request dismissed')
       }
     } catch (error) {
-      console.error('Error requesting notification permission:', error)
+      console.error('❌ Error requesting notification permission:', error)
+      // On mobile, sometimes permissions fail but still work
+      alert('Unable to enable notifications. You may need to enable them in your browser settings.')
     } finally {
       setIsLoading(false)
     }
