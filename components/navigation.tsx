@@ -600,6 +600,9 @@ export default function Navigation() {
                 <DropdownMenuItem asChild>
                   <Link href="/setup-profile">Profile</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">Settings</Link>
+                </DropdownMenuItem>
                 {userTeam && (
                   <DropdownMenuItem asChild>
                     {isCaptain ? (

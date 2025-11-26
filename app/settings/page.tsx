@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertTriangle, Settings, User, Shield, Trash2 } from 'lucide-react'
+import { AlertTriangle, Settings, User, Shield, Trash2, Bell } from 'lucide-react'
+import NotificationToggle from '@/components/NotificationToggle'
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null)
@@ -26,32 +27,30 @@ export default function SettingsPage() {
   }, [supabase])
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete your account? This action cannot be undone and will remove all your data including teams, tournaments, and notifications.')) {
       return
     }
 
     setDeleteLoading(true)
     try {
-      // Delete user profile first
-      if (user) {
-        await supabase.from('players').delete().eq('id', user.id)
-      }
-      
-      // Delete auth user
-      const { error } = await supabase.auth.admin.deleteUser(user.id)
-      
-      if (error) {
-        // Fallback to sign out if admin delete fails
-        await supabase.auth.signOut()
+      const response = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert(data.message || 'Account deleted successfully.')
         router.push('/')
       } else {
-        router.push('/')
+        const error = await response.json()
+        alert(error.error || 'Failed to delete account. Please contact support.')
       }
     } catch (error) {
       console.error('Error deleting account:', error)
-      // Sign out as fallback
-      await supabase.auth.signOut()
-      router.push('/')
+      alert('Failed to delete account. Please contact support.')
     } finally {
       setDeleteLoading(false)
     }
@@ -81,6 +80,49 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-6">
+          {/* Notification Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notifications
+              </CardTitle>
+              <CardDescription>
+                Control how you receive notifications about tournaments and team activities
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="flex-1">
+                  <h4 className="font-medium">Browser Notifications</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Get instant updates in your browser when you're online
+                  </p>
+                </div>
+                <NotificationToggle />
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-blue-600 dark:text-blue-400 mt-0.5">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-blue-800 dark:text-blue-200 font-semibold text-sm mb-1">Why Enable Notifications?</h4>
+                    <ul className="text-blue-700 dark:text-blue-300 text-sm space-y-1">
+                      <li>• Get notified about new tournament registrations</li>
+                      <li>• Receive team invitations instantly</li>
+                      <li>• Stay updated on tournament announcements</li>
+                      <li>• Never miss important messages from admins</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Account Information */}
           <Card>
             <CardHeader>
@@ -156,7 +198,7 @@ export default function SettingsPage() {
               <Alert className="mb-4">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  Deleting your account will permanently remove all your data including profiles, teams, and tournament registrations. This action cannot be undone.
+                  Deleting your account will permanently remove all your data including your player profile, teams (if you're a captain), tournament registrations, notifications, and team invitations. You will be signed out and may need to contact support to complete the account removal process.
                 </AlertDescription>
               </Alert>
               <Button 
