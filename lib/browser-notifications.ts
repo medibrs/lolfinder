@@ -1,3 +1,19 @@
+interface NotificationOptions {
+  title: string
+  body: string
+  tag?: string
+}
+
+interface BrowserNotificationOptions {
+  body?: string
+  icon?: string
+  badge?: string
+  tag?: string
+  requireInteraction?: boolean
+  silent?: boolean
+  vibrate?: number[]
+}
+
 interface NotificationData {
   title: string
   body: string
@@ -5,7 +21,11 @@ interface NotificationData {
   badge?: string
   tag?: string
   data?: any
+  url?: string
+  requireInteraction?: boolean
 }
+
+export type { NotificationOptions }
 
 export class BrowserNotificationManager {
   private static instance: BrowserNotificationManager
@@ -82,11 +102,7 @@ export class BrowserNotificationManager {
       console.log('📱 Creating notification with:', notificationContent)
 
       // Mobile-specific notification options
-      const notificationOptions: NotificationOptions & {
-        requireInteraction?: boolean;
-        silent?: boolean;
-        vibrate?: number[];
-      } = {
+      const notificationOptions: BrowserNotificationOptions = {
         body: notificationContent.body,
         icon: notificationContent.icon,
         badge: notificationContent.badge,

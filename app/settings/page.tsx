@@ -10,7 +10,7 @@ import { AlertTriangle, Settings, User, Shield, Trash2, Bell } from 'lucide-reac
 import NotificationToggle from '@/components/NotificationToggle'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { notificationManager } from '@/lib/browser-notifications'
+import { notificationManager, NotificationOptions } from '@/lib/browser-notifications'
 import { faviconBadge } from '@/lib/favicon-badge'
 
 export default function SettingsPage() {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Bell, BellOff, Check, X } from 'lucide-react'
-import { notificationManager } from '@/lib/browser-notifications'
+import { notificationManager, NotificationOptions } from '@/lib/browser-notifications'
 
 export default function NotificationToggle() {
   const [permission, setPermission] = useState<NotificationPermission>('default')
