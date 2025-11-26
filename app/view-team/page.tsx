@@ -57,7 +57,6 @@ export default function ViewTeamPage() {
         .single()
 
       if (teamError || !teamData) {
-        console.log('Team error:', teamError)
         router.push('/teams')
         return
       }
@@ -90,7 +89,6 @@ export default function ViewTeamPage() {
 
       setTournaments(tournamentsData || [])
     } catch (error) {
-      console.error('Error loading team data:', error)
     } finally {
       setLoading(false)
     }
@@ -112,8 +110,7 @@ export default function ViewTeamPage() {
         .eq('id', user.id)
 
       if (updateError) {
-        console.error('Error leaving team:', updateError)
-        return
+          return
       }
 
       // Send notification to captain

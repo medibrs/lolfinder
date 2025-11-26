@@ -132,8 +132,18 @@ export default function ComprehensiveUserManagement() {
 
   const solveUserProblem = async () => {
     try {
-      // Log the support action
-      console.log('Support ticket resolved:', supportTicket)
+      // Send notification to user
+      await supabase
+        .from('notifications')
+        .insert([{
+          user_id: supportTicket.userId,
+          type: 'support_resolved',
+          title: 'Support Ticket Resolved',
+          message: `Your support ticket has been marked as resolved.`,
+          data: {
+            from: 'admin'
+          }
+        }])
       
       // Reset form
       setSupportTicket({ userId: '', issue: '', resolution: '' })

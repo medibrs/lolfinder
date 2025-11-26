@@ -65,7 +65,6 @@ export default function SetupProfilePage() {
         // Get current session first
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
         
-        console.log('Session data:', { sessionData, sessionError })
         
         if (sessionError || !sessionData?.session?.user) {
           console.error('No authenticated session found:', sessionError)
@@ -73,7 +72,6 @@ export default function SetupProfilePage() {
         }
         
         const user = sessionData.session.user
-        console.log('Session found:', user.id)
         setUserId(user.id)
         
         // Check if user already has a profile
@@ -83,7 +81,6 @@ export default function SetupProfilePage() {
           .eq('id', user.id)
           .maybeSingle() // Use maybeSingle() instead of single() to handle 0 rows
           
-        console.log('Profile query result:', { existingProfile, profileError })
         if (profileError) {
           console.error('Profile error details:', profileError)
         }
@@ -162,10 +159,8 @@ export default function SetupProfilePage() {
     setRiotError(null)
 
     try {
-      console.log('Submit data:', { isEditing, userId, formData })
       const endpoint = isEditing ? `/api/players/${userId}` : '/api/players'
       const method = isEditing ? 'PUT' : 'POST'
-      console.log('Using endpoint:', endpoint, 'with method:', method)
       
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()

@@ -41,13 +41,29 @@ export default function TournamentDetailPage({ params }: { params: { id: string 
     { id: 3, name: 'Phoenix Rising', memberCount: 4 },
   ]
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (registrationType === 'complete' && selectedTeam) {
       // API call: POST /tournaments/:id/register/team-complete
-      console.log('Registering complete team:', selectedTeam)
+      const response = await fetch(`/api/tournaments/${tournament.id}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_id: selectedTeam
+        }),
+      })
     } else if (registrationType === 'looking') {
       // API call: POST /tournaments/:id/register/team-looking
-      console.log('Registering team looking for players')
+      const response = await fetch(`/api/tournaments/${tournament.id}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          player_id: 1 // Replace with actual player ID
+        }),
+      })
     }
   }
 

@@ -70,28 +70,23 @@ export default function ManageTeamPage() {
         .single()
 
       if (teamError || !teamData) {
-        console.log('Team error:', teamError)
         router.push('/create-team')
         return
       }
 
-      console.log('Team data with players:', teamData)
 
       setTeam(teamData)
 
       // Always query players directly to get is_substitute field
-      console.log('Querying players directly for team:', teamData.id)
       const { data: membersData, error: membersError } = await supabase
         .from('players')
         .select('*')
         .eq('team_id', teamData.id)
 
-      console.log('Direct query result:', { membersData, membersError })
       setTeamMembers(membersData || [])
       
       // Find the substitute player from the queried members
       const substituteMember = membersData?.find((p: any) => p.is_substitute)
-      console.log('Found substitute:', substituteMember)
       
       setFormData({
         name: teamData.name,
@@ -116,7 +111,6 @@ export default function ManageTeamPage() {
       setJoinRequests(requestsData || [])
 
       // Fetch tournament registrations (only approved - check both 'approved' and legacy 'Confirmed')
-      console.log('Fetching tournaments for team:', teamData.id)
       const { data: tournamentsData, error: tournamentsError } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -127,8 +121,6 @@ export default function ManageTeamPage() {
         .in('status', ['approved', 'Confirmed'])
         .order('registered_at', { ascending: false })
 
-      console.log('Tournaments query result:', { tournamentsData, tournamentsError })
-      console.log('Number of approved tournaments:', tournamentsData?.length || 0)
       
       // Also check ALL registrations for debugging
       const { data: allRegistrations } = await supabase
@@ -136,7 +128,6 @@ export default function ManageTeamPage() {
         .select('id, status, tournament_id')
         .eq('team_id', teamData.id)
       
-      console.log('ALL registrations for this team:', allRegistrations)
 
       setTournaments(tournamentsData || [])
     } catch (error) {
@@ -167,7 +158,6 @@ export default function ManageTeamPage() {
       }
 
       // Update substitute status for all players
-      console.log('Updating substitute, selected ID:', formData.substitute_id)
       
       // First, remove substitute status from all players
       const { error: clearError } = await supabase
@@ -189,7 +179,6 @@ export default function ManageTeamPage() {
         if (setError) {
           console.error('Error setting substitute:', setError)
         } else {
-          console.log('Successfully set substitute:', formData.substitute_id)
         }
       }
 
@@ -239,7 +228,6 @@ export default function ManageTeamPage() {
         .eq('status', 'pending')
 
       // Send notification to the removed player
-      console.log('Creating removal notification for player:', memberId)
       const { error: notificationError } = await supabase
         .from('notifications')
         .insert([{
@@ -256,7 +244,6 @@ export default function ManageTeamPage() {
       if (notificationError) {
         console.error('Error creating removal notification:', notificationError)
       } else {
-        console.log('Removal notification created successfully')
       }
 
       loadTeamData() // Refresh data

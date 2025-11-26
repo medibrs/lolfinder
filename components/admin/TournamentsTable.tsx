@@ -272,7 +272,6 @@ export default function TournamentsTable() {
         .eq('id', registrationId)
 
       if (!error) {
-        console.log('Status updated successfully, sending notification...')
         
         // Send notification based on status
         if (registration?.team?.captain_id) {
@@ -364,10 +363,8 @@ export default function TournamentsTable() {
         await openManageDialog(managingTournament)
         await fetchTournaments() // Update registration count
       } else {
-        console.error('Failed to kick team:', error.message)
       }
     } catch (error) {
-      console.error('Error kicking team:', error)
     }
   }
 
