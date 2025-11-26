@@ -479,12 +479,14 @@ export default function SearchPage() {
             ) : (
               players.length > 0 ? (
                 players.filter(player => {
-                  const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
+                  // Hide test profiles - only show players with actual user accounts
+                  const isTestProfile = !player.id || player.id.length < 30 || player.id.startsWith('test-') || player.summoner_name.includes('Test');
+                  
                   const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
-                  const notCurrentUser = player.id !== user?.id
-                  const isLookingForTeam = player.looking_for_team === true
-                  const notInTeam = !player.team_id
-                  return matchesRole && matchesSearch && notCurrentUser && isLookingForTeam && notInTeam
+                  const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
+                  const isRealProfile = !isTestProfile;
+                  
+                  return matchesSearch && matchesRole && isRealProfile
                 }).map(player => (
                   <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
                     <div className="flex items-start gap-4 mb-4">

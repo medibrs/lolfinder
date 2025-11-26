@@ -226,11 +226,17 @@ const fetchPlayers = async () => {
   }
 
   const filteredPlayers = players.filter(player => {
+    // Hide test profiles - only show players with actual user accounts
+    // Test profiles typically have no actual auth user associated
+    const isTestProfile = !player.id || player.id.length < 30 || player.id.startsWith('test-') || player.summoner_name.includes('Test');
+    
     const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
     const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
     const notCurrentUser = player.id !== user?.id
     const matchesLFT = !showLFTOnly || (player.looking_for_team && !player.team_id)
-    return matchesRole && matchesSearch && notCurrentUser && matchesLFT
+    const isRealProfile = !isTestProfile;
+    
+    return matchesRole && matchesSearch && notCurrentUser && matchesLFT && isRealProfile
   })
 
   return (
