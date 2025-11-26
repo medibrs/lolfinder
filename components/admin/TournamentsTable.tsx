@@ -258,24 +258,61 @@ export default function TournamentsTable() {
 
     try {
       const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
+      
+      // Get registration info before updating
+      const { data: registration } = await supabase
+        .from('tournament_registrations')
+        .select('*, team:teams(*)')
+        .eq('id', registrationId)
+        .single()
 
-      const response = await fetch(`/api/tournament-registrations/${registrationId}/status`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .update({ status: newStatus })
+        .eq('id', registrationId)
 
-      if (response.ok) {
-        console.log('Status updated successfully, notification should be sent')
+      if (!error) {
+        console.log('Status updated successfully, sending notification...')
+        
+        // Send notification based on status
+        if (registration?.team?.captain_id) {
+          if (newStatus === 'approved') {
+            await supabase
+              .from('notifications')
+              .insert([{
+                user_id: registration.team.captain_id,
+                type: 'tournament_approved',
+                title: 'Tournament Registration Approved!',
+                message: `Your team "${registration.team.name}" has been approved for ${managingTournament.name}!`,
+                data: {
+                  tournament_id: managingTournament.id,
+                  tournament_name: managingTournament.name,
+                  team_id: registration.team.id,
+                  from: 'admin'
+                }
+              }])
+          } else if (newStatus === 'rejected') {
+            await supabase
+              .from('notifications')
+              .insert([{
+                user_id: registration.team.captain_id,
+                type: 'tournament_rejected',
+                title: 'Tournament Registration Rejected',
+                message: `Your team "${registration.team.name}" has been rejected for ${managingTournament.name}.`,
+                data: {
+                  tournament_id: managingTournament.id,
+                  tournament_name: managingTournament.name,
+                  team_id: registration.team.id,
+                  from: 'admin'
+                }
+              }])
+          }
+        }
+
         // Refresh registrations to show updated status
         await openManageDialog(managingTournament)
       } else {
-        const error = await response.json()
-        console.error('Failed to update status:', error.error)
+        console.error('Failed to update status:', error.message)
       }
     } catch (error) {
       console.error('Error updating status:', error)
@@ -290,17 +327,44 @@ export default function TournamentsTable() {
     }
 
     try {
-      const response = await fetch(`/api/tournament-registrations/${registrationId}`, {
-        method: 'DELETE',
-      })
+      const supabase = createClient()
+      
+      // Get team info before deleting
+      const { data: registration } = await supabase
+        .from('tournament_registrations')
+        .select('*, team:teams(*)')
+        .eq('id', registrationId)
+        .single()
+        
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .delete()
+        .eq('id', registrationId)
 
-      if (response.ok) {
+      if (!error) {
+        // Send notification to team captain if found
+        if (registration?.team?.captain_id) {
+          await supabase
+            .from('notifications')
+            .insert([{
+              user_id: registration.team.captain_id,
+              type: 'tournament_rejected',
+              title: 'Removed from Tournament',
+              message: `Your team "${registration.team.name}" has been removed from ${managingTournament.name} by an admin.`,
+              data: {
+                tournament_id: managingTournament.id,
+                tournament_name: managingTournament.name,
+                team_id: registration.team.id,
+                from: 'admin'
+              }
+            }])
+        }
+
         // Refresh registrations
         await openManageDialog(managingTournament)
         await fetchTournaments() // Update registration count
       } else {
-        const error = await response.json()
-        console.error('Failed to kick team:', error.error)
+        console.error('Failed to kick team:', error.message)
       }
     } catch (error) {
       console.error('Error kicking team:', error)

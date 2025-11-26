@@ -308,7 +308,7 @@ export default function NotificationsPage() {
       case 'tournament_approved':
         return <Trophy className={`w-5 h-5 ${data?.from === 'admin' ? 'text-purple-500' : 'text-green-500'}`} />
       case 'tournament_rejected':
-        return <Trophy className="w-5 h-5 text-red-500" />
+        return <Trophy className={`w-5 h-5 ${data?.from === 'admin' ? 'text-purple-500' : 'text-red-500'}`} />
       default:
         return <Bell className="w-5 h-5 text-gray-500" />
     }
@@ -479,7 +479,7 @@ export default function NotificationsPage() {
                 className={`bg-card border-border ${
                   !notification.read ? 'border-primary/50' : ''
                 } ${
-                  notification.type === 'admin_message' || (notification.type === 'tournament_approved' && notification.data?.from === 'admin') 
+                  notification.type === 'admin_message' || ((notification.type === 'tournament_approved' || notification.type === 'tournament_rejected') && notification.data?.from === 'admin') 
                     ? 'border-purple-500/50 bg-purple-500/5' 
                     : ''
                 }`}
@@ -496,7 +496,7 @@ export default function NotificationsPage() {
                           {!notification.read && (
                             <Badge variant="default" className="text-xs">New</Badge>
                           )}
-                          {(notification.type === 'admin_message' || (notification.type === 'tournament_approved' && notification.data?.from === 'admin')) && (
+                          {(notification.type === 'admin_message' || ((notification.type === 'tournament_approved' || notification.type === 'tournament_rejected') && notification.data?.from === 'admin')) && (
                             <Badge variant="secondary" className="bg-purple-500/10 text-purple-500 border-purple-500/20">
                               Admin
                             </Badge>

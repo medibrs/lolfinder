@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, Filter, MoreHorizontal, Eye, Edit, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,11 +52,11 @@ export default function RegistrationsTable() {
           const regResponse = await fetch(`/api/tournaments/${tournament.id}/registrations`)
           const tournamentRegistrations = await regResponse.json()
           
-          const enrichedRegistrations = tournamentRegistrations.map((reg: Registration) => ({
+          const enrichedRegistrations = tournamentRegistrations.map((reg: any) => ({
             ...reg,
             tournament_name: tournament.name,
-            team_name: reg.team_name || 'Unknown Team',
-            captain_name: reg.captain_name || 'Unknown Captain'
+            team_name: reg.team?.name || 'Unknown Team',
+            captain_name: reg.team?.captain?.summoner_name || 'Unknown Captain'
           }))
           
           allRegistrations.push(...enrichedRegistrations)
@@ -89,13 +90,60 @@ export default function RegistrationsTable() {
 
   const updateRegistrationStatus = async (registrationId: string, newStatus: 'approved' | 'rejected' | 'pending') => {
     try {
-      await fetch(`/api/registrations/${registrationId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
+      const supabase = createClient()
+      
+      // Find the registration details from state (since it has tournament name and captain info joined already)
+      const registration = registrations.find(r => r.id === registrationId)
+      
+      // Update status
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .update({ status: newStatus })
+        .eq('id', registrationId)
+
+      if (!error && registration) {
+        // Fetch full captain ID if not present in current state
+        // We need to get the captain_id from the team first
+        const { data: regData } = await supabase
+          .from('tournament_registrations')
+          .select('*, team:teams(*)')
+          .eq('id', registrationId)
+          .single()
+          
+        if (regData?.team?.captain_id) {
+          if (newStatus === 'approved') {
+            await supabase
+              .from('notifications')
+              .insert([{
+                user_id: regData.team.captain_id,
+                type: 'tournament_approved',
+                title: 'Tournament Registration Approved!',
+                message: `Your team "${regData.team.name}" has been approved for ${registration.tournament_name}!`,
+                data: {
+                  tournament_id: registration.tournament_id,
+                  tournament_name: registration.tournament_name,
+                  team_id: registration.team_id,
+                  from: 'admin'
+                }
+              }])
+          } else if (newStatus === 'rejected') {
+            await supabase
+              .from('notifications')
+              .insert([{
+                user_id: regData.team.captain_id,
+                type: 'tournament_rejected',
+                title: 'Tournament Registration Rejected',
+                message: `Your team "${regData.team.name}" has been rejected for ${registration.tournament_name}.`,
+                data: {
+                  tournament_id: registration.tournament_id,
+                  tournament_name: registration.tournament_name,
+                  team_id: registration.team_id,
+                  from: 'admin'
+                }
+              }])
+          }
+        }
+      }
       
       setRegistrations(registrations.map(reg => 
         reg.id === registrationId ? { ...reg, status: newStatus } : reg

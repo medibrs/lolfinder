@@ -436,7 +436,12 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Avatar/Auth */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-2">
+            {isAdmin && (
+              <Button asChild variant="outline" className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 hover:text-yellow-700">
+                <Link href="/admin">Admin</Link>
+              </Button>
+            )}
             {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -466,13 +471,6 @@ export default function Navigation() {
                     ) : (
                       <Link href="/view-team">View Team</Link>
                     )}
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin" className="text-yellow-600 font-semibold">
-                      Admin Dashboard
-                    </Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
