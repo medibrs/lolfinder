@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import RoleIcon from '@/components/RoleIcon'
+import RoleSelect from '@/components/RoleSelect'
 import { Shield, Trophy, Users, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -27,17 +30,6 @@ const getTierColor = (tier: string) => {
     'Unranked': 'bg-gray-600'
   }
   return colors[tier] || 'bg-gray-500'
-}
-
-const getRoleIcon = (role: string) => {
-  const icons: { [key: string]: string } = {
-    'Top': '🛡️',
-    'Jungle': '🌳',
-    'Mid': '✨',
-    'ADC': '🏹',
-    'Support': '💙'
-  }
-  return icons[role] || '❓'
 }
 
 export default function SetupProfilePage() {
@@ -284,40 +276,24 @@ export default function SetupProfilePage() {
                     <label className="block text-sm font-medium text-purple-200 mb-2">
                       Main Role *
                     </label>
-                    <select
-                      name="main_role"
+                    <RoleSelect
                       value={formData.main_role}
-                      onChange={handleChange}
+                      onChange={(value) => setFormData({ ...formData, main_role: value })}
+                      placeholder="Select Main Role"
                       required
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
-                    >
-                      <option value="">Select Main Role</option>
-                      {ROLES.map(role => (
-                        <option key={role} value={role}>
-                          {getRoleIcon(role)} {role}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-purple-200 mb-2">
                       Secondary Role *
                     </label>
-                    <select
-                      name="secondary_role"
+                    <RoleSelect
                       value={formData.secondary_role}
-                      onChange={handleChange}
+                      onChange={(value) => setFormData({ ...formData, secondary_role: value })}
+                      placeholder="Select Secondary Role"
                       required
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
-                    >
-                      <option value="">Select Secondary Role</option>
-                      {ROLES.map(role => (
-                        <option key={role} value={role}>
-                          {getRoleIcon(role)} {role}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 </div>
 
@@ -364,7 +340,9 @@ export default function SetupProfilePage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         {formData.main_role && (
-                          <span title={formData.main_role}>{getRoleIcon(formData.main_role)}</span>
+                          <span title={formData.main_role}>
+                            <RoleIcon role={formData.main_role} size={16} />
+                          </span>
                         )}
                         {fetchedTier && (
                           <Badge className={`${getTierColor(fetchedTier)} text-white text-xs`}>

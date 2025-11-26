@@ -45,30 +45,27 @@ export default function ComprehensiveUserManagement() {
 
   const fetchUsers = async () => {
     try {
-      // Since we can't directly query auth.users, we'll get profiles and match with auth data
-      const { data: profiles, error: profilesError } = await supabase
-        .from('players')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError)
+      // Fetch users from admin API endpoint
+      const response = await fetch('/api/admin/users')
+      
+      if (!response.ok) {
+        console.error('Error fetching users:', response.statusText)
         return
       }
-
-      // Mock user data for demonstration - in real app, you'd use admin API
-      const mockUsers: AuthUser[] = profiles.map((profile: any) => ({
-        id: profile.id,
-        email: `user${profile.id.slice(0, 8)}@example.com`, // Mock email
-        created_at: profile.created_at,
-        app_metadata: profile.app_metadata || {},
-        raw_app_meta_data: profile.app_metadata || {}
-      }))
-
-      setUsers(mockUsers.map(user => ({
-        ...user,
-        profile: profiles.find((p: any) => p.id === user.id)
-      })))
+      
+      const data = await response.json()
+      
+      if (data.users) {
+        setUsers(data.users.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          created_at: user.created_at,
+          app_metadata: user.app_metadata || {},
+          user_metadata: user.user_metadata || {},
+          raw_app_meta_data: user.app_metadata || {},
+          profile: user.profile
+        })))
+      }
     } catch (error) {
       console.error('Error:', error)
     } finally {

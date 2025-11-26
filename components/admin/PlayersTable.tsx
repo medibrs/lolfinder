@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, MessageSquare } from 'lucide-react'
+import RoleIcon from '@/components/RoleIcon'
+import { createClient } from '@/lib/supabase/client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +27,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { createClient } from '@/lib/supabase/client'
 
 interface Player {
   id: string
@@ -149,17 +150,6 @@ export default function PlayersTable() {
     return colors[tier] || 'bg-gray-500'
   }
 
-  const getRoleIcon = (role: string) => {
-    const icons: { [key: string]: string } = {
-      'Top': '🛡️',
-      'Jungle': '🌳',
-      'Mid': '✨',
-      'ADC': '🏹',
-      'Support': '💙'
-    }
-    return icons[role] || '❓'
-  }
-
   if (loading) {
     return (
       <Card>
@@ -265,10 +255,12 @@ export default function PlayersTable() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <span title={player.main_role}>{getRoleIcon(player.main_role)}</span>
+                      <span title={player.main_role}>
+                        <RoleIcon role={player.main_role} size={16} className="mr-1" />
+                      </span>
                       {player.secondary_role && player.secondary_role !== player.main_role && (
                         <span title={player.secondary_role} className="text-muted-foreground">
-                          {getRoleIcon(player.secondary_role)}
+                          <RoleIcon role={player.secondary_role} size={16} className="mr-1" />
                         </span>
                       )}
                     </div>
