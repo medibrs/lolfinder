@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Bell, BellOff, X } from 'lucide-react'
+import { notificationManager } from '@/lib/browser-notifications'
 
 export default function NotificationPermission() {
   const [showPrompt, setShowPrompt] = useState(false)
@@ -11,18 +12,17 @@ export default function NotificationPermission() {
 
   useEffect(() => {
     // Check if browser supports notifications
-    if ('Notification' in window) {
-      setIsSupported(true)
-      setPermission(Notification.permission)
+    setIsSupported(notificationManager.isSupported())
+    const currentPermission = notificationManager.isPermissionGranted() ? 'granted' : 'default'
+    setPermission(currentPermission)
+    
+    // Show prompt after a delay if permission is default
+    if (currentPermission === 'default') {
+      const timer = setTimeout(() => {
+        setShowPrompt(true)
+      }, 5000) // Show after 5 seconds
       
-      // Show prompt after a delay if permission is default
-      if (Notification.permission === 'default') {
-        const timer = setTimeout(() => {
-          setShowPrompt(true)
-        }, 5000) // Show after 5 seconds
-        
-        return () => clearTimeout(timer)
-      }
+      return () => clearTimeout(timer)
     }
   }, [])
 
@@ -30,16 +30,16 @@ export default function NotificationPermission() {
     if (!isSupported) return
 
     try {
-      const result = await Notification.requestPermission()
+      const result = await notificationManager.requestPermission()
       setPermission(result)
       setShowPrompt(false)
       
       if (result === 'granted') {
         // Show a test notification
-        new Notification('Notifications Enabled!', {
+        await notificationManager.showNotification({
+          title: 'Notifications Enabled!',
           body: 'You\'ll now receive updates about tournaments and team invitations.',
-          icon: '/favicon.ico',
-          badge: '/favicon.ico'
+          tag: 'welcome-notification'
         })
       }
     } catch (error) {

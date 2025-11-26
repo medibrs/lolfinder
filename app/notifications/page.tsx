@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Bell, Check, X, Users, Crown, AlertCircle, MessageSquare, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { notificationManager } from '@/lib/browser-notifications'
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
@@ -38,6 +39,10 @@ export default function NotificationsPage() {
               // Add new notification directly to state immediately
               const newNotification = payload.new as any
               setNotifications(prev => [newNotification, ...prev])
+              
+              // Send browser notification if permission is granted
+              const notificationContent = notificationManager.getNotificationContent(newNotification)
+              await notificationManager.showNotification(notificationContent)
               
               // Enrich the notification in the background
               const enriched = await enrichNotification(newNotification)

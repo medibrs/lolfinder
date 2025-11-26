@@ -8,11 +8,22 @@ import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertTriangle, Settings, User, Shield, Trash2, Bell } from 'lucide-react'
 import NotificationToggle from '@/components/NotificationToggle'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -25,6 +36,51 @@ export default function SettingsPage() {
 
     getUser()
   }, [supabase])
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordSuccess('')
+
+    // Validation
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('New passwords do not match')
+      return
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long')
+      return
+    }
+
+    setPasswordLoading(true)
+    try {
+      const response = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      })
+
+      if (response.ok) {
+        setPasswordSuccess('Password updated successfully!')
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        setShowPasswordForm(false)
+      } else {
+        const error = await response.json()
+        setPasswordError(error.error || 'Failed to update password')
+      }
+    } catch (error) {
+      console.error('Error changing password:', error)
+      setPasswordError('Failed to update password')
+    } finally {
+      setPasswordLoading(false)
+    }
+  }
 
   const handleDeleteAccount = async () => {
     if (!confirm('Are you sure you want to delete your account? This action cannot be undone and will remove all your data including teams, tournaments, and notifications.')) {
@@ -140,10 +196,6 @@ export default function SettingsPage() {
                 <p className="font-medium">{user.email}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">User ID</label>
-                <p className="font-mono text-sm">{user.id}</p>
-              </div>
-              <div>
                 <label className="text-sm font-medium text-muted-foreground">Account Created</label>
                 <p className="font-medium">{new Date(user.created_at).toLocaleDateString()}</p>
               </div>
@@ -162,15 +214,87 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Password</h4>
-                  <p className="text-sm text-muted-foreground">Change your password</p>
+              {/* Password Change */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">Password</h4>
+                    <p className="text-sm text-muted-foreground">Change your password</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowPasswordForm(!showPasswordForm)}
+                  >
+                    {showPasswordForm ? 'Cancel' : 'Change Password'}
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm">
-                  Change Password
-                </Button>
+                
+                {showPasswordForm && (
+                  <form onSubmit={handlePasswordChange} className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    {passwordError && (
+                      <Alert className="border-red-200 bg-red-50">
+                        <AlertDescription className="text-red-800">
+                          {passwordError}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {passwordSuccess && (
+                      <Alert className="border-green-200 bg-green-50">
+                        <AlertDescription className="text-green-800">
+                          {passwordSuccess}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="current-password">Current Password</Label>
+                      <Input
+                        id="current-password"
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Confirm New Password</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      disabled={passwordLoading}
+                      className="w-full"
+                    >
+                      {passwordLoading ? 'Updating...' : 'Update Password'}
+                    </Button>
+                  </form>
+                )}
               </div>
+              
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-medium">Two-Factor Authentication</h4>

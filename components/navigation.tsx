@@ -375,6 +375,13 @@ export default function Navigation() {
                       >
                         Profile
                       </Link>
+                      <Link 
+                        href="/settings" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
+                      >
+                        Settings
+                      </Link>
                       {userTeam && (
                         <Link 
                           href={isCaptain ? "/manage-team" : "/view-team"}

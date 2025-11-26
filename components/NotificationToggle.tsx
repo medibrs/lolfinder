@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Bell, BellOff, Check, X } from 'lucide-react'
+import { notificationManager } from '@/lib/browser-notifications'
 
 export default function NotificationToggle() {
   const [permission, setPermission] = useState<NotificationPermission>('default')
@@ -10,10 +11,8 @@ export default function NotificationToggle() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    if ('Notification' in window) {
-      setIsSupported(true)
-      setPermission(Notification.permission)
-    }
+    setIsSupported(notificationManager.isSupported())
+    setPermission(notificationManager.isPermissionGranted() ? 'granted' : 'default')
   }, [])
 
   const requestPermission = async () => {
@@ -21,15 +20,15 @@ export default function NotificationToggle() {
 
     setIsLoading(true)
     try {
-      const result = await Notification.requestPermission()
+      const result = await notificationManager.requestPermission()
       setPermission(result)
       
       if (result === 'granted') {
         // Show a test notification
-        new Notification('Notifications Enabled! 🔔', {
+        await notificationManager.showNotification({
+          title: 'Notifications Enabled! 🔔',
           body: 'You\'ll now receive updates about tournaments and team invitations.',
-          icon: '/favicon.ico',
-          badge: '/favicon.ico'
+          tag: 'test-notification'
         })
       }
     } catch (error) {
