@@ -39,22 +39,7 @@ export default function SettingsPage() {
     getUser()
   }, [supabase])
 
-  const testNotification = async () => {
-    console.log('🧪 Testing browser notification...')
-    const success = await notificationManager.showNotification({
-      title: '🧪 Test Notification',
-      body: 'This is a test notification to verify the system is working!',
-      tag: 'test-notification'
-    })
-    console.log('🧪 Test notification result:', success)
-  }
-
-  const testFaviconBadgeOnly = async () => {
-    console.log('🏷️ Testing favicon badge only...')
-    await faviconBadge.setBadge(1)
-    console.log('🏷️ Favicon badge test completed')
-  }
-
+  
   
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -174,26 +159,8 @@ export default function SettingsPage() {
                     Get instant updates in your browser when you're online
                   </p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={testNotification}
-                    className="w-full sm:w-auto"
-                  >
-                    Test Notification
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={testFaviconBadgeOnly}
-                    className="w-full sm:w-auto"
-                  >
-                    Test Favicon Only
-                  </Button>
-                  <div className="w-full sm:w-auto">
-                    <NotificationToggle />
-                  </div>
+                <div className="w-full sm:w-auto">
+                  <NotificationToggle />
                 </div>
               </div>
               

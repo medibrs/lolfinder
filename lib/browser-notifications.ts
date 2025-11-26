@@ -150,6 +150,11 @@ export class BrowserNotificationManager {
   }
 
   private isUserActiveOnSite(): boolean {
+    // Only check activity on client side
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return false
+    }
+
     // Check if the page is visible and the window is focused
     const isPageVisible = !document.hidden
     const isWindowFocused = document.hasFocus()
@@ -176,6 +181,11 @@ export class BrowserNotificationManager {
   }
 
   private trackUserActivity() {
+    // Only track user activity on client side
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return
+    }
+
     // Track user activity to determine when to show browser notifications
     const updateLastActivity = () => {
       this.lastActivityTime = Date.now()
