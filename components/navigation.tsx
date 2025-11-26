@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { CurrentUserAvatar } from '@/components/current-user-avatar'
 import { createClient } from '@/lib/supabase/client'
@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils'
 
 export default function Navigation() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const activeAdminTab = searchParams.get('tab') || 'overview'
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [notifications, setNotifications] = useState<any[]>([])
@@ -397,47 +399,110 @@ export default function Navigation() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-8">
-            <Link 
-              href="/players" 
-              className={cn(
-                "text-foreground hover:text-primary transition",
-                pathname === "/players" && "text-primary font-medium"
-              )}
-            >
-              Players
-            </Link>
-            <Link 
-              href="/teams" 
-              className={cn(
-                "text-foreground hover:text-primary transition",
-                pathname === "/teams" && "text-primary font-medium"
-              )}
-            >
-              Teams
-            </Link>
-            <Link 
-              href="/tournaments" 
-              className={cn(
-                "text-foreground hover:text-primary transition",
-                pathname === "/tournaments" && "text-primary font-medium"
-              )}
-            >
-              Tournaments
-            </Link>
-            <Link 
-              href="/search" 
-              className={cn(
-                "text-foreground hover:text-primary transition",
-                pathname === "/search" && "text-primary font-medium"
-              )}
-            >
-              Join/Invite
-            </Link>
+            {pathname === '/admin' ? (
+              // Admin tabs when on admin page
+              <>
+                <Link 
+                  href="/admin?tab=overview" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition text-sm",
+                    activeAdminTab === 'overview' && "text-primary font-medium"
+                  )}
+                >
+                  Overview
+                </Link>
+                <Link 
+                  href="/admin?tab=players" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition text-sm",
+                    activeAdminTab === 'players' && "text-primary font-medium"
+                  )}
+                >
+                  Players
+                </Link>
+                <Link 
+                  href="/admin?tab=teams" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition text-sm",
+                    activeAdminTab === 'teams' && "text-primary font-medium"
+                  )}
+                >
+                  Teams
+                </Link>
+                <Link 
+                  href="/admin?tab=tournaments" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition text-sm",
+                    activeAdminTab === 'tournaments' && "text-primary font-medium"
+                  )}
+                >
+                  Tournaments
+                </Link>
+                <Link 
+                  href="/admin?tab=registrations" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition text-sm",
+                    activeAdminTab === 'registrations' && "text-primary font-medium"
+                  )}
+                >
+                  Registrations
+                </Link>
+                <Link 
+                  href="/admin?tab=users" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition text-sm",
+                    activeAdminTab === 'users' && "text-primary font-medium"
+                  )}
+                >
+                  User Roles
+                </Link>
+              </>
+            ) : (
+              // Regular navigation links
+              <>
+                <Link 
+                  href="/players" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition",
+                    pathname === "/players" && "text-primary font-medium"
+                  )}
+                >
+                  Players
+                </Link>
+                <Link 
+                  href="/teams" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition",
+                    pathname === "/teams" && "text-primary font-medium"
+                  )}
+                >
+                  Teams
+                </Link>
+                <Link 
+                  href="/tournaments" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition",
+                    pathname === "/tournaments" && "text-primary font-medium"
+                  )}
+                >
+                  Tournaments
+                </Link>
+                <Link 
+                  href="/search" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition",
+                    pathname === "/search" && "text-primary font-medium"
+                  )}
+                >
+                  Join/Invite
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Desktop Avatar/Auth */}
           <div className="hidden md:flex items-center gap-2">
-            {isAdmin && (
+            {isAdmin && pathname !== '/admin' && (
               <Button asChild variant="outline" className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 hover:text-yellow-700">
                 <Link href="/admin">Admin</Link>
               </Button>

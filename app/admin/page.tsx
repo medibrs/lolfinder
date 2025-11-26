@@ -1,19 +1,6 @@
 import { redirect } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Users, Trophy, Shield, TrendingUp, Activity, Settings } from 'lucide-react'
-import AdminStats from '@/components/admin/AdminStats'
-import PlayersTable from '@/components/admin/PlayersTable'
-import TeamsTable from '@/components/admin/TeamsTable'
-import TournamentsTable from '@/components/admin/TournamentsTable'
-import RegistrationsTable from '@/components/admin/RegistrationsTable'
-import UserManagement from '@/components/admin/UserManagement'
-import CreateTournamentCard from '@/components/admin/CreateTournamentCard'
-import SystemHealthCard from '@/components/admin/SystemHealthCard'
-import ComprehensiveUserManagement from '@/components/admin/ComprehensiveUserManagement'
 import { getCurrentAdminUser } from '@/lib/admin-check'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import AdminTabs from '@/components/admin/AdminTabs'
 
 async function getAdminStats() {
   const { createAdminClient } = await import('@/lib/admin-check')
@@ -58,60 +45,7 @@ export default async function AdminPage() {
     <main className="pt-20">
       <section className="bg-gradient-to-b from-background to-card px-4 py-6">
         <div className="max-w-6xl mx-auto w-full">
-          {/* Main Content Tabs */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 max-w-4xl mx-auto">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="players">Players</TabsTrigger>
-              <TabsTrigger value="teams">Teams</TabsTrigger>
-              <TabsTrigger value="tournaments">Tournaments</TabsTrigger>
-              <TabsTrigger value="registrations">Registrations</TabsTrigger>
-              <TabsTrigger value="users">User Roles</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <CreateTournamentCard />
-                <SystemHealthCard stats={stats} />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="players">
-              <Card className="bg-card border-border p-6">
-                <div className="text-4xl mb-4">👥</div>
-                <h3 className="text-xl font-bold mb-4">Player Management</h3>
-                <PlayersTable />
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="teams">
-              <Card className="bg-card border-border p-6">
-                <div className="text-4xl mb-4">🏆</div>
-                <h3 className="text-xl font-bold mb-4">Team Management</h3>
-                <TeamsTable />
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="tournaments">
-              <Card className="bg-card border-border p-6">
-                <div className="text-4xl mb-4">⚔️</div>
-                <h3 className="text-xl font-bold mb-4">Tournament Management</h3>
-                <TournamentsTable />
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="registrations">
-              <Card className="bg-card border-border p-6">
-                <div className="text-4xl mb-4">📝</div>
-                <h3 className="text-xl font-bold mb-4">Registration Management</h3>
-                <RegistrationsTable />
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="users">
-              <ComprehensiveUserManagement />
-            </TabsContent>
-          </Tabs>
+          <AdminTabs stats={stats} />
 
           {/* Compact Stats at Bottom */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8 pt-6 border-t border-border">
