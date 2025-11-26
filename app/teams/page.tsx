@@ -138,6 +138,13 @@ export default function TeamsPage() {
     }
   }
 
+  const sortedTeams = [...teams].sort((a, b) => {
+    // Put user's team first
+    if (userTeam && a.id === userTeam.id) return -1
+    if (userTeam && b.id === userTeam.id) return 1
+    return 0
+  })
+
   const handleRequestToJoin = async (teamId: string, teamName: string) => {
     if (!user || sendingRequest) return
 
@@ -207,7 +214,7 @@ export default function TeamsPage() {
     }
   }
 
-  const filteredTeams = teams.filter(team => {
+  const filteredTeams = sortedTeams.filter(team => {
     const matchesRole = !selectedRole || team.open_positions.includes(selectedRole)
     const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesRole && matchesSearch
@@ -221,9 +228,15 @@ export default function TeamsPage() {
             <h1 className="text-4xl font-bold mb-2">Teams</h1>
             <p className="text-muted-foreground">Find teams looking for your role</p>
           </div>
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <a href="/create-team">Create Team</a>
-          </Button>
+          {userTeam ? (
+            <Button asChild className="bg-yellow-600 hover:bg-yellow-700">
+              <a href="/manage-team">Manage Team</a>
+            </Button>
+          ) : (
+            <Button asChild className="bg-primary hover:bg-primary/90">
+              <a href="/create-team">Create Team</a>
+            </Button>
+          )}
         </div>
 
         <div className="mb-8 space-y-4">
