@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-react'
+import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, MessageSquare } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { createClient } from '@/lib/supabase/client'
 
 interface Player {
   id: string
@@ -36,6 +46,14 @@ export default function PlayersTable() {
   const [tierFilter, setTierFilter] = useState('all')
   const [roleFilter, setRoleFilter] = useState('all')
   const [lftFilter, setLftFilter] = useState('all')
+  
+  // Message Dialog State
+  const [messageOpen, setMessageOpen] = useState(false)
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
+  const [messageText, setMessageText] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
+  
+  const supabase = createClient()
 
   useEffect(() => {
     fetchPlayers()
@@ -64,6 +82,47 @@ export default function PlayersTable() {
     
     return matchesSearch && matchesTier && matchesRole && matchesLft
   })
+
+  const openMessageDialog = (player: Player) => {
+    setSelectedPlayer(player)
+    setMessageText('')
+    setMessageOpen(true)
+  }
+
+  const handleSendMessage = async () => {
+    if (!selectedPlayer || !messageText.trim()) return
+
+    setSendingMessage(true)
+    try {
+      // Create a notification for the player using direct client
+      // This matches the logic in TeamsTable.tsx which is confirmed to work
+      const { error } = await supabase
+        .from('notifications')
+        .insert([{
+          user_id: selectedPlayer.id,
+          type: 'admin_message',
+          title: 'Message from Admin',
+          message: messageText,
+          read: false,
+          data: {
+            from_admin: true
+          }
+        }])
+
+      if (error) {
+        console.error('Full error object:', error)
+        throw error
+      }
+
+      setMessageOpen(false)
+      alert('Message sent successfully!')
+    } catch (error: any) {
+      console.error('Error sending message:', error)
+      alert(`Failed to send message: ${error.message || 'Unknown error'}`)
+    } finally {
+      setSendingMessage(false)
+    }
+  }
 
   const deletePlayer = async (playerId: string) => {
     if (confirm('Are you sure you want to delete this player?')) {
@@ -260,6 +319,10 @@ export default function PlayersTable() {
                           Edit Player
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => openMessageDialog(player)}>
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Message Player
+                        </DropdownMenuItem>
                         <DropdownMenuItem 
                           className="text-destructive"
                           onClick={() => deletePlayer(player.id)}
@@ -281,6 +344,31 @@ export default function PlayersTable() {
             No players found matching your filters.
           </div>
         )}
+
+        <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Message {selectedPlayer?.summoner_name}</DialogTitle>
+              <DialogDescription>
+                Send a direct notification to this player. They will receive it immediately.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Textarea
+                placeholder="Type your message here..."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setMessageOpen(false)}>Cancel</Button>
+              <Button onClick={handleSendMessage} disabled={sendingMessage || !messageText.trim()}>
+                {sendingMessage ? 'Sending...' : 'Send Message'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   )

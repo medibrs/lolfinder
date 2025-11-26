@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
@@ -64,7 +65,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`} suppressHydrationWarning={true}>
-        <Navigation />
+        <Suspense fallback={<div className="h-16 w-full bg-background/80 border-b border-border fixed top-0 z-50" />}>
+          <Navigation />
+        </Suspense>
         {children}
         <Analytics />
       </body>

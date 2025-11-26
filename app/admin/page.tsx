@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentAdminUser } from '@/lib/admin-check'
 import AdminTabs from '@/components/admin/AdminTabs'
+import { Suspense } from 'react'
 
 async function getAdminStats() {
   const { createAdminClient } = await import('@/lib/admin-check')
@@ -45,7 +46,9 @@ export default async function AdminPage() {
     <main className="pt-20">
       <section className="bg-gradient-to-b from-background to-card px-4 py-6">
         <div className="max-w-6xl mx-auto w-full">
-          <AdminTabs stats={stats} />
+          <Suspense fallback={<div className="p-8 text-center">Loading admin dashboard...</div>}>
+            <AdminTabs stats={stats} />
+          </Suspense>
 
           {/* Compact Stats at Bottom */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8 pt-6 border-t border-border">
