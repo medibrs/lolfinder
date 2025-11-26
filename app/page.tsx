@@ -12,6 +12,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [isCaptain, setIsCaptain] = useState(false)
+  const [playerProfile, setPlayerProfile] = useState<any>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -20,6 +21,17 @@ export default function Home() {
       setUser(user)
       
       if (user) {
+        // Fetch user's player profile (includes Riot Games name)
+        const { data: profileData } = await supabase
+          .from('players')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+        
+        if (profileData) {
+          setPlayerProfile(profileData)
+        }
+
         // Fetch user's team
         const { data: playerData } = await supabase
           .from('players')
@@ -269,19 +281,13 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                Welcome back, {user.email?.split('@')[0]}! 👋
+                Welcome back, {playerProfile?.riot_games_name || 'Summoner'}! 👋
               </h1>
               <p className="text-muted-foreground text-lg">
                 Ready to dominate the Rift? Here's what's happening with your team.
               </p>
             </div>
             <div className="flex gap-3">
-              <Button asChild variant="outline">
-                <Link href="/settings">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </Link>
-              </Button>
               <Button asChild>
                 <Link href="/notifications">
                   <Bell className="w-4 h-4 mr-2" />
