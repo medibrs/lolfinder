@@ -284,46 +284,86 @@ export default function Navigation() {
               <SheetContent side="right" className="w-[280px]">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <nav className="flex flex-col gap-2 mt-6">
-                  <Link 
-                    href="/players" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      "text-base font-medium px-3 py-2 rounded-md transition",
-                      pathname === "/players" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                    )}
-                  >
-                    Players
-                  </Link>
-                  <Link 
-                    href="/teams" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      "text-base font-medium px-3 py-2 rounded-md transition",
-                      pathname === "/teams" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                    )}
-                  >
-                    Teams
-                  </Link>
-                  <Link 
-                    href="/tournaments" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      "text-base font-medium px-3 py-2 rounded-md transition",
-                      pathname === "/tournaments" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                    )}
-                  >
-                    Tournaments
-                  </Link>
-                  <Link 
-                    href="/search" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      "text-base font-medium px-3 py-2 rounded-md transition",
-                      pathname === "/search" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                    )}
-                  >
-                    Join/Invite
-                  </Link>
+                  {user ? (
+                    // Authenticated user links
+                    <>
+                      <Link 
+                        href="/players" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "text-base font-medium px-3 py-2 rounded-md transition",
+                          pathname === "/players" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                        )}
+                      >
+                        Players
+                      </Link>
+                      <Link 
+                        href="/teams" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "text-base font-medium px-3 py-2 rounded-md transition",
+                          pathname === "/teams" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                        )}
+                      >
+                        Teams
+                      </Link>
+                      <Link 
+                        href="/tournaments" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "text-base font-medium px-3 py-2 rounded-md transition",
+                          pathname === "/tournaments" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                        )}
+                      >
+                        Tournaments
+                      </Link>
+                      <Link 
+                        href="/search" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "text-base font-medium px-3 py-2 rounded-md transition",
+                          pathname === "/search" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                        )}
+                      >
+                        Join/Invite
+                      </Link>
+                    </>
+                  ) : (
+                    // Public links
+                    <>
+                      <Link 
+                        href="/tournaments" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "text-base font-medium px-3 py-2 rounded-md transition",
+                          pathname === "/tournaments" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                        )}
+                      >
+                        Tournaments
+                      </Link>
+                      <Link 
+                        href="/#about" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
+                      >
+                        About
+                      </Link>
+                      <Link 
+                        href="/#how-it-works" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
+                      >
+                        How It Works
+                      </Link>
+                      <Link 
+                        href="/#features" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
+                      >
+                        Features
+                      </Link>
+                    </>
+                  )}
                   
                   {user && (
                     <>
