@@ -114,8 +114,15 @@ export default function Navigation() {
 
   
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    window.location.href = '/auth'
+    try {
+      await fetch('/auth/signout', { method: 'POST' })
+      window.location.href = '/auth'
+    } catch (error) {
+      console.error('Error signing out:', error)
+      // Fallback to client-side signout if server fails
+      await supabase.auth.signOut()
+      window.location.href = '/auth'
+    }
   }
 
   if (loading) {

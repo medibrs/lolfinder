@@ -226,14 +226,18 @@ const fetchPlayers = async () => {
   }
 
   const filteredPlayers = players.filter(player => {
-    // Hide test profiles - only show players with actual user accounts
-    // Test profiles typically have no actual auth user associated
-    const isTestProfile = !player.id || player.id.length < 30 || player.id.startsWith('test-') || player.summoner_name.includes('Test');
+    // TODO: REMOVE THIS FILTER WHEN GOING PUBLIC
+    // This filter hides test profiles that were added via SQL for testing purposes
+    // Test profiles have "test" in their summoner names
+    // Once we launch publicly, delete test profiles from DB and remove this entire filter block
+    const isTestProfile = player.summoner_name.toLowerCase().includes('test');
     
     const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
     const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
     const notCurrentUser = player.id !== user?.id
     const matchesLFT = !showLFTOnly || (player.looking_for_team && !player.team_id)
+    
+    // END OF TEMPORARY TEST PROFILE FILTER - REMOVE ABOVE LOGIC WHEN GOING PUBLIC
     const isRealProfile = !isTestProfile;
     
     return matchesRole && matchesSearch && notCurrentUser && matchesLFT && isRealProfile

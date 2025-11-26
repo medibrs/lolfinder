@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { getRiotApiUsageStats } from '@/lib/riot-logging'
 
 interface RateLimitStatus {
   used: number
@@ -33,7 +32,13 @@ export default function RiotApiStatsCard() {
   const fetchStats = async () => {
     setLoading(true)
     try {
-      const data = await getRiotApiUsageStats(timeWindow)
+      const response = await fetch(`/api/admin/riot-stats?timeWindow=${timeWindow}`)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stats: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
       setStats(data)
     } catch (error) {
       console.error('Error fetching Riot API stats:', error)
