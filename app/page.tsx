@@ -30,26 +30,6 @@ export default function Home() {
               <Link href="/tournaments">View Tournaments</Link>
             </Button>
           </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-12">
-            <div className="p-4">
-              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">500+</div>
-              <div className="text-sm text-muted-foreground">Active Players</div>
-            </div>
-            <div className="p-4">
-              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">100+</div>
-              <div className="text-sm text-muted-foreground">Teams Formed</div>
-            </div>
-            <div className="p-4">
-              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">50+</div>
-              <div className="text-sm text-muted-foreground">Tournaments</div>
-            </div>
-            <div className="p-4">
-              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">$10k+</div>
-              <div className="text-sm text-muted-foreground">Prize Pool</div>
-            </div>
-          </div>
         </div>
       </section>
 
