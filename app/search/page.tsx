@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,6 +35,7 @@ interface Player {
 }
 
 export default function SearchPage() {
+  const router = useRouter()
   const [searchType, setSearchType] = useState<'players' | 'teams'>('teams')
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -51,8 +53,19 @@ export default function SearchPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    fetchData()
+    checkAuthAndFetchData()
   }, [])
+
+  const checkAuthAndFetchData = async () => {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    
+    if (!authUser) {
+      router.push('/auth')
+      return
+    }
+    
+    fetchData()
+  }
 
   const fetchData = async () => {
     try {

@@ -457,8 +457,8 @@ export default function Navigation() {
                   User Roles
                 </Link>
               </>
-            ) : (
-              // Regular navigation links
+            ) : user ? (
+              // Authenticated user navigation
               <>
                 <Link 
                   href="/players" 
@@ -495,6 +495,37 @@ export default function Navigation() {
                   )}
                 >
                   Join/Invite
+                </Link>
+              </>
+            ) : (
+              // Public navigation (unauthenticated)
+              <>
+                <Link 
+                  href="/tournaments" 
+                  className={cn(
+                    "text-foreground hover:text-primary transition",
+                    pathname === "/tournaments" && "text-primary font-medium"
+                  )}
+                >
+                  Tournaments
+                </Link>
+                <Link 
+                  href="/#about" 
+                  className="text-foreground hover:text-primary transition"
+                >
+                  About
+                </Link>
+                <Link 
+                  href="/#how-it-works" 
+                  className="text-foreground hover:text-primary transition"
+                >
+                  How It Works
+                </Link>
+                <Link 
+                  href="/#features" 
+                  className="text-foreground hover:text-primary transition"
+                >
+                  Features
                 </Link>
               </>
             )}

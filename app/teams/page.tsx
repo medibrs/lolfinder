@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,7 @@ interface Team {
 }
 
 export default function TeamsPage() {
+  const router = useRouter()
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [teams, setTeams] = useState<any[]>([])
@@ -35,8 +37,19 @@ export default function TeamsPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    fetchTeams()
+    checkAuthAndFetchTeams()
   }, [])
+
+  const checkAuthAndFetchTeams = async () => {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    
+    if (!authUser) {
+      router.push('/auth')
+      return
+    }
+    
+    fetchTeams()
+  }
 
   const fetchTeams = async () => {
     try {

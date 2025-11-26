@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ interface Player {
 }
 
 export default function PlayersPage() {
+  const router = useRouter()
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showLFTOnly, setShowLFTOnly] = useState(false)
@@ -36,7 +38,7 @@ export default function PlayersPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    fetchPlayers()
+    checkAuthAndFetchPlayers()
     
     // Refetch invitations when page becomes visible (to catch rejected/accepted invites)
     const handleVisibilityChange = () => {
@@ -57,6 +59,17 @@ export default function PlayersPage() {
       clearInterval(interval)
     }
   }, [])
+
+  const checkAuthAndFetchPlayers = async () => {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    
+    if (!authUser) {
+      router.push('/auth')
+      return
+    }
+    
+    fetchPlayers()
+  }
 
   const fetchPlayers = async () => {
     try {
