@@ -38,10 +38,7 @@ export class BrowserNotificationManager {
     return BrowserNotificationManager.instance
   }
 
-  constructor() {
-    this.permission = typeof Notification !== 'undefined' ? Notification.permission : 'default'
-  }
-
+  
   async requestPermission(): Promise<NotificationPermission> {
     if (typeof Notification === 'undefined') {
       console.log('🔕 Notifications not supported on this device/browser')
@@ -88,6 +85,12 @@ export class BrowserNotificationManager {
       return false
     }
 
+    // Check if user is actively browsing the site
+    if (this.isUserActiveOnSite()) {
+      console.log('👁️ User is actively browsing, skipping browser notification')
+      return false
+    }
+
     const permission = await this.requestPermission()
     
     if (permission !== 'granted') {
@@ -99,7 +102,7 @@ export class BrowserNotificationManager {
 
     try {
       const notificationContent = this.getNotificationContent(notification)
-      console.log('📱 Creating notification with:', notificationContent)
+      console.log('� Creating notification with:', notificationContent)
 
       // Mobile-specific notification options
       const notificationOptions: BrowserNotificationOptions = {
@@ -110,7 +113,7 @@ export class BrowserNotificationManager {
         requireInteraction: notificationContent.requireInteraction,
         silent: false,
         // Add vibration for mobile devices
-        vibrate: [200, 100, 200],
+        vibrate: [500, 100, 500],
       }
 
       const browserNotification = new Notification(notificationContent.title, notificationOptions)
@@ -144,6 +147,64 @@ export class BrowserNotificationManager {
       
       return false
     }
+  }
+
+  private isUserActiveOnSite(): boolean {
+    // Check if the page is visible and the window is focused
+    const isPageVisible = !document.hidden
+    const isWindowFocused = document.hasFocus()
+    
+    // Also check if the user was recently active (within last 30 seconds)
+    const isRecentlyActive = Date.now() - this.lastActivityTime < 30000
+    
+    console.log('👁: User activity check:', {
+      isPageVisible,
+      isWindowFocused,
+      isRecentlyActive,
+      lastActivityTime: new Date(this.lastActivityTime).toLocaleTimeString()
+    })
+    
+    return isPageVisible && isWindowFocused && isRecentlyActive
+  }
+
+  private lastActivityTime = Date.now()
+
+  constructor() {
+    this.permission = typeof Notification !== 'undefined' ? Notification.permission : 'default'
+    this.lastActivityTime = Date.now()
+    this.trackUserActivity()
+  }
+
+  private trackUserActivity() {
+    // Track user activity to determine when to show browser notifications
+    const updateLastActivity = () => {
+      this.lastActivityTime = Date.now()
+    }
+
+    // Track various user interactions
+    const events = [
+      'mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 
+      'click', 'keydown', 'keyup', 'focus', 'blur'
+    ]
+
+    events.forEach(event => {
+      document.addEventListener(event, updateLastActivity, true)
+    })
+
+    // Track page visibility changes
+    document.addEventListener('visibilitychange', () => {
+      console.log('👁️ Page visibility changed:', document.hidden ? 'hidden' : 'visible')
+    })
+
+    // Track window focus
+    window.addEventListener('focus', () => {
+      console.log('👁️ Window focused')
+      updateLastActivity()
+    })
+
+    window.addEventListener('blur', () => {
+      console.log('👁️ Window blurred')
+    })
   }
 
   private isMobile(): boolean {
