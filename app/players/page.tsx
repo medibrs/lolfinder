@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
+import { getProfileIconUrl } from '@/lib/ddragon'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -42,6 +43,7 @@ export default function PlayersPage() {
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
   const [sentInvites, setSentInvites] = useState<Record<string, string>>({})
   const [cancellingInvite, setCancellingInvite] = useState<string | null>(null)
+  const [profileIconUrls, setProfileIconUrls] = useState<Record<string, string>>({})
   const supabase = createClient()
 
   useEffect(() => {
@@ -78,7 +80,24 @@ export default function PlayersPage() {
     fetchPlayers()
   }
 
-  const fetchPlayers = async () => {
+  const fetchProfileIconUrls = async (players: Player[]) => {
+  const urls: Record<string, string> = {};
+  
+  for (const player of players) {
+    if (player.profile_icon_id) {
+      try {
+        const url = await getProfileIconUrl(player.profile_icon_id);
+        urls[player.id] = url;
+      } catch (error) {
+        console.error(`Failed to fetch profile icon for ${player.summoner_name}:`, error);
+      }
+    }
+  }
+  
+  setProfileIconUrls(urls);
+};
+
+const fetchPlayers = async () => {
     try {
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -121,6 +140,11 @@ export default function PlayersPage() {
       }
 
       setPlayers(data || [])
+      
+      // Fetch profile icon URLs for all players
+      if (data && data.length > 0) {
+        await fetchProfileIconUrls(data);
+      }
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -276,17 +300,33 @@ export default function PlayersPage() {
                     <div className="relative">
                       {player.profile_icon_id ? (
                         <Image 
-                          src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${player.profile_icon_id}.png`}
+                          src={profileIconUrls[player.id] || ''}
                           alt="Profile Icon"
                           width={64}
                           height={64}
                           className="rounded-full border-2 border-border"
+                          onError={(e) => {
+                            // Fallback to question mark if image fails to load
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              const fallback = parent.querySelector('.fallback-icon');
+                              if (fallback) {
+                                (fallback as HTMLElement).style.display = 'flex';
+                              }
+                            }
+                          }}
                         />
                       ) : (
                         <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
                           <span className="text-2xl">?</span>
                         </div>
                       )}
+                      {/* Fallback icon */}
+                      <div className="fallback-icon w-16 h-16 bg-muted rounded-full flex items-center justify-center" style={{ display: 'none' }}>
+                        <span className="text-2xl">?</span>
+                      </div>
                       {/* Rank Badge */}
                       <div className="absolute -bottom-1 -right-1">
                         <Image 

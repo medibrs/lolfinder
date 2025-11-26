@@ -61,7 +61,6 @@ export async function getRiotAccount(gameName: string, tagLine: string, userId?:
     }
     
     const data = await response.json();
-    console.log('Riot Account API Response:', JSON.stringify(data, null, 2));
     return data;
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -104,7 +103,6 @@ export async function getSummonerByPuuid(puuid: string, userId?: string): Promis
     }
     
     const data = await response.json();
-    console.log('Riot Summoner API Response:', JSON.stringify(data, null, 2));
     return data;
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -146,7 +144,6 @@ export async function getLeagueEntries(puuid: string, userId?: string): Promise<
     }
     
     const data = await response.json();
-    console.log('Riot League Entries API Response:', JSON.stringify(data, null, 2));
     return data;
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -229,6 +226,5 @@ export async function validateAndFetchRiotData(summonerName: string, userId?: st
     opggUrl: opggUrl
   };
 
-  console.log('Final processed Riot data:', JSON.stringify(result, null, 2));
   return result;
 }
