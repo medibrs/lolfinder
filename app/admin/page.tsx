@@ -56,62 +56,8 @@ export default async function AdminPage() {
 
   return (
     <main className="pt-20">
-      {/* Hero Section */}
-      <section className="min-h-screen bg-gradient-to-b from-background to-card flex items-start justify-center px-4 pt-16">
+      <section className="bg-gradient-to-b from-background to-card px-4 py-6">
         <div className="max-w-6xl mx-auto w-full">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-balance">
-              Admin <span className="text-primary">Dashboard</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 text-balance">
-              Manage your tournament platform. Monitor players, teams, competitions, and grow your community.
-            </p>
-            
-            <div className="flex justify-center mb-8">
-              <form action="/auth/signout" method="post">
-                <Button variant="outline" size="lg" type="submit">
-                  Sign Out
-                </Button>
-              </form>
-            </div>
-          </div>
-
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            <Card className="bg-card border-border p-6">
-              <div className="text-4xl mb-4">👥</div>
-              <h3 className="text-xl font-bold mb-2">Total Players</h3>
-              <p className="text-3xl font-bold text-primary mb-2">{stats.playersCount}</p>
-              <p className="text-muted-foreground">
-                +{Math.floor(stats.playersCount * 0.2)}% from last month
-              </p>
-            </Card>
-            <Card className="bg-card border-border p-6">
-              <div className="text-4xl mb-4">🏆</div>
-              <h3 className="text-xl font-bold mb-2">Total Teams</h3>
-              <p className="text-3xl font-bold text-primary mb-2">{stats.teamsCount}</p>
-              <p className="text-muted-foreground">
-                +{Math.floor(stats.teamsCount * 0.2)}% from last month
-              </p>
-            </Card>
-            <Card className="bg-card border-border p-6">
-              <div className="text-4xl mb-4">⚔️</div>
-              <h3 className="text-xl font-bold mb-2">Tournaments</h3>
-              <p className="text-3xl font-bold text-primary mb-2">{stats.tournamentsCount}</p>
-              <p className="text-muted-foreground">
-                +{Math.floor(stats.tournamentsCount * 0.2)}% from last month
-              </p>
-            </Card>
-            <Card className="bg-card border-border p-6">
-              <div className="text-4xl mb-4">📊</div>
-              <h3 className="text-xl font-bold mb-2">Registrations</h3>
-              <p className="text-3xl font-bold text-primary mb-2">{stats.registrationsCount}</p>
-              <p className="text-muted-foreground">
-                +{Math.floor(stats.registrationsCount * 0.2)}% from last month
-              </p>
-            </Card>
-          </div>
-
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList className="grid w-full grid-cols-6 max-w-4xl mx-auto">
@@ -166,6 +112,38 @@ export default async function AdminPage() {
               <ComprehensiveUserManagement />
             </TabsContent>
           </Tabs>
+
+          {/* Compact Stats at Bottom */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8 pt-6 border-t border-border">
+            <div className="flex items-center gap-2 p-3 bg-card/50 rounded-lg">
+              <span className="text-lg">👥</span>
+              <div>
+                <p className="text-xs text-muted-foreground">Players</p>
+                <p className="text-lg font-bold text-primary">{stats.playersCount}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-card/50 rounded-lg">
+              <span className="text-lg">🏆</span>
+              <div>
+                <p className="text-xs text-muted-foreground">Teams</p>
+                <p className="text-lg font-bold text-primary">{stats.teamsCount}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-card/50 rounded-lg">
+              <span className="text-lg">⚔️</span>
+              <div>
+                <p className="text-xs text-muted-foreground">Tournaments</p>
+                <p className="text-lg font-bold text-primary">{stats.tournamentsCount}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-card/50 rounded-lg">
+              <span className="text-lg">📊</span>
+              <div>
+                <p className="text-xs text-muted-foreground">Registrations</p>
+                <p className="text-lg font-bold text-primary">{stats.registrationsCount}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </main>

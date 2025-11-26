@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Users, MessageSquare, Check } from 'lucide-react'
+import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Users, MessageSquare, Check, Trophy, X } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -34,6 +34,13 @@ interface Team {
   captain_name?: string
 }
 
+interface Tournament {
+  id: string
+  name: string
+  start_date: string
+  status: string
+}
+
 export default function TeamsTable() {
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
@@ -46,10 +53,125 @@ export default function TeamsTable() {
   const [messageContent, setMessageContent] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
   const [messageSent, setMessageSent] = useState(false)
+  const [tournamentDialogOpen, setTournamentDialogOpen] = useState(false)
+  const [tournaments, setTournaments] = useState<Tournament[]>([])
+  const [selectedTournamentId, setSelectedTournamentId] = useState('')
+  const [addingToTournament, setAddingToTournament] = useState(false)
+  const [teamTournaments, setTeamTournaments] = useState<string[]>([])
+  const [loadingTournaments, setLoadingTournaments] = useState(false)
 
   useEffect(() => {
     fetchTeams()
+    fetchTournaments()
   }, [])
+
+  const fetchTournaments = async () => {
+    try {
+      const response = await fetch('/api/tournaments')
+      const data = await response.json()
+      setTournaments(data)
+    } catch (error) {
+      console.error('Error fetching tournaments:', error)
+    }
+  }
+
+  const openTournamentDialog = async (team: Team) => {
+    setSelectedTeam(team)
+    setSelectedTournamentId('')
+    setTournamentDialogOpen(true)
+    setLoadingTournaments(true)
+    
+    // Fetch which tournaments this team is already registered in
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('tournament_registrations')
+        .select('tournament_id')
+        .eq('team_id', team.id)
+        .in('status', ['pending', 'approved'])
+      
+      setTeamTournaments(data?.map(r => r.tournament_id) || [])
+    } catch (error) {
+      console.error('Error fetching team tournaments:', error)
+    } finally {
+      setLoadingTournaments(false)
+    }
+  }
+
+  const addTeamToTournament = async () => {
+    if (!selectedTeam || !selectedTournamentId) return
+    
+    setAddingToTournament(true)
+    try {
+      const supabase = createClient()
+      
+      // Check if already registered
+      const { data: existing } = await supabase
+        .from('tournament_registrations')
+        .select('id')
+        .eq('team_id', selectedTeam.id)
+        .eq('tournament_id', selectedTournamentId)
+        .single()
+      
+      if (existing) {
+        console.error('Team is already registered for this tournament')
+        setAddingToTournament(false)
+        return
+      }
+      
+      // Insert registration directly with approved status
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .insert([{
+          team_id: selectedTeam.id,
+          tournament_id: selectedTournamentId,
+          status: 'approved'
+        }])
+      
+      if (!error) {
+        // Send notification to team captain
+        await supabase
+          .from('notifications')
+          .insert([{
+            user_id: selectedTeam.captain_id,
+            type: 'tournament_approved',
+            title: 'Tournament Registration Approved!',
+            message: `Your team "${selectedTeam.name}" has been added to a tournament by an admin!`,
+            data: {
+              tournament_id: selectedTournamentId,
+              team_id: selectedTeam.id,
+              from: 'admin'
+            }
+          }])
+
+        setTeamTournaments([...teamTournaments, selectedTournamentId])
+        setSelectedTournamentId('')
+      } else {
+        console.error('Error adding team to tournament:', error)
+      }
+    } catch (error) {
+      console.error('Error adding team to tournament:', error)
+    } finally {
+      setAddingToTournament(false)
+    }
+  }
+
+  const removeTeamFromTournament = async (tournamentId: string) => {
+    if (!selectedTeam) return
+    
+    try {
+      const supabase = createClient()
+      await supabase
+        .from('tournament_registrations')
+        .delete()
+        .eq('team_id', selectedTeam.id)
+        .eq('tournament_id', tournamentId)
+      
+      setTeamTournaments(teamTournaments.filter(id => id !== tournamentId))
+    } catch (error) {
+      console.error('Error removing team from tournament:', error)
+    }
+  }
 
   const fetchTeams = async () => {
     try {
@@ -325,6 +447,10 @@ export default function TeamsTable() {
                           <MessageSquare className="mr-2 h-4 w-4" />
                           Contact Team
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openTournamentDialog(team)}>
+                          <Trophy className="mr-2 h-4 w-4" />
+                          Manage Tournaments
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           className="text-destructive"
@@ -394,6 +520,83 @@ export default function TeamsTable() {
                   Sent!
                 </>
               ) : 'Send Message'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tournament Management Dialog */}
+      <Dialog open={tournamentDialogOpen} onOpenChange={setTournamentDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Manage Tournament Registration</DialogTitle>
+            <DialogDescription>
+              Add or remove {selectedTeam?.name} from tournaments
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Current Registrations */}
+            <div className="grid gap-2">
+              <Label>Current Tournaments</Label>
+              {loadingTournaments ? (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              ) : teamTournaments.length === 0 ? (
+                <div className="text-sm text-muted-foreground">Not registered in any tournaments</div>
+              ) : (
+                <div className="space-y-2">
+                  {teamTournaments.map(tournamentId => {
+                    const tournament = tournaments.find(t => t.id === tournamentId)
+                    return tournament ? (
+                      <div key={tournamentId} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                        <div className="flex items-center gap-2">
+                          <Trophy className="h-4 w-4 text-yellow-500" />
+                          <span className="text-sm font-medium">{tournament.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                          onClick={() => removeTeamFromTournament(tournamentId)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : null
+                  })}
+                </div>
+              )}
+            </div>
+            
+            {/* Add to Tournament */}
+            <div className="grid gap-2">
+              <Label>Add to Tournament</Label>
+              <div className="flex gap-2">
+                <Select value={selectedTournamentId} onValueChange={setSelectedTournamentId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select a tournament" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tournaments
+                      .filter(t => !teamTournaments.includes(t.id))
+                      .map(tournament => (
+                        <SelectItem key={tournament.id} value={tournament.id}>
+                          {tournament.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  onClick={addTeamToTournament}
+                  disabled={!selectedTournamentId || addingToTournament}
+                >
+                  {addingToTournament ? 'Adding...' : 'Add'}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTournamentDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

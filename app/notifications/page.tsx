@@ -280,7 +280,10 @@ export default function NotificationsPage() {
     }
   }
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (notification: any) => {
+    const type = notification.type
+    const data = notification.data
+
     switch (type) {
       case 'team_invitation':
         return <Users className="w-5 h-5 text-blue-500" />
@@ -303,7 +306,7 @@ export default function NotificationsPage() {
       case 'admin_message':
         return <MessageSquare className="w-5 h-5 text-purple-500" />
       case 'tournament_approved':
-        return <Trophy className="w-5 h-5 text-green-500" />
+        return <Trophy className={`w-5 h-5 ${data?.from === 'admin' ? 'text-purple-500' : 'text-green-500'}`} />
       case 'tournament_rejected':
         return <Trophy className="w-5 h-5 text-red-500" />
       default:
@@ -476,14 +479,16 @@ export default function NotificationsPage() {
                 className={`bg-card border-border ${
                   !notification.read ? 'border-primary/50' : ''
                 } ${
-                  notification.type === 'admin_message' ? 'border-purple-500/50 bg-purple-500/5' : ''
+                  notification.type === 'admin_message' || (notification.type === 'tournament_approved' && notification.data?.from === 'admin') 
+                    ? 'border-purple-500/50 bg-purple-500/5' 
+                    : ''
                 }`}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
                       <div className="mt-1">
-                        {getNotificationIcon(notification.type)}
+                        {getNotificationIcon(notification)}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -491,7 +496,7 @@ export default function NotificationsPage() {
                           {!notification.read && (
                             <Badge variant="default" className="text-xs">New</Badge>
                           )}
-                          {notification.type === 'admin_message' && (
+                          {(notification.type === 'admin_message' || (notification.type === 'tournament_approved' && notification.data?.from === 'admin')) && (
                             <Badge variant="secondary" className="bg-purple-500/10 text-purple-500 border-purple-500/20">
                               Admin
                             </Badge>

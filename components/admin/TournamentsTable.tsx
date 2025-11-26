@@ -211,22 +211,42 @@ export default function TournamentsTable() {
     if (!managingTournament || !selectedTeamToAdd) return
 
     try {
-      const response = await fetch('/api/tournament-registrations/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const supabase = createClient()
+      
+      // Insert registration directly with approved status
+      const { error } = await supabase
+        .from('tournament_registrations')
+        .insert([{
           tournament_id: managingTournament.id,
           team_id: selectedTeamToAdd,
-        }),
-      })
+          status: 'approved'
+        }])
 
-      if (response.ok) {
+      if (!error) {
+        // Get the team captain ID
+        const team = allTeams.find(t => t.id === selectedTeamToAdd)
+        if (team) {
+          await supabase
+            .from('notifications')
+            .insert([{
+              user_id: team.captain_id,
+              type: 'tournament_approved',
+              title: 'Tournament Registration Approved!',
+              message: `Your team "${team.name}" has been added to ${managingTournament.name} by an admin!`,
+              data: {
+                tournament_id: managingTournament.id,
+                tournament_name: managingTournament.name,
+                team_id: team.id,
+                from: 'admin'
+              }
+            }])
+        }
+
         // Refresh registrations
         await openManageDialog(managingTournament)
         setSelectedTeamToAdd('')
       } else {
-        const error = await response.json()
-        console.error('Failed to add team:', error.error)
+        console.error('Failed to add team:', error.message)
       }
     } catch (error) {
       console.error('Error adding team:', error)
