@@ -210,10 +210,29 @@ export class BrowserNotificationManager {
 
   getNotificationContent(notification: any): NotificationData {
     console.log('🔔 Processing notification:', notification)
+    console.log('🔔 Notification fields:', {
+      id: notification.id,
+      type: notification.type,
+      message: notification.message,
+      data: notification.data,
+      created_at: notification.created_at,
+      read: notification.read,
+      user_id: notification.user_id
+    })
+    
+    // Try to extract message from different possible fields
+    const message = notification.message || 
+                   notification.content || 
+                   notification.body || 
+                   notification.text ||
+                   (notification.data && notification.data.message) ||
+                   'You have a new notification'
+    
+    console.log('🔔 Extracted message:', message)
     
     const baseContent: NotificationData = {
       title: 'New Notification',
-      body: notification.message || 'You have a new notification',
+      body: message,
       icon: '/favicon.ico',
       badge: '/favicon.ico',
       tag: notification.id,
@@ -279,9 +298,25 @@ export class BrowserNotificationManager {
 
       default:
         console.log('🔔 Unknown notification type, using default:', notification.type)
+        
+        // Create a more informative default message
+        let defaultBody = message
+        if (message === 'You have a new notification') {
+          // If we couldn't extract a proper message, try to be more helpful
+          if (notification.type) {
+            defaultBody = `New ${notification.type} notification`
+          } else if (notification.data && Object.keys(notification.data).length > 0) {
+            const dataKeys = Object.keys(notification.data).join(', ')
+            defaultBody = `New notification with data: ${dataKeys}`
+          } else {
+            defaultBody = 'You have a new notification'
+          }
+        }
+        
         return {
           ...baseContent,
-          body: notification.message || `New notification: ${notification.type || 'unknown type'}`
+          title: notification.type ? `📬 ${notification.type}` : 'New Notification',
+          body: defaultBody
         }
     }
   }
