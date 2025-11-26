@@ -49,6 +49,12 @@ export default function SettingsPage() {
     console.log('🧪 Test notification result:', success)
   }
 
+  const testFaviconBadgeOnly = async () => {
+    console.log('🏷️ Testing favicon badge only...')
+    await faviconBadge.setBadge(1)
+    console.log('🏷️ Favicon badge test completed')
+  }
+
   
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -176,6 +182,14 @@ export default function SettingsPage() {
                     className="w-full sm:w-auto"
                   >
                     Test Notification
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={testFaviconBadgeOnly}
+                    className="w-full sm:w-auto"
+                  >
+                    Test Favicon Only
                   </Button>
                   <div className="w-full sm:w-auto">
                     <NotificationToggle />

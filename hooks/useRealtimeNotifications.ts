@@ -35,6 +35,7 @@ export function useRealtimeNotifications(userId: string | null) {
           setNotifications(prev => [newNotification, ...prev])
           setUnreadCount(prev => {
             const newCount = prev + 1
+            console.log('🏷️ Updating favicon badge to:', newCount)
             faviconBadge.setBadge(newCount)
             return newCount
           })

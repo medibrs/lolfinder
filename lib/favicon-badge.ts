@@ -135,16 +135,26 @@ export class FaviconBadge {
   }
 
   async setBadge(count: number, options: Partial<FaviconBadgeOptions> = {}) {
-    if (typeof window === 'undefined') return
+    console.log('🏷️ FaviconBadge.setBadge called with count:', count)
+    
+    if (typeof window === 'undefined') {
+      console.log('🏷️ SSR detected, skipping favicon update')
+      return
+    }
 
     // Initialize if not already done
     if (!this.isInitialized) {
+      console.log('🏷️ Initializing favicon badge system...')
       this.initialize()
     }
 
-    if (!this.isInitialized || !this.ctx || !this.canvas) return
+    if (!this.isInitialized || !this.ctx || !this.canvas) {
+      console.log('🏷️ Favicon badge not initialized or missing context/canvas')
+      return
+    }
 
     try {
+      console.log('🏷️ Loading original favicon...')
       // Load original favicon
       const img = await this.loadImage(this.originalFavicon || '/favicon.ico')
       
@@ -157,7 +167,10 @@ export class FaviconBadge {
 
       // Draw badge if count > 0
       if (count > 0) {
+        console.log('🏷️ Drawing badge with count:', count)
         this.drawBadge(count, options)
+      } else {
+        console.log('🏷️ Count is 0, skipping badge drawing')
       }
 
       // Update favicon
@@ -165,17 +178,22 @@ export class FaviconBadge {
                                             document.querySelector("link[rel='shortcut icon']")
       
       if (link) {
-        link.href = this.canvas.toDataURL('image/png')
+        const dataUrl = this.canvas.toDataURL('image/png')
+        link.href = dataUrl
+        console.log('🏷️ Favicon updated with data URL length:', dataUrl.length)
+      } else {
+        console.log('🏷️ No favicon link element found')
       }
 
       // Also update apple-touch-icon
       const appleLink: HTMLLinkElement | null = document.querySelector("link[rel='apple-touch-icon']")
       if (appleLink) {
         appleLink.href = this.canvas.toDataURL('image/png')
+        console.log('🏷️ Apple touch icon updated')
       }
 
     } catch (error) {
-      console.error('Error setting favicon badge:', error)
+      console.error('🏷️ Error setting favicon badge:', error)
     }
   }
 
