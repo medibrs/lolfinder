@@ -204,53 +204,48 @@ export default function TournamentsPage() {
                     />
                     
                     {/* Tournament Header */}
-                    <div className="relative h-32">
-                      {/* Gradient Overlay - subtle fade */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-transparent" />
-                      
-                      <div className="relative h-full flex flex-col justify-end p-6 pt-4">
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-                          <div className="flex-1">
-                            <h3 className="text-2xl font-bold mb-1 text-white group-hover:text-primary transition-colors drop-shadow-lg">{tournament.name}</h3>
-                            <p className="text-zinc-300 text-sm drop-shadow-md">{tournament.description || 'No description available'}</p>
+                    <div className="relative h-28 md:h-32">
+                      <div className="relative h-full flex flex-col justify-end p-4 md:p-6">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="text-lg md:text-2xl font-bold text-white group-hover:text-primary transition-colors drop-shadow-lg line-clamp-2">{tournament.name}</h3>
+                            <div className="flex-shrink-0">
+                              {tournamentStatus.status === 'upcoming' && (
+                                <span className="px-2 md:px-3 py-1 rounded-md font-semibold text-xs bg-orange-600 text-white whitespace-nowrap shadow-lg">
+                                  Upcoming
+                                </span>
+                              )}
+                              {tournamentStatus.status === 'in-progress' && (
+                                <span className="px-2 md:px-3 py-1 rounded-md font-semibold text-xs bg-green-600 text-white whitespace-nowrap animate-pulse shadow-lg">
+                                  Live
+                                </span>
+                              )}
+                              {tournamentStatus.status === 'completed' && (
+                                <span className="px-2 md:px-3 py-1 rounded-md font-semibold text-xs bg-zinc-700 text-zinc-300 whitespace-nowrap shadow-lg">
+                                  Completed
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {tournamentStatus.status === 'upcoming' && (
-                              <span className="px-3 py-1 rounded-md font-semibold text-xs bg-orange-600 text-white whitespace-nowrap shadow-lg">
-                                Upcoming
-                              </span>
-                            )}
-                            {tournamentStatus.status === 'in-progress' && (
-                              <span className="px-3 py-1 rounded-md font-semibold text-xs bg-green-600 text-white whitespace-nowrap animate-pulse shadow-lg">
-                                Live
-                              </span>
-                            )}
-                            {tournamentStatus.status === 'completed' && (
-                              <span className="px-3 py-1 rounded-md font-semibold text-xs bg-zinc-700 text-zinc-300 whitespace-nowrap shadow-lg">
-                                Completed
-                              </span>
-                            )}
-                          </div>
+                          <p className="text-zinc-300 text-xs md:text-sm drop-shadow-md line-clamp-2">{tournament.description || 'No description available'}</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Tournament Details - Compact blur section */}
-                    <div className="relative px-6 py-3 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50">
-                      <div className="flex items-center justify-between gap-4 mb-3">
-                        <div className="flex items-center gap-8">
-                          <div>
-                            <p className="text-zinc-400 text-xs uppercase tracking-wider">Date</p>
-                            <p className="text-white font-semibold text-sm">{dateRange}</p>
-                          </div>
-                          <div>
-                            <p className="text-zinc-400 text-xs uppercase tracking-wider">Prize</p>
-                            <p className="text-white font-semibold text-sm">{tournament.prize_pool || 'TBD'}</p>
-                          </div>
-                          <div>
-                            <p className="text-zinc-400 text-xs uppercase tracking-wider">Teams</p>
-                            <p className="text-orange-500 font-semibold text-sm">{tournament.max_teams}</p>
-                          </div>
+                    <div className="relative px-4 md:px-6 py-3 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50">
+                      <div className="grid grid-cols-3 gap-2 md:gap-8 mb-3">
+                        <div className="text-center md:text-left">
+                          <p className="text-zinc-400 text-[10px] md:text-xs uppercase tracking-wider">Date</p>
+                          <p className="text-white font-semibold text-xs md:text-sm">{dateRange}</p>
+                        </div>
+                        <div className="text-center md:text-left">
+                          <p className="text-zinc-400 text-[10px] md:text-xs uppercase tracking-wider">Prize</p>
+                          <p className="text-white font-semibold text-xs md:text-sm">{tournament.prize_pool || 'TBD'}</p>
+                        </div>
+                        <div className="text-center md:text-left">
+                          <p className="text-zinc-400 text-[10px] md:text-xs uppercase tracking-wider">Teams</p>
+                          <p className="text-orange-500 font-semibold text-xs md:text-sm">{tournament.max_teams}</p>
                         </div>
                       </div>
 
