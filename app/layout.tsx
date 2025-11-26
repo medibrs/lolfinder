@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Navigation from '@/components/navigation'
 import NotificationPermission from '@/components/NotificationPermission'
+import Footer from '@/components/footer'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -69,7 +70,10 @@ export default function RootLayout({
         <Suspense fallback={<div className="h-16 w-full bg-background/80 border-b border-border fixed top-0 z-50" />}>
           <Navigation />
         </Suspense>
-        {children}
+        <main className="min-h-screen">
+          {children}
+        </main>
+        <Footer />
         <NotificationPermission />
         <Analytics />
         <script
