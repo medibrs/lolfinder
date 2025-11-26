@@ -163,11 +163,43 @@ export function useRealtimeNotifications(userId: string | null, limit: number = 
     }
   }
 
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId)
+
+      if (error) {
+        console.error('Error deleting notification:', error)
+        return false
+      }
+
+      // Remove from state and update unread count if needed
+      setNotifications(prev => {
+        const deletedNotification = prev.find(n => n.id === notificationId)
+        if (deletedNotification && !deletedNotification.read) {
+          setUnreadCount(current => {
+            const newCount = Math.max(0, current - 1)
+            faviconBadge.setBadge(newCount)
+            return newCount
+          })
+        }
+        return prev.filter(n => n.id !== notificationId)
+      })
+      return true
+    } catch (error) {
+      console.error('Error deleting notification:', error)
+      return false
+    }
+  }
+
   return {
     notifications,
     unreadCount,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
     loadNotifications
   }
 }

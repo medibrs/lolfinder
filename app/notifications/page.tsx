@@ -18,7 +18,13 @@ export default function NotificationsPage() {
   const supabase = createClient()
   
   // Use the shared notifications hook for consistency with higher limit for full view
-  const { notifications, unreadCount, markAsRead: markNotificationAsRead, markAllAsRead: markAllNotificationsAsRead } = useRealtimeNotifications(user?.id || null, 1000)
+  const { 
+    notifications, 
+    unreadCount, 
+    markAsRead: markNotificationAsRead, 
+    markAllAsRead: markAllNotificationsAsRead,
+    deleteNotification: deleteNotificationFromHook 
+  } = useRealtimeNotifications(user?.id || null, 1000)
 
   useEffect(() => {
     const initializePage = async () => {
@@ -128,21 +134,7 @@ export default function NotificationsPage() {
   }
 
   const deleteNotification = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId)
-
-      if (error) {
-        console.error('Error deleting notification:', error)
-        return
-      }
-
-      setNotifications(prev => prev.filter(n => n.id !== notificationId))
-    } catch (error) {
-      console.error('Error deleting notification:', error)
-    }
+    await deleteNotificationFromHook(notificationId)
   }
 
   const getNotificationIcon = (notification: any) => {
@@ -207,8 +199,8 @@ export default function NotificationsPage() {
       const responseData = await response.json()
 
       if (response.ok) {
-        // Remove notification from UI immediately
-        setNotifications(prev => prev.filter(n => n.id !== notification.id))
+        // Remove notification from UI immediately using hook
+        await deleteNotificationFromHook(notification.id)
         
         // Reload page to update team status
         setTimeout(() => window.location.reload(), 500)
@@ -256,8 +248,8 @@ export default function NotificationsPage() {
       const responseData = await response.json()
 
       if (response.ok) {
-        // Remove notification from UI immediately
-        setNotifications(prev => prev.filter(n => n.id !== notification.id))
+        // Remove notification from UI immediately using hook
+        await deleteNotificationFromHook(notification.id)
         
         // Reload page to update team status
         setTimeout(() => window.location.reload(), 500)
