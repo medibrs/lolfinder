@@ -278,11 +278,11 @@ export default function TournamentsPage() {
                             Registration Closed
                           </div>
                         )
-                      ) : (
-                        <div className="w-full py-2.5 px-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-500 font-semibold text-sm text-center">
-                          {user ? 'Create a Team First' : 'Sign In to Register'}
+                      ) : user ? (
+                        <div className="w-full py-2.5 px-4 rounded-md bg-zinc-800/50 border border-zinc-700 text-zinc-400 font-semibold text-sm text-center">
+                          Create a Team First
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </Card>
                 )
