@@ -8,6 +8,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
+import RoleIcon from '@/components/RoleIcon'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -505,13 +512,35 @@ export default function SearchPage() {
                       <div className="flex-1">
                         <h3 className="text-2xl font-bold mb-2">{player.summoner_name}</h3>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-primary font-semibold">{player.main_role}</span>
-                          {player.secondary_role && (
-                            <>
-                              <span className="text-muted-foreground">/</span>
-                              <span className="text-muted-foreground">{player.secondary_role}</span>
-                            </>
-                          )}
+                          <TooltipProvider>
+                            <div className="flex items-center gap-1">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <RoleIcon role={player.main_role} size={16} />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{player.main_role}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              {player.secondary_role && (
+                                <>
+                                  <span className="text-muted-foreground">/</span>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div>
+                                        <RoleIcon role={player.secondary_role} size={16} />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{player.secondary_role}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </>
+                              )}
+                            </div>
+                          </TooltipProvider>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-muted-foreground">Rank:</span>

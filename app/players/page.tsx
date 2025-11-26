@@ -9,6 +9,13 @@ import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 import { getProfileIconUrl } from '@/lib/ddragon'
+import RoleIcon from '@/components/RoleIcon'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -347,13 +354,35 @@ const fetchPlayers = async () => {
                         <span className="text-muted-foreground font-normal ml-1">#{player.summoner_name.split('#')[1]}</span>
                       </h3>
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-primary font-semibold">{player.main_role}</span>
-                        {player.secondary_role && (
-                          <>
-                            <span className="text-muted-foreground">/</span>
-                            <span className="text-muted-foreground">{player.secondary_role}</span>
-                          </>
-                        )}
+                        <TooltipProvider>
+                          <div className="flex items-center gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <RoleIcon role={player.main_role} size={16} />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{player.main_role}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {player.secondary_role && (
+                              <>
+                                <span className="text-muted-foreground">/</span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div>
+                                      <RoleIcon role={player.secondary_role} size={16} />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{player.secondary_role}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </>
+                            )}
+                          </div>
+                        </TooltipProvider>
                       </div>
                       
                       {/* Enhanced Rank Display */}
