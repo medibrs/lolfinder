@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { notificationManager } from '@/lib/browser-notifications'
 import { faviconBadge } from '@/lib/favicon-badge'
 
-export function useRealtimeNotifications(userId: string | null) {
+export function useRealtimeNotifications(userId: string | null, limit: number = 10) {
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const supabase = createClient()
@@ -80,7 +80,7 @@ export function useRealtimeNotifications(userId: string | null) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [userId])
+  }, [userId, limit])
 
   // Update favicon badge when unread count changes
   useEffect(() => {
@@ -101,7 +101,7 @@ export function useRealtimeNotifications(userId: string | null) {
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(10)
+        .limit(limit)
 
       if (error) {
         console.error('Error loading notifications:', error)

@@ -21,6 +21,13 @@ interface Player {
   discord?: string
   team_id?: string
   looking_for_team: boolean
+  puuid?: string
+  summoner_level?: number
+  profile_icon_id?: number
+  rank?: string | null
+  league_points?: number
+  wins?: number
+  losses?: number
 }
 
 export default function PlayersPage() {
@@ -265,16 +272,37 @@ export default function PlayersPage() {
               filteredPlayers.map(player => (
                 <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
                   <div className="flex items-start gap-4 mb-4">
-                    <Image 
-                      src={getRankImage(player.tier)} 
-                      alt={player.tier}
-                      width={64}
-                      height={64}
-                      className="object-contain"
-                    />
+                    {/* Profile Icon */}
+                    <div className="relative">
+                      {player.profile_icon_id ? (
+                        <Image 
+                          src={`https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/${player.profile_icon_id}.png`}
+                          alt="Profile Icon"
+                          width={64}
+                          height={64}
+                          className="rounded-full border-2 border-border"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                          <span className="text-2xl">?</span>
+                        </div>
+                      )}
+                      {/* Rank Badge */}
+                      <div className="absolute -bottom-1 -right-1">
+                        <Image 
+                          src={getRankImage(player.tier)} 
+                          alt={player.tier}
+                          width={24}
+                          height={24}
+                          className="object-contain"
+                        />
+                      </div>
+                    </div>
+                    
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold mb-2 truncate" title={player.summoner_name}>
+                      <h3 className="text-xl font-bold mb-1 truncate" title={player.summoner_name}>
                         {player.summoner_name.split('#')[0]}
+                        <span className="text-muted-foreground font-normal ml-1">#{player.summoner_name.split('#')[1]}</span>
                       </h3>
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-primary font-semibold">{player.main_role}</span>
@@ -285,15 +313,64 @@ export default function PlayersPage() {
                           </>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      
+                      {/* Enhanced Rank Display */}
+                      <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium text-muted-foreground">Rank:</span>
-                        <span className="text-sm font-semibold">{player.tier}</span>
+                        <span className="text-sm font-semibold">
+                          {player.tier}
+                          {player.rank && player.rank !== null && (
+                            <span className="ml-1">{player.rank}</span>
+                          )}
+                        </span>
+                        {player.league_points !== undefined && player.league_points > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            ({player.league_points} LP)
+                          </span>
+                        )}
                       </div>
+                      
+                      {/* Summoner Level */}
+                      {player.summoner_level && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-muted-foreground">Level:</span>
+                          <span className="text-sm font-semibold">{player.summoner_level}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
+                  {/* Win/Loss Stats */}
+                  {(player.wins !== undefined || player.losses !== undefined) && (
+                    <div className="flex items-center justify-center gap-4 mb-4 p-2 bg-muted/50 rounded">
+                      {player.wins !== undefined && (
+                        <div className="text-center">
+                          <span className="text-green-600 font-bold text-sm">{player.wins}</span>
+                          <span className="text-xs text-muted-foreground block">W</span>
+                        </div>
+                      )}
+                      {(player.wins !== undefined && player.losses !== undefined) && (
+                        <span className="text-muted-foreground">/</span>
+                      )}
+                      {player.losses !== undefined && (
+                        <div className="text-center">
+                          <span className="text-red-600 font-bold text-sm">{player.losses}</span>
+                          <span className="text-xs text-muted-foreground block">L</span>
+                        </div>
+                      )}
+                      {player.wins !== undefined && player.losses !== undefined && player.wins + player.losses > 0 && (
+                        <div className="text-center">
+                          <span className="text-blue-600 font-bold text-sm">
+                            {Math.round((player.wins / (player.wins + player.losses)) * 100)}%
+                          </span>
+                          <span className="text-xs text-muted-foreground block">WR</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   {player.discord && (
-                    <p className="text-muted-foreground mb-4">Discord: {player.discord}</p>
+                    <p className="text-muted-foreground mb-4 text-sm">Discord: {player.discord}</p>
                   )}
                   
                   {user && userTeam && player.id !== user.id ? (

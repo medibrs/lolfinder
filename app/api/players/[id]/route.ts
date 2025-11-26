@@ -57,7 +57,13 @@ export async function PUT(
     // Validate summoner name via Riot API and fetch tier/opgg
     let riotData;
     try {
-      riotData = await validateAndFetchRiotData(validatedData.summoner_name);
+      // Get current user for logging
+      const authHeader = request.headers.get('authorization');
+      const { data: { user: authUser } } = await supabase.auth.getUser(
+        authHeader?.replace('Bearer ', '')
+      );
+      
+      riotData = await validateAndFetchRiotData(validatedData.summoner_name, authUser?.id);
     } catch (riotError: any) {
       return NextResponse.json(
         { error: riotError.message || 'Failed to validate summoner name' },
@@ -76,6 +82,11 @@ export async function PUT(
       opgg_url: riotData.opggUrl,
       puuid: riotData.puuid,
       summoner_level: riotData.summonerLevel,
+      profile_icon_id: riotData.profileIconId,
+      rank: riotData.rank,
+      league_points: riotData.leaguePoints,
+      wins: riotData.wins,
+      losses: riotData.losses,
     };
 
     const { data, error } = await supabase

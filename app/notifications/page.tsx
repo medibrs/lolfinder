@@ -8,92 +8,34 @@ import { Badge } from '@/components/ui/badge'
 import { Bell, Check, X, Users, Crown, AlertCircle, MessageSquare, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { notificationManager } from '@/lib/browser-notifications'
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [processingAction, setProcessingAction] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  
+  // Use the shared notifications hook for consistency with higher limit for full view
+  const { notifications, unreadCount, markAsRead: markNotificationAsRead, markAllAsRead: markAllNotificationsAsRead } = useRealtimeNotifications(user?.id || null, 1000)
 
   useEffect(() => {
-    const initializeNotifications = async () => {
+    const initializePage = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (authUser) {
-        setUser(authUser)
-        loadNotificationsForUser(authUser.id)
-        
-        // Set up real-time subscription - no polling, instant updates via WebSocket
-        const channel = supabase
-          .channel(`notifications-page-${authUser.id}`)
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'notifications',
-              filter: `user_id=eq.${authUser.id}`
-            },
-            async (payload) => {
-              // Add new notification directly to state immediately
-              const newNotification = payload.new as any
-              setNotifications(prev => [newNotification, ...prev])
-              
-              // Send browser notification if permission is granted
-              const notificationContent = notificationManager.getNotificationContent(newNotification)
-              await notificationManager.showNotification(notificationContent)
-              
-              // Enrich the notification in the background
-              const enriched = await enrichNotification(newNotification)
-              setNotifications(prev => prev.map(n => n.id === enriched.id ? enriched : n))
-            }
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: 'UPDATE',
-              schema: 'public',
-              table: 'notifications',
-              filter: `user_id=eq.${authUser.id}`
-            },
-            (payload) => {
-              // Update notification in state directly
-              const updatedNotification = payload.new as any
-              setNotifications(prev => 
-                prev.map(n => n.id === updatedNotification.id 
-                  ? { ...n, ...updatedNotification } 
-                  : n
-                )
-              )
-            }
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: 'DELETE',
-              schema: 'public',
-              table: 'notifications',
-              filter: `user_id=eq.${authUser.id}`
-            },
-            (payload) => {
-              // Remove notification from state directly
-              const deletedId = payload.old.id
-              setNotifications(prev => prev.filter(n => n.id !== deletedId))
-            }
-          )
-          .subscribe()
-
-        return () => {
-          supabase.removeChannel(channel)
-        }
-      } else {
-        setLoading(false)
-      }
+      setUser(authUser)
+      setLoading(false)
     }
     
-    initializeNotifications()
+    initializePage()
   }, [])
+
+  // Mark all as read when visiting the page (but only if there are unread notifications)
+  useEffect(() => {
+    if (user && unreadCount > 0) {
+      markAllNotificationsAsRead()
+    }
+  }, [user, unreadCount, markAllNotificationsAsRead])
 
   // Helper function to enrich a single notification with player/team data
   const enrichNotification = async (notification: any) => {
@@ -178,92 +120,10 @@ export default function NotificationsPage() {
     return notification
   }
 
-  const loadNotificationsForUser = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching notifications:', error)
-        return
-      }
-
-      // Enrich notifications with player data for join requests and invitations
-      const enrichedNotifications = await Promise.all(
-        (data || []).map(notification => enrichNotification(notification))
-      )
-
-      setNotifications(prev => {
-        // Merge fetched notifications with any real-time updates that came in while fetching
-        const fetchedIds = new Set(enrichedNotifications.map(n => n.id))
-        const newItems = prev.filter(n => !fetchedIds.has(n.id))
-        
-        const combined = [...newItems, ...enrichedNotifications].sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )
-        return combined
-      })
-
-      // Mark all unread notifications as read when visiting the page
-      const unreadNotifications = data?.filter(n => !n.read) || []
-      if (unreadNotifications.length > 0) {
-        await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('user_id', userId)
-          .eq('read', false)
-        
-        // Update local state
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-      }
-    } catch (error) {
-      console.error('Error loading notifications:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const markAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId)
-
-      if (error) {
-        console.error('Error marking notification as read:', error)
-        return
-      }
-
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      )
-    } catch (error) {
-      console.error('Error marking notification as read:', error)
-    }
-  }
-
-  const markAllAsRead = async () => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', user.id)
-        .eq('read', false)
-
-      if (error) {
-        console.error('Error marking all notifications as read:', error)
-        return
-      }
-
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      )
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error)
+    const success = await markNotificationAsRead(notificationId)
+    if (!success) {
+      console.error('Error marking notification as read')
     }
   }
 
@@ -430,8 +290,6 @@ export default function NotificationsPage() {
     )
   }
 
-  const unreadCount = notifications.filter(n => !n.read).length
-
   return (
     <main className="min-h-screen pt-24 pb-12">
       <div className="max-w-4xl mx-auto px-4">
@@ -444,7 +302,7 @@ export default function NotificationsPage() {
             </h1>
             <div className="flex items-center gap-3">
               {unreadCount > 0 && (
-                <Button onClick={markAllAsRead} variant="outline">
+                <Button onClick={markAllNotificationsAsRead} variant="outline">
                   <Check className="w-4 h-4 mr-2" />
                   Mark All Read
                 </Button>
