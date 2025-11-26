@@ -292,17 +292,9 @@ export default function NotificationsPage() {
               <Bell className="w-8 h-8" />
               Notifications
             </h1>
-            <div className="flex items-center gap-3">
-              {unreadCount > 0 && (
-                <Button onClick={markAllNotificationsAsRead} variant="outline">
-                  <Check className="w-4 h-4 mr-2" />
-                  Mark All Read
-                </Button>
-              )}
-              <Button asChild variant="outline">
-                <Link href="/">Back to Home</Link>
-              </Button>
-            </div>
+            <Button asChild variant="outline">
+              <Link href="/">Back to Home</Link>
+            </Button>
           </div>
           <p className="text-muted-foreground">
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
@@ -340,8 +332,8 @@ export default function NotificationsPage() {
                 }`}
               >
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between sm:flex-row flex-col gap-4">
-                    <div className="flex items-start gap-4 flex-1 w-full">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
                       <div className="mt-1 flex-shrink-0">
                         {getNotificationIcon(notification)}
                       </div>
@@ -536,16 +528,7 @@ export default function NotificationsPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2 sm:ml-4 ml-0 sm:justify-start justify-end">
-                      {!notification.read && (
-                        <Button
-                          onClick={() => markAsRead(notification.id)}
-                          size="sm"
-                          variant="ghost"
-                        >
-                          <Check className="w-4 h-4" />
-                        </Button>
-                      )}
+                    <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                       <Button
                         onClick={() => deleteNotification(notification.id)}
                         size="sm"
