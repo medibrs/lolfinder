@@ -235,20 +235,22 @@ export default function TournamentsPage() {
                       </div>
                     </div>
 
-                    {/* Tournament Details - Transparent with blur */}
-                    <div className="relative p-6 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50">
-                      <div className="grid grid-cols-3 gap-6 mb-6">
-                        <div>
-                          <p className="text-zinc-400 text-xs uppercase tracking-wider mb-1">Date</p>
-                          <p className="text-white font-semibold text-sm">{dateRange}</p>
-                        </div>
-                        <div>
-                          <p className="text-zinc-400 text-xs uppercase tracking-wider mb-1">Prize</p>
-                          <p className="text-white font-semibold text-sm">{tournament.prize_pool || 'TBD'}</p>
-                        </div>
-                        <div>
-                          <p className="text-zinc-400 text-xs uppercase tracking-wider mb-1">Teams</p>
-                          <p className="text-orange-500 font-semibold text-sm">{tournament.max_teams}</p>
+                    {/* Tournament Details - Compact blur section */}
+                    <div className="relative px-6 py-3 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50">
+                      <div className="flex items-center justify-between gap-4 mb-3">
+                        <div className="flex items-center gap-8">
+                          <div>
+                            <p className="text-zinc-400 text-xs uppercase tracking-wider">Date</p>
+                            <p className="text-white font-semibold text-sm">{dateRange}</p>
+                          </div>
+                          <div>
+                            <p className="text-zinc-400 text-xs uppercase tracking-wider">Prize</p>
+                            <p className="text-white font-semibold text-sm">{tournament.prize_pool || 'TBD'}</p>
+                          </div>
+                          <div>
+                            <p className="text-zinc-400 text-xs uppercase tracking-wider">Teams</p>
+                            <p className="text-orange-500 font-semibold text-sm">{tournament.max_teams}</p>
+                          </div>
                         </div>
                       </div>
 
