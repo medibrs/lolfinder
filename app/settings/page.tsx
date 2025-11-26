@@ -166,40 +166,41 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-12">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Settings</h1>
-          <p className="text-muted-foreground">
+    <div className="min-h-screen pt-20 pb-8 sm:pt-24 sm:pb-12">
+      <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Settings</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Manage your account settings and preferences
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Notification Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="w-full">
+            <CardHeader className="pb-4 sm:pb-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Bell className="h-5 w-5" />
                 Notifications
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm sm:text-base">
                 Control how you receive notifications about tournaments and team activities
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <div className="flex-1">
+              <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+                <div>
                   <h4 className="font-medium">Browser Notifications</h4>
                   <p className="text-sm text-muted-foreground">
                     Get instant updates in your browser when you're online
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={testNotification}
+                    className="w-full sm:w-auto"
                   >
                     Test Notification
                   </Button>
@@ -207,10 +208,13 @@ export default function SettingsPage() {
                     variant="outline" 
                     size="sm"
                     onClick={testFaviconBadge}
+                    className="w-full sm:w-auto"
                   >
                     Test Badge
                   </Button>
-                  <NotificationToggle />
+                  <div className="w-full sm:w-auto">
+                    <NotificationToggle />
+                  </div>
                 </div>
               </div>
               
@@ -236,43 +240,45 @@ export default function SettingsPage() {
           </Card>
 
           {/* Account Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="w-full">
+            <CardHeader className="pb-4 sm:pb-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <User className="h-5 w-5" />
                 Account Information
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm sm:text-base">
                 Your account details and information
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <p className="font-medium">{user.email}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Account Created</label>
-                <p className="font-medium">{new Date(user.created_at).toLocaleDateString()}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Email</label>
+                  <p className="font-medium break-all">{user.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Account Created</label>
+                  <p className="font-medium">{new Date(user.created_at).toLocaleDateString()}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Security Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="w-full">
+            <CardHeader className="pb-4 sm:pb-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Shield className="h-5 w-5" />
                 Security
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm sm:text-base">
                 Manage your security settings
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Password Change */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="space-y-3 sm:flex sm:items-center sm:justify-between">
                   <div>
                     <h4 className="font-medium">Password</h4>
                     <p className="text-sm text-muted-foreground">Change your password</p>
@@ -281,6 +287,7 @@ export default function SettingsPage() {
                     variant="outline" 
                     size="sm"
                     onClick={() => setShowPasswordForm(!showPasswordForm)}
+                    className="w-full sm:w-auto"
                   >
                     {showPasswordForm ? 'Cancel' : 'Change Password'}
                   </Button>
@@ -351,12 +358,12 @@ export default function SettingsPage() {
                 )}
               </div>
               
-              <div className="flex items-center justify-between">
+              <div className="space-y-3 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <h4 className="font-medium">Two-Factor Authentication</h4>
                   <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
                 </div>
-                <Button variant="outline" size="sm" disabled>
+                <Button variant="outline" size="sm" disabled className="w-full sm:w-auto">
                   Coming Soon
                 </Button>
               </div>
@@ -385,7 +392,7 @@ export default function SettingsPage() {
                 variant="destructive" 
                 onClick={handleDeleteAccount}
                 disabled={deleteLoading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto"
               >
                 <Trash2 className="h-4 w-4" />
                 {deleteLoading ? 'Deleting...' : 'Delete Account'}
