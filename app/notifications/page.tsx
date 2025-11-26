@@ -340,13 +340,13 @@ export default function NotificationsPage() {
                 }`}
               >
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="mt-1">
+                  <div className="flex items-start justify-between sm:flex-row flex-col gap-4">
+                    <div className="flex items-start gap-4 flex-1 w-full">
+                      <div className="mt-1 flex-shrink-0">
                         {getNotificationIcon(notification)}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <h3 className="font-semibold">{notification.title}</h3>
                           {!notification.read && (
                             <Badge variant="default" className="text-xs">New</Badge>
@@ -536,7 +536,7 @@ export default function NotificationsPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 sm:ml-4 ml-0 sm:justify-start justify-end">
                       {!notification.read && (
                         <Button
                           onClick={() => markAsRead(notification.id)}
@@ -563,12 +563,9 @@ export default function NotificationsPage() {
               <div className="text-center">
                 <Bell className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
                 <h2 className="text-2xl font-bold mb-4">No Notifications</h2>
-                <p className="text-muted-foreground mb-8">
+                <p className="text-muted-foreground">
                   You don't have any notifications yet. They'll appear here when you get team invitations or updates.
                 </p>
-                <Button asChild>
-                  <Link href="/players">Find Players</Link>
-                </Button>
               </div>
             </Card>
           )}
