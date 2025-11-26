@@ -1,22 +1,139 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { notificationManager } from '@/lib/browser-notifications'
 import { faviconBadge } from '@/lib/favicon-badge'
 
-export function useRealtimeNotifications(userId: string | null, limit: number = 10) {
+const PAGE_SIZE = 20
+
+export function useRealtimeNotifications(userId: string | null, filterType?: string, searchTerm?: string) {
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const supabase = createClient()
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [page, setPage] = useState(0)
+  const supabase = useMemo(() => createClient(), [])
 
+  // Load initial notifications (first page) with server-side filtering
+  const loadNotifications = useCallback(async () => {
+    if (!userId) {
+      console.log('loadNotifications: No userId, skipping')
+      return
+    }
+    
+    console.log('loadNotifications: Starting load for userId:', userId, 'filterType:', filterType, 'searchTerm:', searchTerm)
+    setLoading(true)
+    setPage(0)
+    
+    try {
+      let query = supabase
+        .from('notifications')
+        .select('*', { count: 'exact' })
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+      
+      // Apply server-side type filter
+      if (filterType && filterType !== 'all') {
+        query = query.eq('type', filterType)
+      }
+      
+      // Apply server-side search filter
+      if (searchTerm) {
+        query = query.or(`title.ilike.%${searchTerm}%,message.ilike.%${searchTerm}%`)
+      }
+      
+      const { data, error, count } = await query.range(0, PAGE_SIZE - 1)
+
+      console.log('loadNotifications: Query result - data:', data?.length, 'error:', error, 'count:', count)
+
+      if (error) {
+        console.error('Error loading notifications:', error)
+        setLoading(false)
+        return
+      }
+
+      const notificationsData = data || []
+      console.log('loadNotifications: Setting notifications:', notificationsData.length, 'items')
+      setNotifications(notificationsData)
+      setHasMore(notificationsData.length === PAGE_SIZE && (count || 0) > PAGE_SIZE)
+      
+      // Calculate unread count from all notifications (not filtered)
+      const { data: allNotifications } = await supabase
+        .from('notifications')
+        .select('read')
+        .eq('user_id', userId)
+        .eq('read', false)
+      
+      const unreadCountData = allNotifications?.length || 0
+      setUnreadCount(unreadCountData)
+      faviconBadge.setBadge(unreadCountData)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error loading notifications:', error)
+      setLoading(false)
+    }
+  }, [userId, supabase, filterType, searchTerm])
+
+  // Load more notifications (next page) with server-side filtering
+  const loadMore = useCallback(async () => {
+    if (!userId || loadingMore || !hasMore) return
+    
+    setLoadingMore(true)
+    const nextPage = page + 1
+    const offset = nextPage * PAGE_SIZE
+    
+    try {
+      let query = supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+      
+      // Apply server-side type filter
+      if (filterType && filterType !== 'all') {
+        query = query.eq('type', filterType)
+      }
+      
+      // Apply server-side search filter
+      if (searchTerm) {
+        query = query.or(`title.ilike.%${searchTerm}%,message.ilike.%${searchTerm}%`)
+      }
+      
+      const { data, error } = await query.range(offset, offset + PAGE_SIZE - 1)
+
+      if (error) {
+        console.error('Error loading more notifications:', error)
+        setLoadingMore(false)
+        return
+      }
+
+      const newNotifications = data || []
+      
+      if (newNotifications.length > 0) {
+        setNotifications(prev => [...prev, ...newNotifications])
+        setPage(nextPage)
+      }
+      
+      setHasMore(newNotifications.length === PAGE_SIZE)
+      setLoadingMore(false)
+    } catch (error) {
+      console.error('Error loading more notifications:', error)
+      setLoadingMore(false)
+    }
+  }, [userId, page, loadingMore, hasMore, supabase, filterType, searchTerm])
+
+  // Load notifications when filters change
+  useEffect(() => {
+    if (!userId) return
+    loadNotifications()
+  }, [userId, loadNotifications])
+
+  // Set up real-time subscription (separate from filter changes)
   useEffect(() => {
     if (!userId) return
 
-    // Initial load
-    loadNotifications()
-
-    // Set up real-time subscription
     const channel = supabase
       .channel(`global-notifications-${userId}`)
       .on(
@@ -30,9 +147,13 @@ export function useRealtimeNotifications(userId: string | null, limit: number = 
         async (payload) => {
           console.log('New notification received:', payload.new)
           
-          // Add to state
           const newNotification = payload.new as any
+          
+          // Always add new notifications to the list (they're newest)
+          // Filter logic is handled by the server when loading
           setNotifications(prev => [newNotification, ...prev])
+          
+          // Update unread count
           setUnreadCount(prev => {
             const newCount = prev + 1
             console.log('🏷️ Updating favicon badge to:', newCount)
@@ -75,47 +196,34 @@ export function useRealtimeNotifications(userId: string | null, limit: number = 
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          const deletedNotification = payload.old as any
+          setNotifications(prev => prev.filter(n => n.id !== deletedNotification.id))
+          
+          // Update unread count if deleted notification was unread
+          if (!deletedNotification.read) {
+            setUnreadCount(prev => {
+              const newCount = Math.max(0, prev - 1)
+              faviconBadge.setBadge(newCount)
+              return newCount
+            })
+          }
+        }
+      )
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [userId, limit])
-
-  // Update favicon badge when unread count changes
-  useEffect(() => {
-    faviconBadge.setBadge(unreadCount)
-  }, [unreadCount])
-
-  // Clear favicon badge when user logs out
-  useEffect(() => {
-    if (!userId) {
-      faviconBadge.clear()
-    }
-  }, [userId])
-
-  const loadNotifications = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit)
-
-      if (error) {
-        console.error('Error loading notifications:', error)
-        return
-      }
-
-      setNotifications(data || [])
-      const unreadCount = data?.filter(n => !n.read).length || 0
-      setUnreadCount(unreadCount)
-      faviconBadge.setBadge(unreadCount)
-    } catch (error) {
-      console.error('Error loading notifications:', error)
-    }
-  }
+  }, [userId, supabase])
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -129,6 +237,9 @@ export function useRealtimeNotifications(userId: string | null, limit: number = 
         return false
       }
 
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      )
       setUnreadCount(prev => {
         const newCount = Math.max(0, prev - 1)
         faviconBadge.setBadge(newCount)
@@ -142,6 +253,8 @@ export function useRealtimeNotifications(userId: string | null, limit: number = 
   }
 
   const markAllAsRead = async () => {
+    if (!userId) return false
+    
     try {
       const { error } = await supabase
         .from('notifications')
@@ -154,6 +267,7 @@ export function useRealtimeNotifications(userId: string | null, limit: number = 
         return false
       }
 
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
       setUnreadCount(0)
       faviconBadge.setBadge(0)
       return true
@@ -197,9 +311,13 @@ export function useRealtimeNotifications(userId: string | null, limit: number = 
   return {
     notifications,
     unreadCount,
+    loading,
+    loadingMore,
+    hasMore,
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    loadNotifications
+    loadNotifications,
+    loadMore
   }
 }

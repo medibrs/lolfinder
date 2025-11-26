@@ -1,30 +1,57 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Bell, Check, X, Users, Crown, AlertCircle, MessageSquare, Trophy } from 'lucide-react'
+import { Bell, Check, X, Users, Crown, AlertCircle, MessageSquare, RefreshCw, Trophy, Search, Filter } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { notificationManager } from '@/lib/browser-notifications'
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+// Debounce hook for search
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
 
 export default function NotificationsPage() {
   const [user, setUser] = useState<any>(null)
   const [processingAction, setProcessingAction] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [filterType, setFilterType] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearchTerm = useDebounce(searchTerm, 300) // 300ms debounce
   const supabase = createClient()
   
-  // Use the shared notifications hook for consistency with higher limit for full view
+  // Use the shared notifications hook with pagination and filters
   const { 
     notifications, 
     unreadCount, 
+    loading: notificationsLoading,
+    loadingMore,
+    hasMore,
     markAsRead: markNotificationAsRead, 
     markAllAsRead: markAllNotificationsAsRead,
-    deleteNotification: deleteNotificationFromHook 
-  } = useRealtimeNotifications(user?.id || null, 1000)
+    deleteNotification: deleteNotificationFromHook,
+    loadNotifications: refreshNotifications,
+    loadMore
+  } = useRealtimeNotifications(user?.id || null, filterType, debouncedSearchTerm)
 
   useEffect(() => {
     const initializePage = async () => {
@@ -45,16 +72,33 @@ export default function NotificationsPage() {
 
   // Helper function to enrich a single notification with player/team data
   const enrichNotification = async (notification: any) => {
-    // For join requests - fetch player info if not already present
-    if (notification.type === 'team_join_request' && notification.data?.player_id && !notification.data?.player) {
-      const { data: playerData } = await supabase
-        .from('players')
-        .select('id, summoner_name, tier, main_role, secondary_role, opgg_link')
-        .eq('id', notification.data.player_id)
-        .single()
+    // For join requests - always fetch fresh player data to check if they're already on a team
+    if (notification.type === 'team_join_request') {
+      // Get player ID from either player_id or player.id
+      const playerId = notification.data?.player_id || notification.data?.player?.id
       
-      if (playerData) {
-        notification.data.player = playerData
+      if (playerId) {
+        const { data: playerData } = await supabase
+          .from('players')
+          .select('id, summoner_name, tier, main_role, secondary_role, opgg_link, team_id, team_name')
+          .eq('id', playerId)
+          .single()
+        
+        if (playerData) {
+          // Check if player is already on a team
+          if (playerData.team_id) {
+            notification.data.player = {
+              ...playerData,
+              alreadyOnTeam: true,
+              currentTeamName: playerData.team_name || 'Unknown Team'
+            }
+          } else {
+            notification.data.player = {
+              ...playerData,
+              alreadyOnTeam: false
+            }
+          }
+        }
       }
     }
     
@@ -287,18 +331,87 @@ export default function NotificationsPage() {
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-4xl font-bold flex items-center gap-3">
-              <Bell className="w-8 h-8" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <h1 className="text-3xl sm:text-4xl font-bold flex items-center gap-3">
+              <Bell className="w-6 h-6 sm:w-8 sm:h-8" />
               Notifications
             </h1>
-            <Button asChild variant="outline">
-              <Link href="/">Back to Home</Link>
-            </Button>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button 
+                onClick={() => refreshNotifications()} 
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/">Back to Home</Link>
+              </Button>
+            </div>
           </div>
           <p className="text-muted-foreground">
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
           </p>
+          
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <div className="flex items-center gap-2 flex-1">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search notifications..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Notifications</SelectItem>
+                  <SelectItem value="team_invitation">Team Invitations</SelectItem>
+                  <SelectItem value="team_join_request">Join Requests</SelectItem>
+                  <SelectItem value="team_join_accepted">Join Accepted</SelectItem>
+                  <SelectItem value="team_join_rejected">Join Rejected</SelectItem>
+                  <SelectItem value="team_member_joined">Member Joined</SelectItem>
+                  <SelectItem value="team_member_left">Member Left</SelectItem>
+                  <SelectItem value="team_member_removed">Member Removed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {/* Filter summary */}
+          {(filterType !== 'all' || searchTerm) && (
+            <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
+              <span>Showing:</span>
+              {filterType !== 'all' && (
+                <Badge variant="secondary" className="capitalize">
+                  {filterType.replace(/_/g, ' ')}
+                </Badge>
+              )}
+              {searchTerm && (
+                <Badge variant="secondary">
+                  "{searchTerm}"
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilterType('all')
+                  setSearchTerm('')
+                }}
+                className="h-6 px-2 text-xs"
+              >
+                Clear filters
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Error Message */}
@@ -420,6 +533,18 @@ export default function NotificationsPage() {
                         {/* Display detailed user info for join requests */}
                         {notification.type === 'team_join_request' && notification.data?.player && (
                           <div className="bg-muted/50 rounded-lg p-3 mb-3">
+                            {/* Warning if player is already on a team */}
+                            {notification.data.player.alreadyOnTeam && (
+                              <div className="mb-3 p-3 bg-orange-500/10 border border-orange-500/50 rounded-lg">
+                                <div className="flex items-center gap-2 text-orange-500">
+                                  <AlertCircle className="w-4 h-4" />
+                                  <span className="font-medium text-sm">
+                                    This player is already on a team: {notification.data.player.currentTeamName}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <div>
@@ -490,12 +615,14 @@ export default function NotificationsPage() {
                           <div className="flex items-center gap-3">
                             <Button
                               onClick={() => handleJoinRequestAction(notification, 'accept')}
-                              disabled={processingAction === notification.id}
+                              disabled={processingAction === notification.id || notification.data.player?.alreadyOnTeam}
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700"
+                              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed"
                             >
                               {processingAction === notification.id ? (
                                 'Processing...'
+                              ) : notification.data.player?.alreadyOnTeam ? (
+                                'Already on Team'
                               ) : (
                                 <>
                                   <Check className="w-4 h-4 mr-2" />
@@ -545,12 +672,57 @@ export default function NotificationsPage() {
             <Card className="bg-card border-border p-12">
               <div className="text-center">
                 <Bell className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h2 className="text-2xl font-bold mb-4">No Notifications</h2>
+                <h2 className="text-2xl font-bold mb-4">
+                  {filterType !== 'all' || searchTerm ? 'No Matching Notifications' : 'No Notifications'}
+                </h2>
                 <p className="text-muted-foreground">
-                  You don't have any notifications yet. They'll appear here when you get team invitations or updates.
+                  {filterType !== 'all' || searchTerm 
+                    ? 'No notifications match your current filters. Try adjusting your search or filter criteria.'
+                    : "You don't have any notifications yet. They'll appear here when you get team invitations or updates."
+                  }
                 </p>
+                {(filterType !== 'all' || searchTerm) && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setFilterType('all')
+                      setSearchTerm('')
+                    }}
+                    className="mt-4"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </div>
             </Card>
+          )}
+          
+          {/* Load More Button */}
+          {notifications.length > 0 && hasMore && (
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={loadMore}
+                disabled={loadingMore}
+                variant="outline"
+                className="w-full max-w-xs"
+              >
+                {loadingMore ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Load More Notifications'
+                )}
+              </Button>
+            </div>
+          )}
+          
+          {/* End of notifications indicator */}
+          {notifications.length > 0 && !hasMore && (
+            <p className="text-center text-muted-foreground text-sm mt-6">
+              You've reached the end of your notifications
+            </p>
           )}
         </div>
       </div>
