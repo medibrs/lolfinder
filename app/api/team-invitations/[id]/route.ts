@@ -214,14 +214,19 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    console.log('DELETE /api/team-invitations/[id] - Cancelling invitation:', id)
 
     // Get current user
     const authHeader = request.headers.get('authorization');
+    console.log('Auth header:', authHeader ? 'Present' : 'Missing')
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader?.replace('Bearer ', '')
     );
 
+    console.log('Auth result:', { user: user?.id, authError })
+
     if (authError || !user) {
+      console.log('Authentication failed')
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
@@ -232,11 +237,15 @@ export async function DELETE(
       .eq('id', user.id)
       .single();
 
+    console.log('Player result:', { currentPlayer: currentPlayer?.id, playerError })
+
     if (playerError || !currentPlayer) {
+      console.log('Player profile not found')
       return NextResponse.json({ error: 'Player profile not found' }, { status: 404 });
     }
 
     // Get the invitation and verify user is team captain
+    console.log('Looking up invitation:', id)
     const { data: invitation, error: invitationError } = await supabase
       .from('team_invitations')
       .select(`
@@ -247,26 +256,41 @@ export async function DELETE(
       .eq('status', 'pending')
       .single();
 
+    console.log('Invitation result:', { invitation, invitationError })
+
     if (invitationError || !invitation) {
+      console.log('Invitation not found')
       return NextResponse.json({ error: 'Invitation not found' }, { status: 404 });
     }
 
+    console.log('Checking captain rights:', { 
+      invitationCaptain: invitation.team.captain_id, 
+      currentPlayer: currentPlayer.id,
+      isCaptain: invitation.team.captain_id === currentPlayer.id
+    })
+
     if (invitation.team.captain_id !== currentPlayer.id) {
+      console.log('User is not team captain')
       return NextResponse.json({ error: 'Only team captains can cancel invitations' }, { status: 403 });
     }
 
-    // Update invitation status to cancelled instead of deleting
+    // Update invitation status to cancelled instead of delete
+    console.log('Updating invitation status to cancelled...')
     const { error: updateError } = await supabase
       .from('team_invitations')
-      .update({ status: 'cancelled' })
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
       .eq('id', id);
 
+    console.log('Update result:', { updateError })
+
     if (updateError) {
+      console.log('Failed to update invitation')
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
 
     // Update the notification to show it's been cancelled
-    await supabase
+    console.log('Updating notification...')
+    const { error: notificationError } = await supabase
       .from('notifications')
       .update({
         type: 'team_invitation_cancelled',
@@ -276,8 +300,12 @@ export async function DELETE(
       .eq('type', 'team_invitation')
       .filter('data->>invitation_id', 'eq', id);
 
+    console.log('Notification update result:', { notificationError })
+
+    console.log('Invitation cancelled successfully')
     return NextResponse.json({ message: 'Invitation cancelled' });
   } catch (error) {
+    console.error('DELETE invitation error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

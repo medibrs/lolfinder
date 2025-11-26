@@ -159,12 +159,19 @@ export default function PlayersPage() {
 
   const handleCancelInvite = async (playerId: string) => {
     const inviteId = sentInvites[playerId]
-    if (!inviteId || cancellingInvite) return
+    console.log('Cancelling invite for player:', playerId, 'inviteId:', inviteId)
+    if (!inviteId || cancellingInvite) {
+      console.log('Cannot cancel - missing inviteId or already cancelling')
+      return
+    }
 
     try {
       setCancellingInvite(playerId)
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
+      
+      console.log('Sending DELETE request to:', `/api/team-invitations/${inviteId}`)
+      console.log('Session present:', !!session?.access_token)
       
       const response = await fetch(`/api/team-invitations/${inviteId}`, {
         method: 'DELETE',
@@ -173,10 +180,15 @@ export default function PlayersPage() {
         },
       })
 
+      console.log('Response status:', response.status)
+      console.log('Response ok:', response.ok)
+
       if (response.ok) {
+        console.log('Invite cancelled successfully, removing from local state')
         setSentInvites(prev => {
           const updated = { ...prev }
           delete updated[playerId]
+          console.log('Updated sentInvites:', updated)
           return updated
         })
       } else {
