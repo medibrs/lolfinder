@@ -193,55 +193,61 @@ export default function TournamentsPage() {
                 const dateRange = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
                 
                 return (
-                  <Card key={tournament.id} className="bg-gradient-to-br from-zinc-900 to-zinc-950 border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-300 group">
-                    {/* Tournament Header with Background Pattern */}
-                    <div className="relative bg-gradient-to-r from-zinc-800/50 to-zinc-900/50 p-6 border-b border-zinc-800">
-                      {/* Decorative background pattern */}
-                      <div className="absolute inset-0 opacity-5">
-                        <div className="absolute inset-0" style={{
-                          backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                          backgroundSize: '32px 32px'
-                        }}></div>
-                      </div>
+                  <Card key={tournament.id} className="relative border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-300 group p-0">
+                    {/* Full Card Background Image */}
+                    <div 
+                      className="absolute inset-0 bg-cover bg-top"
+                      style={{
+                        backgroundImage: 'url(/leet_lol_header.jpg)',
+                        filter: 'brightness(0.6)'
+                      }}
+                    />
+                    
+                    {/* Tournament Header */}
+                    <div className="relative h-32">
+                      {/* Gradient Overlay - subtle fade */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-transparent" />
                       
-                      <div className="relative flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                        <div className="flex-1">
-                          <h3 className="text-2xl font-bold mb-2 text-white group-hover:text-primary transition-colors">{tournament.name}</h3>
-                          <p className="text-zinc-400 text-sm">{tournament.description || 'No description available'}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {tournamentStatus.status === 'upcoming' && (
-                            <span className="px-3 py-1 rounded-md font-semibold text-xs bg-orange-600 text-white whitespace-nowrap">
-                              Upcoming
-                            </span>
-                          )}
-                          {tournamentStatus.status === 'in-progress' && (
-                            <span className="px-3 py-1 rounded-md font-semibold text-xs bg-green-600 text-white whitespace-nowrap animate-pulse">
-                              Live
-                            </span>
-                          )}
-                          {tournamentStatus.status === 'completed' && (
-                            <span className="px-3 py-1 rounded-md font-semibold text-xs bg-zinc-700 text-zinc-300 whitespace-nowrap">
-                              Completed
-                            </span>
-                          )}
+                      <div className="relative h-full flex flex-col justify-end p-6 pt-4">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+                          <div className="flex-1">
+                            <h3 className="text-2xl font-bold mb-1 text-white group-hover:text-primary transition-colors drop-shadow-lg">{tournament.name}</h3>
+                            <p className="text-zinc-300 text-sm drop-shadow-md">{tournament.description || 'No description available'}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {tournamentStatus.status === 'upcoming' && (
+                              <span className="px-3 py-1 rounded-md font-semibold text-xs bg-orange-600 text-white whitespace-nowrap shadow-lg">
+                                Upcoming
+                              </span>
+                            )}
+                            {tournamentStatus.status === 'in-progress' && (
+                              <span className="px-3 py-1 rounded-md font-semibold text-xs bg-green-600 text-white whitespace-nowrap animate-pulse shadow-lg">
+                                Live
+                              </span>
+                            )}
+                            {tournamentStatus.status === 'completed' && (
+                              <span className="px-3 py-1 rounded-md font-semibold text-xs bg-zinc-700 text-zinc-300 whitespace-nowrap shadow-lg">
+                                Completed
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Tournament Details */}
-                    <div className="p-6">
+                    {/* Tournament Details - Transparent with blur */}
+                    <div className="relative p-6 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50">
                       <div className="grid grid-cols-3 gap-6 mb-6">
                         <div>
-                          <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Date</p>
+                          <p className="text-zinc-400 text-xs uppercase tracking-wider mb-1">Date</p>
                           <p className="text-white font-semibold text-sm">{dateRange}</p>
                         </div>
                         <div>
-                          <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Prize</p>
+                          <p className="text-zinc-400 text-xs uppercase tracking-wider mb-1">Prize</p>
                           <p className="text-white font-semibold text-sm">{tournament.prize_pool || 'TBD'}</p>
                         </div>
                         <div>
-                          <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Teams</p>
+                          <p className="text-zinc-400 text-xs uppercase tracking-wider mb-1">Teams</p>
                           <p className="text-orange-500 font-semibold text-sm">{tournament.max_teams}</p>
                         </div>
                       </div>
