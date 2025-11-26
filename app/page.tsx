@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Trophy, Users, Target, Zap, Shield, Crown, Bell, Settings, Plus, Search, Calendar, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import Footer from '@/components/footer'
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
@@ -309,7 +310,8 @@ export default function Home() {
 
   // If user is authenticated, show personalized dashboard
   return (
-    <main className="pt-16 min-h-screen">
+    <>
+      <main className="pt-16 min-h-screen">
       {/* Welcome Header */}
       <section className="bg-gradient-to-b from-primary/5 to-background px-4 py-12">
         <div className="max-w-6xl mx-auto">
@@ -544,5 +546,7 @@ export default function Home() {
         </div>
       </section>
     </main>
+    <Footer />
+    </>
   )
 }

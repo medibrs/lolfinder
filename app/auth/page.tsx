@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import Footer from '@/components/footer'
 import { Shield, Trophy, Users, Zap } from 'lucide-react'
 
 export default function AuthPage() {
@@ -17,10 +18,19 @@ export default function AuthPage() {
   const [view, setView] = useState<'sign_in' | 'sign_up'>('sign_in')
 
   useEffect(() => {
+    let mounted = true
+    
     // Check if user is already logged in and has profile
     const checkUserAndProfile = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          if (mounted) setLoading(false)
+          return
+        }
+        
         if (session) {
           // Check if user has a profile
           const { data: playerProfile } = await supabase
@@ -36,12 +46,21 @@ export default function AuthPage() {
             router.push('/setup-profile')
           }
         } else {
-          setLoading(false)
+          if (mounted) setLoading(false)
         }
       } catch (error) {
-        setLoading(false)
+        console.error('Auth check error:', error)
+        if (mounted) setLoading(false)
       }
     }
+
+    // Set a timeout to ensure loading doesn't get stuck
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.log('Auth check timeout - forcing loading to false')
+        setLoading(false)
+      }
+    }, 3000)
 
     checkUserAndProfile()
 
@@ -77,7 +96,11 @@ export default function AuthPage() {
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [router, supabase])
 
   if (loading) {
@@ -92,7 +115,8 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 pt-20">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 pt-20">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-black/20"></div>
       <div className="absolute inset-0">
@@ -319,5 +343,7 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   )
 }

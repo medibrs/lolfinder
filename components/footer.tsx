@@ -70,7 +70,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="border-t border-border mt-8 pt-6 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 LoLFinder. All rights reserved.</p>
+          <p>&copy; 2025 LoLFinder. All rights reserved.</p>
         </div>
       </div>
     </footer>

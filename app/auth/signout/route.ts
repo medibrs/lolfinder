@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(
@@ -26,13 +26,13 @@ export async function POST(request: Request) {
     
     if (error) {
       console.error('Signout error:', error)
-      // Still redirect even if signout fails to avoid user being stuck
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    return NextResponse.redirect(new URL('/auth', request.url))
+    // Return success - let client handle the redirect
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Signout route error:', error)
-    // Always redirect to avoid 500 errors
-    return NextResponse.redirect(new URL('/auth', request.url))
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }
 }
