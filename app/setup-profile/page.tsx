@@ -326,19 +326,19 @@ export default function SetupProfilePage() {
                 {formData.summoner_name && (
                   <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-purple-200 mb-3">Profile Preview</h4>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                           <span className="text-sm font-medium text-purple-400">
                             {formData.summoner_name.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <div>
-                          <div className="font-medium text-white">{formData.summoner_name}</div>
-                          <div className="text-sm text-gray-400">{formData.discord}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-white truncate">{formData.summoner_name}</div>
+                          <div className="text-sm text-gray-400 truncate">{formData.discord}</div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-shrink-0">
                         {formData.main_role && (
                           <span title={formData.main_role}>
                             <RoleIcon role={formData.main_role} size={16} />
