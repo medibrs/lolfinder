@@ -16,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -26,13 +27,14 @@ export default function Navigation() {
   const activeAdminTab = searchParams.get('tab') || 'overview'
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [notifications, setNotifications] = useState<any[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [isCaptain, setIsCaptain] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const supabase = createClient()
+
+  // Global notifications hook
+  const { notifications, unreadCount } = useRealtimeNotifications(user?.id || null)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -40,7 +42,6 @@ export default function Navigation() {
       setUser(authUser)
       
       if (authUser) {
-        fetchNotifications(authUser.id)
         fetchUserTeam(authUser.id)
         
         // Check if user is admin
@@ -54,69 +55,7 @@ export default function Navigation() {
     fetchUser()
   }, [])
 
-  useEffect(() => {
-    if (!user) return
-
-    // Subscribe to real-time notifications
-    const channel = supabase
-      .channel(`navigation-notifications-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          // Only increment unread count if we're NOT on the notifications page
-          if (window.location.pathname !== '/notifications') {
-            setUnreadCount(prev => prev + 1)
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          // If a notification was marked as read, update the count
-          // Simplest way is to re-fetch count to be accurate
-          fetchNotifications(user.id)
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchNotifications(user.id)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [user])
-
-  useEffect(() => {
-    if (user) {
-      if (pathname === '/notifications') {
-        setUnreadCount(0)
-      }
-      fetchNotifications(user.id)
-    }
-  }, [pathname])
-
+  
   useEffect(() => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -125,12 +64,9 @@ export default function Navigation() {
         setLoading(false)
         
         if (session?.user) {
-          fetchNotifications(session.user.id)
           fetchUserTeam(session.user.id)
           checkAdminStatus(session.user)
         } else {
-          setNotifications([])
-          setUnreadCount(0)
           setUserTeam(null)
           setIsCaptain(false)
           setIsAdmin(false)
@@ -176,54 +112,7 @@ export default function Navigation() {
     }
   }
 
-  const fetchNotifications = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      if (error) {
-        console.error('Error fetching notifications:', error)
-        return
-      }
-
-      setNotifications(data || [])
-      
-      // If we are on the notifications page, keep unread count as 0
-      if (window.location.pathname === '/notifications') {
-        setUnreadCount(0)
-      } else {
-        setUnreadCount(data?.filter(n => !n.read).length || 0)
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error)
-    }
-  }
-
-  const markNotificationAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId)
-
-      if (error) {
-        console.error('Error marking notification as read:', error)
-        return
-      }
-
-      // Refresh notifications
-      if (user) {
-        fetchNotifications(user.id)
-      }
-    } catch (error) {
-      console.error('Error marking notification as read:', error)
-    }
-  }
-
+  
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     window.location.href = '/auth'

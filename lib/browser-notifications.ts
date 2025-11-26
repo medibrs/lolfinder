@@ -50,20 +50,33 @@ export class BrowserNotificationManager {
   }
 
   async showNotification(data: NotificationData): Promise<boolean> {
+    console.log('🔔 Attempting to show browser notification:', data)
+    
     if (!this.isSupported()) {
-      console.log('Browser notifications not supported')
+      console.log('❌ Browser notifications not supported')
       return false
     }
 
+    console.log('✅ Browser notifications supported, permission:', this.permission)
+
     if (this.permission !== 'granted') {
+      console.log('🔐 Requesting notification permission...')
       const permission = await this.requestPermission()
+      console.log('🔐 Permission result:', permission)
       if (permission !== 'granted') {
-        console.log('Notification permission not granted')
+        console.log('❌ Notification permission not granted')
         return false
       }
     }
 
     try {
+      console.log('📱 Creating notification with:', {
+        title: data.title,
+        body: data.body,
+        icon: data.icon,
+        tag: data.tag
+      })
+      
       const notification = new Notification(data.title, {
         body: data.body,
         icon: data.icon || '/favicon.ico',
@@ -74,6 +87,8 @@ export class BrowserNotificationManager {
         silent: false, // Play sound if supported
       })
 
+      console.log('✅ Notification created successfully')
+
       // Auto-close after 8 seconds
       setTimeout(() => {
         notification.close()
@@ -81,6 +96,7 @@ export class BrowserNotificationManager {
 
       // Handle click events
       notification.onclick = (event) => {
+        console.log('🖱️ Notification clicked')
         event.preventDefault() // Prevent default browser behavior
         window.focus() // Bring window to front
         notification.close()
@@ -97,9 +113,10 @@ export class BrowserNotificationManager {
         }
       }
 
+      console.log('✅ Browser notification shown successfully')
       return true
     } catch (error) {
-      console.error('Error showing browser notification:', error)
+      console.error('❌ Error showing browser notification:', error)
       return false
     }
   }

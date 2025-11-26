@@ -10,6 +10,8 @@ import { AlertTriangle, Settings, User, Shield, Trash2, Bell } from 'lucide-reac
 import NotificationToggle from '@/components/NotificationToggle'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { notificationManager } from '@/lib/browser-notifications'
+import { faviconBadge } from '@/lib/favicon-badge'
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null)
@@ -36,6 +38,44 @@ export default function SettingsPage() {
 
     getUser()
   }, [supabase])
+
+  const testNotification = async () => {
+    console.log('🧪 Testing browser notification...')
+    const success = await notificationManager.showNotification({
+      title: '🧪 Test Notification',
+      body: 'This is a test notification to verify the system is working!',
+      tag: 'test-notification'
+    })
+    console.log('🧪 Test notification result:', success)
+  }
+
+  const testFaviconBadge = async () => {
+    console.log('🏷️ Testing favicon badge...')
+    
+    // Test with different counts
+    await faviconBadge.setBadge(1)
+    console.log('🏷️ Favicon badge set to 1')
+    
+    setTimeout(async () => {
+      await faviconBadge.setBadge(5)
+      console.log('🏷️ Favicon badge set to 5')
+    }, 2000)
+    
+    setTimeout(async () => {
+      await faviconBadge.setBadge(99)
+      console.log('🏷️ Favicon badge set to 99')
+    }, 4000)
+    
+    setTimeout(async () => {
+      await faviconBadge.setBadge(150)
+      console.log('🏷️ Favicon badge set to 150 (should show 99+)')
+    }, 6000)
+    
+    setTimeout(async () => {
+      faviconBadge.clear()
+      console.log('🏷️ Favicon badge cleared')
+    }, 8000)
+  }
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -155,7 +195,23 @@ export default function SettingsPage() {
                     Get instant updates in your browser when you're online
                   </p>
                 </div>
-                <NotificationToggle />
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={testNotification}
+                  >
+                    Test Notification
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={testFaviconBadge}
+                  >
+                    Test Badge
+                  </Button>
+                  <NotificationToggle />
+                </div>
               </div>
               
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
