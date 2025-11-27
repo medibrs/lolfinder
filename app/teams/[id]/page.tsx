@@ -64,6 +64,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const [userTeam, setUserTeam] = useState<any>(null)
   const [pendingRequest, setPendingRequest] = useState<string | null>(null)
   const [sendingRequest, setSendingRequest] = useState(false)
+  const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
   const supabase = createClient()
 
   const handleRequestToJoin = async () => {
@@ -125,36 +126,45 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
 
         // Check if user has a team
         if (user) {
-          const { data: playerData } = await supabase
+          const { data: playerData, error: playerError } = await supabase
             .from('players')
             .select('team_id')
             .eq('id', user.id)
             .single()
           
           console.log('Player data:', playerData)
+          console.log('Player error:', playerError)
           
-          if (playerData?.team_id) {
-            const { data: teamData } = await supabase
-              .from('teams')
-              .select('*')
-              .eq('id', playerData.team_id)
+          if (playerError) {
+            console.log('User does not have a player profile')
+            setHasPlayerProfile(false)
+          } else {
+            console.log('User has a player profile')
+            setHasPlayerProfile(true)
+            
+            if (playerData?.team_id) {
+              const { data: teamData } = await supabase
+                .from('teams')
+                .select('*')
+                .eq('id', playerData.team_id)
+                .single()
+              
+              console.log('User team data:', teamData)
+              setUserTeam(teamData)
+            }
+
+            // Check if user has a pending request to this team
+            const { data: requestData } = await supabase
+              .from('team_join_requests')
+              .select('id')
+              .eq('player_id', user.id)
+              .eq('team_id', id)
+              .eq('status', 'pending')
               .single()
             
-            console.log('User team data:', teamData)
-            setUserTeam(teamData)
-          }
-
-          // Check if user has a pending request to this team
-          const { data: requestData } = await supabase
-            .from('team_join_requests')
-            .select('id')
-            .eq('player_id', user.id)
-            .eq('team_id', id)
-            .eq('status', 'pending')
-            .single()
-          
-          if (requestData) {
-            setPendingRequest(requestData.id)
+            if (requestData) {
+              setPendingRequest(requestData.id)
+            }
           }
         }
 
@@ -248,6 +258,28 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
             Back to Teams
           </Link>
         </Button>
+
+        {/* Profile Setup Banner */}
+        {currentUserId && !hasPlayerProfile && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900">Complete Your Player Profile</h3>
+                  <p className="text-sm text-blue-700">Create your profile to join teams and participate in tournaments</p>
+                </div>
+              </div>
+              <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                <Link href="/setup-profile">Set Up Profile</Link>
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Team Info */}
@@ -494,8 +526,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                       console.log('UI Check - isCaptain:', isCaptain)
                       console.log('UI Check - recruiting_status:', team.recruiting_status)
                       console.log('UI Check - pendingRequest:', pendingRequest)
+                      console.log('UI Check - hasPlayerProfile:', hasPlayerProfile)
                       
-                      const canRequestToJoin = currentUserId && !userTeam && !isCaptain && team.recruiting_status === 'Open'
+                      const canRequestToJoin = currentUserId && hasPlayerProfile && !userTeam && !isCaptain && team.recruiting_status === 'Open'
                       console.log('UI Check - canRequestToJoin:', canRequestToJoin)
                       
                       return canRequestToJoin ? (
@@ -563,14 +596,14 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                           </p>
                         </div>
                       ) : (
-                        // Default slots available (user not logged in)
+                        // Default slots available (user not logged in or no profile)
                         <div className="space-y-3">
                           <UserPlus className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           <p className="text-sm font-medium text-muted-foreground">
                             {teamSize - members.length} slots available
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Sign in to request joining this team
+                            {currentUserId ? 'Complete your profile to join teams' : 'Sign in to request joining this team'}
                           </p>
                         </div>
                       )

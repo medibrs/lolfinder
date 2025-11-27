@@ -60,6 +60,7 @@ export default function SearchPage() {
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
   const [sentInvites, setSentInvites] = useState<Record<string, string>>({})
   const [cancellingInvite, setCancellingInvite] = useState<string | null>(null)
+  const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -110,47 +111,57 @@ export default function SearchPage() {
       // Check if user is in a team
       if (authUser) {
         // First check if user is a player and get their team
-        const { data: playerData } = await supabase
+        const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('team_id')
           .eq('id', authUser.id)
           .single()
         
-        // If player has a team, fetch the team data
-        if (playerData?.team_id) {
-          const { data: teamData } = await supabase
-            .from('teams')
-            .select('*')
-            .eq('id', playerData.team_id)
-            .single()
-          
-          setUserTeam(teamData)
-        }
-
-        // Fetch user's pending join requests
-        const { data: requests } = await supabase
-          .from('team_join_requests')
-          .select('id, team_id')
-          .eq('player_id', authUser.id)
-          .eq('status', 'pending')
+        console.log('Search page - Player data:', playerData)
+        console.log('Search page - Player error:', playerError)
         
-        const pendingMap: Record<string, string> = {}
-        requests?.forEach(r => {
-          pendingMap[r.team_id] = r.id
-        })
-        setPendingRequests(pendingMap)
-
-        // Fetch pending invitations sent by this team
-        if (playerData?.team_id) {
-          const { data: teamData } = await supabase
-            .from('teams')
-            .select('*')
-            .eq('id', playerData.team_id)
-            .single()
+        if (playerError) {
+          console.log('Search page - User does not have a player profile')
+          setHasPlayerProfile(false)
+        } else {
+          console.log('Search page - User has a player profile')
+          setHasPlayerProfile(true)
           
-          if (teamData && teamData.captain_id === authUser.id) {
-            const { data: invitations } = await supabase
-              .from('team_invitations')
+          // If player has a team, fetch the team data
+          if (playerData?.team_id) {
+            const { data: teamData } = await supabase
+              .from('teams')
+              .select('*')
+              .eq('id', playerData.team_id)
+              .single()
+            
+            setUserTeam(teamData)
+          }
+
+          // Fetch user's pending join requests
+          const { data: requests } = await supabase
+            .from('team_join_requests')
+            .select('id, team_id')
+            .eq('player_id', authUser.id)
+            .eq('status', 'pending')
+          
+          const pendingMap: Record<string, string> = {}
+          requests?.forEach(r => {
+            pendingMap[r.team_id] = r.id
+          })
+          setPendingRequests(pendingMap)
+
+          // Fetch pending invitations sent by this team
+          if (playerData?.team_id) {
+            const { data: teamData } = await supabase
+              .from('teams')
+              .select('*')
+              .eq('id', playerData.team_id)
+              .single()
+            
+            if (teamData && teamData.captain_id === authUser.id) {
+              const { data: invitations } = await supabase
+                .from('team_invitations')
               .select('id, invited_player_id')
               .eq('team_id', teamData.id)
               .eq('status', 'pending')
@@ -163,6 +174,7 @@ export default function SearchPage() {
           }
         }
       }
+    }
 
       // Use cache for search data
       const teamsCacheKey = 'search_teams'
@@ -408,6 +420,28 @@ export default function SearchPage() {
     <main className="min-h-screen pt-24 pb-12">
       <div className="max-w-6xl mx-auto px-4">
         <h1 className="text-4xl font-bold mb-8">Find Your Match</h1>
+
+        {/* Profile Setup Banner */}
+        {user && !hasPlayerProfile && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900">Complete Your Player Profile</h3>
+                  <p className="text-sm text-blue-700">Create your profile to join teams and participate in tournaments</p>
+                </div>
+              </div>
+              <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                <a href="/setup-profile">Set Up Profile</a>
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-4 mb-8">
           <Button

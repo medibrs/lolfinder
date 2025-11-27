@@ -336,6 +336,30 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Profile Setup Banner */}
+      {user && !playerProfile && (
+        <section className="px-4 py-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-blue-900">Complete Your Player Profile</h3>
+                    <p className="text-sm text-blue-700">Create your profile to join teams and participate in tournaments</p>
+                  </div>
+                </div>
+                <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <Link href="/setup-profile">Set Up Profile</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Quick Actions */}
       <section className="px-4 py-8">
         <div className="max-w-6xl mx-auto">

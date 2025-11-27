@@ -54,6 +54,7 @@ export default function PlayersPage() {
   const [sentInvites, setSentInvites] = useState<Record<string, string>>({})
   const [cancellingInvite, setCancellingInvite] = useState<string | null>(null)
   const [profileIconUrls, setProfileIconUrls] = useState<Record<string, string>>({})
+  const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -118,6 +119,24 @@ const fetchPlayers = async () => {
 
       // Check if user is a team captain
       if (authUser) {
+        // First check if user has a player profile
+        const { data: playerData, error: playerError } = await supabase
+          .from('players')
+          .select('team_id')
+          .eq('id', authUser.id)
+          .single()
+        
+        console.log('Players page - Player data:', playerData)
+        console.log('Players page - Player error:', playerError)
+        
+        if (playerError) {
+          console.log('Players page - User does not have a player profile')
+          setHasPlayerProfile(false)
+        } else {
+          console.log('Players page - User has a player profile')
+          setHasPlayerProfile(true)
+        }
+
         const { data: teamData } = await supabase
           .from('teams')
           .select('*')
@@ -301,6 +320,28 @@ const fetchPlayers = async () => {
       <div className="max-w-6xl mx-auto px-4">
         <h1 className="text-4xl font-bold mb-2">Player Directory</h1>
         <p className="text-muted-foreground mb-8">Browse all registered players looking for teams</p>
+
+        {/* Profile Setup Banner */}
+        {user && !hasPlayerProfile && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900">Complete Your Player Profile</h3>
+                  <p className="text-sm text-blue-700">Create your profile to join teams and participate in tournaments</p>
+                </div>
+              </div>
+              <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                <a href="/setup-profile">Set Up Profile</a>
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="mb-8 space-y-4">
           <Input
