@@ -8,7 +8,10 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import { getRankImage } from '@/lib/rank-utils'
+import { getProfileIconUrl } from '@/lib/ddragon'
 import RoleIcon from '@/components/RoleIcon'
 import { Shield, Trophy, Users, Calendar, UserPlus, Edit, Gamepad2, Crown } from 'lucide-react'
 
@@ -55,9 +58,27 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const [newMemberRole, setNewMemberRole] = useState('')
   const [team, setTeam] = useState<any>(null)
   const [members, setMembers] = useState<any[]>([])
+  const [profileIconUrls, setProfileIconUrls] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const supabase = createClient()
+
+  const fetchProfileIconUrls = async (members: any[]) => {
+    const urls: Record<string, string> = {};
+    
+    for (const member of members) {
+      if (member.profile_icon_id) {
+        try {
+          const url = await getProfileIconUrl(member.profile_icon_id);
+          urls[member.id] = url;
+        } catch (error) {
+          console.error(`Failed to fetch profile icon for ${member.summoner_name}:`, error);
+        }
+      }
+    }
+    
+    setProfileIconUrls(urls);
+  }
 
   useEffect(() => {
     const fetchTeamData = async () => {
@@ -88,6 +109,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
 
         if (!membersError && membersData) {
           setMembers(membersData)
+          // Fetch profile icon URLs for members
+          await fetchProfileIconUrls(membersData)
         }
       } catch (error) {
         console.error('Error:', error)
@@ -237,17 +260,58 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                   {members.map(member => (
                     <div key={member.id} className="bg-gradient-to-r from-secondary/20 to-background rounded-lg p-4 border border-border hover:border-primary/50 transition-all">
                       <div className="flex items-start gap-4">
-                        <Avatar className="h-12 w-12 border-2 border-primary/20">
-                          <AvatarImage src={member.avatar_url} />
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
-                            {(member.summoner_name || member.riot_games_name || 'Player').charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        {/* Profile Icon with Rank Badge */}
+                        <div className="relative flex-shrink-0">
+                          <div className="relative">
+                            {member.profile_icon_id ? (
+                              <Image 
+                                src={profileIconUrls[member.id] || ''}
+                                alt="Profile Icon"
+                                width={48}
+                                height={48}
+                                className="rounded-full border-2 border-border"
+                                onError={(e) => {
+                                  // Fallback to question mark if image fails to load
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    const fallback = parent.querySelector('.fallback-icon');
+                                    if (fallback) {
+                                      (fallback as HTMLElement).style.display = 'flex';
+                                    }
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                                <span className="text-lg">?</span>
+                              </div>
+                            )}
+                            {/* Fallback icon */}
+                            <div className="fallback-icon w-12 h-12 bg-muted rounded-full flex items-center justify-center" style={{ display: 'none' }}>
+                              <span className="text-lg">?</span>
+                            </div>
+                            {/* Rank Badge */}
+                            <div className="absolute -bottom-1 -right-1">
+                              <Image 
+                                src={getRankImage(member.tier)} 
+                                alt={member.tier}
+                                width={20}
+                                height={20}
+                                className="object-contain"
+                              />
+                            </div>
+                          </div>
+                        </div>
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="font-semibold text-foreground truncate">
-                              {member.summoner_name || member.riot_games_name || 'Unknown'}
+                              {member.summoner_name?.split('#')[0] || member.riot_games_name || 'Unknown'}
+                              {member.summoner_name?.split('#')[1] && (
+                                <span className="text-muted-foreground font-normal ml-1">#{member.summoner_name.split('#')[1]}</span>
+                              )}
                             </h4>
                             {member.id === team.captain_id && (
                               <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs">
@@ -273,16 +337,64 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                             )}
                           </div>
                           
+                          {/* Enhanced Rank Display */}
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge className={`${getTierColor(member.tier || 'Unranked')} text-white text-xs`}>
-                              {member.tier || 'Unranked'}
-                            </Badge>
-                            {member.looking_for_team && (
-                              <Badge variant="outline" className="text-xs">
-                                LFT
-                              </Badge>
+                            <span className="text-sm font-medium text-muted-foreground">Rank:</span>
+                            <span className="text-sm font-semibold">
+                              {member.tier}
+                              {member.rank && member.rank !== null && (
+                                <span className="ml-1">{member.rank}</span>
+                              )}
+                            </span>
+                            {member.league_points !== undefined && member.league_points > 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                ({member.league_points} LP)
+                              </span>
                             )}
                           </div>
+                          
+                          {/* Win/Loss Stats */}
+                          {(member.wins !== undefined || member.losses !== undefined) && (
+                            <div className="flex items-center gap-3 mb-2 p-2 bg-muted/50 rounded text-xs">
+                              {member.wins !== undefined && (
+                                <div className="text-center">
+                                  <span className="text-green-600 font-bold">{member.wins}</span>
+                                  <span className="text-muted-foreground ml-1">W</span>
+                                </div>
+                              )}
+                              {(member.wins !== undefined && member.losses !== undefined) && (
+                                <span className="text-muted-foreground">/</span>
+                              )}
+                              {member.losses !== undefined && (
+                                <div className="text-center">
+                                  <span className="text-red-600 font-bold">{member.losses}</span>
+                                  <span className="text-muted-foreground ml-1">L</span>
+                                </div>
+                              )}
+                              {member.wins !== undefined && member.losses !== undefined && member.wins + member.losses > 0 && (
+                                <div className="text-center">
+                                  <span className="text-blue-600 font-bold">
+                                    {Math.round((member.wins / (member.wins + member.losses)) * 100)}%
+                                  </span>
+                                  <span className="text-muted-foreground ml-1">WR</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Summoner Level */}
+                          {member.summoner_level && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-sm font-medium text-muted-foreground">Level:</span>
+                              <span className="text-sm font-semibold">{member.summoner_level}</span>
+                            </div>
+                          )}
+                          
+                          {member.looking_for_team && (
+                            <Badge variant="outline" className="text-xs">
+                              LFT
+                            </Badge>
+                          )}
                           
                           <div className="text-xs text-muted-foreground">
                             {member.discord && (
