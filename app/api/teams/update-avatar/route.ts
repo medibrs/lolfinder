@@ -36,6 +36,26 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Only team captains can update avatar' }, { status: 403 })
     }
 
+    // Check if avatar is already taken by another team
+    const { data: existingTeam, error: avatarCheckError } = await supabase
+      .from('teams')
+      .select('id, name')
+      .eq('team_avatar', avatarId)
+      .neq('id', teamId) // Exclude current team
+      .single()
+
+    if (avatarCheckError && avatarCheckError.code !== 'PGRST116') { // PGRST116 is "not found" error
+      console.error('Error checking avatar availability:', avatarCheckError)
+      return NextResponse.json({ error: 'Failed to check avatar availability' }, { status: 500 })
+    }
+
+    if (existingTeam) {
+      return NextResponse.json({ 
+        error: 'Avatar already taken', 
+        message: `This avatar is already being used by ${existingTeam.name}` 
+      }, { status: 409 })
+    }
+
     // Update team avatar
     const { data: updatedTeam, error: updateError } = await supabase
       .from('teams')

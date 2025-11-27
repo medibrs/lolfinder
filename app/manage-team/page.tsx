@@ -20,7 +20,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle, Edit } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 
@@ -44,6 +50,9 @@ export default function ManageTeamPage() {
     substitute_id: null as string | null
   })
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null)
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [updatingAvatar, setUpdatingAvatar] = useState(false)
+  const [takenAvatars, setTakenAvatars] = useState<{id: number; teamName: string; teamId: string}[]>([])
 
   useEffect(() => {
     loadTeamData()
@@ -130,6 +139,9 @@ export default function ManageTeamPage() {
       
 
       setTournaments(tournamentsData || [])
+      
+      // Fetch taken avatars
+      fetchTakenAvatars()
     } catch (error) {
       console.error('Error loading team data:', error)
     } finally {
@@ -187,6 +199,61 @@ export default function ManageTeamPage() {
     } catch (error) {
       console.error('Error updating team:', error)
     }
+  }
+
+  const handleUpdateTeamAvatar = async (avatarId: number) => {
+    if (!team || updatingAvatar) return
+    
+    try {
+      setUpdatingAvatar(true)
+      const supabase = createClient()
+      
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/teams/update-avatar', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ teamId: team.id, avatarId }),
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok) {
+        setTeam((prev: any) => ({ ...prev, team_avatar: avatarId }))
+        setShowAvatarPicker(false)
+        // Refresh taken avatars list
+        fetchTakenAvatars()
+      } else {
+        console.error('Failed to update team avatar:', result.error)
+        // Show user-friendly error message
+        alert(result.message || result.error || 'Failed to update avatar')
+      }
+    } catch (error) {
+      console.error('Error updating team avatar:', error)
+      alert('Error updating team avatar')
+    } finally {
+      setUpdatingAvatar(false)
+    }
+  }
+
+  const fetchTakenAvatars = async () => {
+    try {
+      const response = await fetch('/api/teams/taken-avatars')
+      if (response.ok) {
+        const data = await response.json()
+        setTakenAvatars(data.takenAvatars || [])
+      }
+    } catch (error) {
+      console.error('Error fetching taken avatars:', error)
+    }
+  }
+
+  const getTeamAvatarUrl = (avatarId: number) => {
+    if (!avatarId) return ''
+    return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
   }
 
   const handleRemoveMember = async (memberId: string) => {
@@ -445,6 +512,48 @@ export default function ManageTeamPage() {
                         placeholder="Describe your team"
                         rows={3}
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Team Avatar</label>
+                      <div className="flex items-center gap-4">
+                        <div className="relative group">
+                          <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 to-accent/10">
+                            {team?.team_avatar ? (
+                              <Image 
+                                src={getTeamAvatarUrl(team.team_avatar)} 
+                                alt="Team Avatar"
+                                width={64}
+                                height={64}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Shield className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => setShowAvatarPicker(true)}
+                          >
+                            <Edit className="h-2 w-2" />
+                          </Button>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowAvatarPicker(true)}
+                        >
+                          Change Avatar
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Choose an avatar from League of Legends profile icons (IDs 3905-4016)
+                      </p>
                     </div>
 
                     <div>
@@ -791,6 +900,81 @@ export default function ManageTeamPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Avatar Picker Dialog */}
+      <Dialog open={showAvatarPicker} onOpenChange={setShowAvatarPicker}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto mx-4">
+          <DialogHeader>
+            <DialogTitle>Choose Team Avatar</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Select an avatar for your team. Some avatars may already be taken by other teams.
+            </p>
+          </DialogHeader>
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 sm:gap-3 md:gap-4 p-2 sm:p-4">
+            {Array.from({ length: 4016 - 3905 + 1 }, (_, i) => 3905 + i).map((avatarId) => {
+              const isTaken = takenAvatars.some(taken => taken.id === avatarId)
+              const takenBy = takenAvatars.find(taken => taken.id === avatarId)
+              const isCurrentAvatar = team?.team_avatar === avatarId
+              
+              return (
+                <button
+                  key={avatarId}
+                  onClick={() => !isTaken && handleUpdateTeamAvatar(avatarId)}
+                  disabled={updatingAvatar || (isTaken && !isCurrentAvatar)}
+                  className={`relative group rounded-lg overflow-hidden border-2 transition-all aspect-square ${
+                    isCurrentAvatar 
+                      ? 'border-primary ring-2 ring-primary/20' 
+                      : isTaken 
+                      ? 'border-red-300 opacity-60 cursor-not-allowed' 
+                      : 'border-border hover:border-primary hover:scale-105 cursor-pointer'
+                  }`}
+                  title={isTaken ? `Taken by ${takenBy?.teamName}` : 'Available'}
+                >
+                  <Image
+                    src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`}
+                    alt={`Avatar ${avatarId}`}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                  {isCurrentAvatar && (
+                    <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                      <div className="bg-primary rounded-full p-1">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                  {isTaken && !isCurrentAvatar && (
+                    <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
+                      <div className="bg-red-500 rounded-full p-1">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2 border-t">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 border border-primary rounded"></div>
+              <span>Current</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 border border-border rounded"></div>
+              <span>Available</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 border border-red-300 rounded opacity-60"></div>
+              <span>Taken</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
