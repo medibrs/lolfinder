@@ -48,14 +48,14 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto mx-4">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto mx-2 sm:mx-4">
         <DialogHeader>
           <DialogTitle>Choose Team Avatar</DialogTitle>
           <p className="text-sm text-muted-foreground">
             Select an avatar for your team. Only available avatars are shown.
           </p>
         </DialogHeader>
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 sm:gap-3 md:gap-4 p-2 sm:p-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-3 md:gap-4 p-3 sm:p-4">
           {Array.from({ length: 4016 - 3905 + 1 }, (_, i) => 3905 + i)
             .filter((avatarId) => {
               // Show if it's the current avatar or if it's not taken
@@ -69,24 +69,24 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
                   key={avatarId}
                   onClick={() => handleAvatarSelect(avatarId)}
                   disabled={disabled}
-                  className={`relative group rounded-lg overflow-hidden border-2 transition-all hover:border-primary hover:scale-105 aspect-square cursor-pointer ${
+                  className={`relative group rounded-lg overflow-hidden border-2 transition-all active:scale-95 aspect-square focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                     isCurrentAvatar 
                       ? 'border-primary ring-2 ring-primary/20' 
-                      : 'border-border hover:border-primary hover:scale-105'
+                      : 'border-border active:border-primary'
                   }`}
                   title={isCurrentAvatar ? 'Current Avatar' : 'Available'}
                 >
                   <Image
                     src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`}
                     alt={`Avatar ${avatarId}`}
-                    width={64}
-                    height={64}
+                    width={80}
+                    height={80}
                     className="w-full h-full object-cover"
                   />
                   {isCurrentAvatar && (
                     <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
                       <div className="bg-primary rounded-full p-1">
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>
@@ -137,7 +137,10 @@ export function AvatarPreview({ avatarId, onEdit, showEditButton = false, size =
   }
 
   return (
-    <div className={`relative group ${showEditButton ? 'cursor-pointer' : ''}`}>
+    <div 
+      className={`relative ${showEditButton ? 'cursor-pointer' : ''}`}
+      onClick={showEditButton && onEdit ? onEdit : undefined}
+    >
       <div className={`${sizeClasses[size]} rounded-xl overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 to-accent/10`}>
         {avatarId ? (
           <Image 
@@ -157,10 +160,13 @@ export function AvatarPreview({ avatarId, onEdit, showEditButton = false, size =
         <Button
           size="sm"
           variant="secondary"
-          className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={onEdit}
+          className="absolute -bottom-2 -right-2 h-7 w-7 sm:h-6 sm:w-6 rounded-full p-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow-md"
+          onClick={(e) => {
+            e.stopPropagation()
+            onEdit()
+          }}
         >
-          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-3 w-3 sm:h-3 sm:w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
         </Button>
