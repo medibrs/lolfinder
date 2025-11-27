@@ -835,57 +835,49 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
             <DialogHeader>
               <DialogTitle>Choose Team Avatar</DialogTitle>
               <p className="text-sm text-muted-foreground">
-                Select an avatar for your team. Some avatars may already be taken by other teams.
+                Select an avatar for your team. Only available avatars are shown.
               </p>
             </DialogHeader>
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 sm:gap-3 md:gap-4 p-2 sm:p-4">
-              {Array.from({ length: 4016 - 3905 + 1 }, (_, i) => 3905 + i).map((avatarId) => {
-                const isTaken = takenAvatars.some(taken => taken.id === avatarId)
-                const takenBy = takenAvatars.find(taken => taken.id === avatarId)
-                const isCurrentAvatar = team.team_avatar === avatarId
-                
-                return (
-                  <button
-                    key={avatarId}
-                    onClick={() => !isTaken && handleUpdateTeamAvatar(avatarId)}
-                    disabled={updatingAvatar || (isTaken && !isCurrentAvatar)}
-                    className={`relative group rounded-lg overflow-hidden border-2 transition-all aspect-square ${
-                      isCurrentAvatar 
-                        ? 'border-primary ring-2 ring-primary/20' 
-                        : isTaken 
-                        ? 'border-red-300 opacity-60 cursor-not-allowed' 
-                        : 'border-border hover:border-primary hover:scale-105 cursor-pointer'
-                    }`}
-                    title={isTaken ? `Taken by ${takenBy?.teamName}` : 'Available'}
-                  >
-                    <Image
-                      src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`}
-                      alt={`Avatar ${avatarId}`}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover"
-                    />
-                    {isCurrentAvatar && (
-                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                        <div className="bg-primary rounded-full p-1">
-                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
+              {Array.from({ length: 4016 - 3905 + 1 }, (_, i) => 3905 + i)
+                .filter((avatarId) => {
+                  // Show if it's the current avatar or if it's not taken
+                  return team.team_avatar === avatarId || !takenAvatars.some(taken => taken.id === avatarId)
+                })
+                .map((avatarId) => {
+                  const isCurrentAvatar = team.team_avatar === avatarId
+                  
+                  return (
+                    <button
+                      key={avatarId}
+                      onClick={() => handleUpdateTeamAvatar(avatarId)}
+                      disabled={updatingAvatar}
+                      className={`relative group rounded-lg overflow-hidden border-2 transition-all hover:border-primary hover:scale-105 aspect-square cursor-pointer ${
+                        isCurrentAvatar 
+                          ? 'border-primary ring-2 ring-primary/20' 
+                          : 'border-border hover:border-primary hover:scale-105'
+                      }`}
+                      title={isCurrentAvatar ? 'Current Avatar' : 'Available'}
+                    >
+                      <Image
+                        src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`}
+                        alt={`Avatar ${avatarId}`}
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-cover"
+                      />
+                      {isCurrentAvatar && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <div className="bg-primary rounded-full p-1">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {isTaken && !isCurrentAvatar && (
-                      <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
-                        <div className="bg-red-500 rounded-full p-1">
-                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
+                      )}
+                    </button>
+                  )
+                })}
             </div>
             <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2 border-t">
               <div className="flex items-center gap-1">
@@ -895,10 +887,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 border border-border rounded"></div>
                 <span>Available</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 border border-red-300 rounded opacity-60"></div>
-                <span>Taken</span>
               </div>
             </div>
           </DialogContent>
