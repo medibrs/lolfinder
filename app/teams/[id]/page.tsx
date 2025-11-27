@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -54,6 +55,7 @@ const getTierGradient = (tier: string) => {
 
 export default function TeamDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const router = useRouter()
   const [showAddMember, setShowAddMember] = useState(false)
   const [newMemberRole, setNewMemberRole] = useState('')
   const [team, setTeam] = useState<any>(null)
@@ -66,6 +68,23 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const [sendingRequest, setSendingRequest] = useState(false)
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
   const supabase = createClient()
+
+  const handleSearchPlayers = () => {
+    const searchParams = new URLSearchParams()
+    searchParams.set('type', 'players')
+    if (newMemberRole) {
+      searchParams.set('role', newMemberRole)
+    }
+    router.push(`/search?${searchParams.toString()}`)
+  }
+
+  const handleEditTeam = () => {
+    router.push('/manage-team')
+  }
+
+  const handleRegisterForTournament = () => {
+    router.push('/tournaments')
+  }
 
   const handleRequestToJoin = async () => {
     if (!currentUserId || sendingRequest) return
@@ -630,13 +649,21 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                       className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
-                      Invite Player
+                      {showAddMember ? 'Hide Invite Form' : 'Find Players to Invite'}
                     </Button>
-                    <Button variant="outline" className="w-full">
+                    <Button 
+                      onClick={handleEditTeam}
+                      variant="outline" 
+                      className="w-full"
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Team
                     </Button>
-                    <Button variant="outline" className="w-full">
+                    <Button 
+                      onClick={handleRegisterForTournament}
+                      variant="outline" 
+                      className="w-full"
+                    >
                       <Trophy className="h-4 w-4 mr-2" />
                       Register for Tournament
                     </Button>
@@ -649,7 +676,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
             {showAddMember && isCaptain && (
               <Card className="bg-gradient-to-br from-secondary/30 to-background border-border">
                 <div className="p-6">
-                  <h3 className="font-bold mb-4">Invite Player</h3>
+                  <h3 className="font-bold mb-4">Find Players by Role</h3>
                   <div className="space-y-3">
                     <select
                       value={newMemberRole}
@@ -661,7 +688,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                         <option key={role} value={role}>{role}</option>
                       ))}
                     </select>
-                    <Button className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90">
+                    <Button 
+                      onClick={handleSearchPlayers}
+                      className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                    >
                       <UserPlus className="h-4 w-4 mr-2" />
                       Search Players
                     </Button>

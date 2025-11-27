@@ -55,6 +55,7 @@ export default function PlayersPage() {
   const [cancellingInvite, setCancellingInvite] = useState<string | null>(null)
   const [profileIconUrls, setProfileIconUrls] = useState<Record<string, string>>({})
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
+  const [profileChecked, setProfileChecked] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -132,9 +133,11 @@ const fetchPlayers = async () => {
         if (playerError) {
           console.log('Players page - User does not have a player profile')
           setHasPlayerProfile(false)
+          setProfileChecked(true)
         } else {
           console.log('Players page - User has a player profile')
           setHasPlayerProfile(true)
+          setProfileChecked(true)
         }
 
         const { data: teamData } = await supabase
@@ -159,6 +162,9 @@ const fetchPlayers = async () => {
           })
           setSentInvites(inviteMap)
         }
+      } else {
+        // No authenticated user
+        setProfileChecked(true)
       }
 
       // Use cache for players data
@@ -322,7 +328,7 @@ const fetchPlayers = async () => {
         <p className="text-muted-foreground mb-8">Browse all registered players looking for teams</p>
 
         {/* Profile Setup Banner */}
-        {user && !hasPlayerProfile && (
+        {user && !hasPlayerProfile && profileChecked && (
           <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

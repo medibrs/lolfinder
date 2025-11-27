@@ -152,6 +152,7 @@ export default function Navigation() {
                 width={180} 
                 height={48} 
                 className="h-12 w-auto object-contain"
+                style={{ width: 'auto', height: '48px' }}
                 priority
               />
             </Link>
@@ -173,6 +174,7 @@ export default function Navigation() {
               width={180} 
               height={48} 
               className="h-12 w-auto object-contain"
+              style={{ width: 'auto', height: '48px' }}
               priority
             />
           </Link>

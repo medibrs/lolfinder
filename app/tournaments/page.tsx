@@ -33,6 +33,7 @@ export default function TournamentsPage() {
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [successMessage, setSuccessMessage] = useState<string>('')
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
+  const [profileChecked, setProfileChecked] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -82,9 +83,11 @@ export default function TournamentsPage() {
         if (playerError) {
           console.log('Tournaments page - User does not have a player profile')
           setHasPlayerProfile(false)
+          setProfileChecked(true)
         } else {
           console.log('Tournaments page - User has a player profile')
           setHasPlayerProfile(true)
+          setProfileChecked(true)
         }
 
         const { data: teamData } = await supabase
@@ -111,6 +114,9 @@ export default function TournamentsPage() {
           })
           setRegistrationStatuses(statusMap)
         }
+      } else {
+        // No authenticated user
+        setProfileChecked(true)
       }
 
       // Use cache for tournaments data
@@ -228,7 +234,7 @@ export default function TournamentsPage() {
         <p className="text-muted-foreground mb-8">Browse and register for upcoming tournaments</p>
 
         {/* Profile Setup Banner */}
-        {user && !hasPlayerProfile && (
+        {user && !hasPlayerProfile && profileChecked && (
           <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

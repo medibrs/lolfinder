@@ -14,6 +14,7 @@ export default function Home() {
   const [userTeam, setUserTeam] = useState<any>(null)
   const [isCaptain, setIsCaptain] = useState(false)
   const [playerProfile, setPlayerProfile] = useState<any>(null)
+  const [profileChecked, setProfileChecked] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(false)
   const supabase = createClient()
 
@@ -34,18 +35,21 @@ export default function Home() {
             const { data: profileData } = await supabase
               .from('players')
               .select('*')
-              .eq('user_id', session.user.id)
+              .eq('id', session.user.id)
               .single()
             
             if (profileData) {
               setPlayerProfile(profileData)
             }
+            
+            // Profile check is complete
+            setProfileChecked(true)
 
             // Fetch user's team
             const { data: playerData } = await supabase
               .from('players')
               .select('teams(*)')
-              .eq('user_id', session.user.id)
+              .eq('id', session.user.id)
               .single()
             
             if (playerData?.teams && Array.isArray(playerData.teams) && playerData.teams.length > 0) {
@@ -56,6 +60,7 @@ export default function Home() {
           } else {
             setUser(null)
             setSessionChecked(true)
+            setProfileChecked(true)
           }
         }
       } catch (error) {
@@ -63,6 +68,7 @@ export default function Home() {
         if (mounted) {
           setUser(null)
           setSessionChecked(true)
+          setProfileChecked(true)
         }
       } finally {
         if (mounted) {
@@ -337,7 +343,7 @@ export default function Home() {
       </section>
 
       {/* Profile Setup Banner */}
-      {user && !playerProfile && (
+      {user && !playerProfile && profileChecked && (
         <section className="px-4 py-6">
           <div className="max-w-6xl mx-auto">
             <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">

@@ -38,6 +38,7 @@ export default function TeamsPage() {
   const [sendingRequest, setSendingRequest] = useState<string | null>(null)
   const [cancellingRequest, setCancellingRequest] = useState<string | null>(null)
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
+  const [profileChecked, setProfileChecked] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -98,9 +99,11 @@ export default function TeamsPage() {
         if (playerError) {
           console.log('Teams page - User does not have a player profile')
           setHasPlayerProfile(false)
+          setProfileChecked(true)
         } else {
           console.log('Teams page - User has a player profile')
           setHasPlayerProfile(true)
+          setProfileChecked(true)
           
           // If player has a team, fetch the team data
           if (playerData?.team_id) {
@@ -126,6 +129,9 @@ export default function TeamsPage() {
           })
           setPendingRequests(pendingMap)
         }
+      } else {
+        // No authenticated user
+        setProfileChecked(true)
       }
 
       // Use cache for teams data
@@ -289,7 +295,7 @@ export default function TeamsPage() {
     <main className="min-h-screen pt-24 pb-12">
       <div className="max-w-6xl mx-auto px-4">
         {/* Profile Setup Banner */}
-        {user && !hasPlayerProfile && (
+        {user && !hasPlayerProfile && profileChecked && (
           <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -316,9 +322,15 @@ export default function TeamsPage() {
             <p className="text-muted-foreground">Find teams looking for your role</p>
           </div>
           {userTeam ? (
-            <Button asChild className="bg-yellow-600 hover:bg-yellow-700">
-              <a href="/manage-team">Manage Team</a>
-            </Button>
+            userTeam.captain_id === user?.id ? (
+              <Button asChild className="bg-yellow-600 hover:bg-yellow-700">
+                <a href="/manage-team">Manage Team</a>
+              </Button>
+            ) : (
+              <Button asChild className="bg-primary hover:bg-primary/90">
+                <a href={`/teams/${userTeam.id}`}>View Team</a>
+              </Button>
+            )
           ) : (
             <Button asChild className="bg-primary hover:bg-primary/90">
               <a href="/create-team">Create Team</a>

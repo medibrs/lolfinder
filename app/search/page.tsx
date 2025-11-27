@@ -61,9 +61,25 @@ export default function SearchPage() {
   const [sentInvites, setSentInvites] = useState<Record<string, string>>({})
   const [cancellingInvite, setCancellingInvite] = useState<string | null>(null)
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
+  const [profileChecked, setProfileChecked] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
+    // Handle URL parameters
+    const urlParams = new URLSearchParams(window.location.search)
+    const typeParam = urlParams.get('type')
+    const roleParam = urlParams.get('role')
+    
+    // Set search type
+    if (typeParam === 'players') {
+      setSearchType('players')
+    }
+    
+    // Set role filter
+    if (roleParam && ROLES.includes(roleParam)) {
+      setSelectedRole(roleParam)
+    }
+    
     checkAuthAndFetchData()
     
     // Refetch data when page becomes visible
@@ -111,6 +127,7 @@ export default function SearchPage() {
       // Check if user is in a team
       if (authUser) {
         // First check if user is a player and get their team
+        console.log('Search page - Checking for player profile with authUser.id:', authUser.id)
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('team_id')
@@ -121,11 +138,13 @@ export default function SearchPage() {
         console.log('Search page - Player error:', playerError)
         
         if (playerError) {
-          console.log('Search page - User does not have a player profile')
+          console.log('Search page - User does not have a player profile, error:', playerError.message)
           setHasPlayerProfile(false)
-        } else {
-          console.log('Search page - User has a player profile')
+          setProfileChecked(true)
+        } else if (playerData) {
+          console.log('Search page - User has a player profile, data:', playerData)
           setHasPlayerProfile(true)
+          setProfileChecked(true)
           
           // If player has a team, fetch the team data
           if (playerData?.team_id) {
@@ -173,6 +192,9 @@ export default function SearchPage() {
             setSentInvites(inviteMap)
           }
         }
+      } else {
+        // No authenticated user
+        setProfileChecked(true)
       }
     }
 
@@ -422,7 +444,7 @@ export default function SearchPage() {
         <h1 className="text-4xl font-bold mb-8">Find Your Match</h1>
 
         {/* Profile Setup Banner */}
-        {user && !hasPlayerProfile && (
+        {user && !hasPlayerProfile && profileChecked && (
           <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
