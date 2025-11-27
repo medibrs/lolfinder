@@ -8,13 +8,31 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Textarea } from '@/components/ui/textarea'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 import { getProfileIconUrl } from '@/lib/ddragon'
 import RoleIcon from '@/components/RoleIcon'
-import { Shield, Trophy, Users, Calendar, UserPlus, Edit, Gamepad2, Crown } from 'lucide-react'
+import { Shield, Trophy, Users, Calendar, UserPlus, Edit, Gamepad2, Crown, Settings, UserMinus, Trash2, AlertTriangle } from 'lucide-react'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger', 'Unranked']
@@ -67,6 +85,21 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const [pendingRequest, setPendingRequest] = useState<string | null>(null)
   const [sendingRequest, setSendingRequest] = useState(false)
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [updatingAvatar, setUpdatingAvatar] = useState(false)
+  const [isManageMode, setIsManageMode] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [joinRequests, setJoinRequests] = useState<any[]>([])
+  const [tournaments, setTournaments] = useState<any[]>([])
+  const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null)
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    open_positions: [] as string[],
+    recruiting_status: 'Open' as 'Open' | 'Closed' | 'Full',
+    team_size: 6,
+    substitute_id: null as string | null
+  })
   const supabase = createClient()
 
   const handleSearchPlayers = () => {
@@ -84,6 +117,355 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleRegisterForTournament = () => {
     router.push('/tournaments')
+  }
+
+  const handleUpdateTeamAvatar = async (avatarId: number) => {
+    if (!isCaptain || updatingAvatar) return
+    
+    try {
+      setUpdatingAvatar(true)
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/teams/update-avatar', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ teamId: team.id, avatarId }),
+      })
+      
+      if (response.ok) {
+        setTeam((prev: any) => ({ ...prev, team_avatar: avatarId }))
+        setShowAvatarPicker(false)
+      } else {
+        console.error('Failed to update team avatar')
+      }
+    } catch (error) {
+      console.error('Error updating team avatar:', error)
+    } finally {
+      setUpdatingAvatar(false)
+    }
+  }
+
+  const getTeamAvatarUrl = (avatarId: number) => {
+    if (!avatarId) return null
+    return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
+  }
+
+  const handleSaveTeam = async () => {
+    try {
+      const supabase = createClient()
+      
+      const { error } = await supabase
+        .from('teams')
+        .update({
+          name: formData.name,
+          description: formData.description,
+          open_positions: formData.open_positions,
+          recruiting_status: formData.recruiting_status,
+          team_size: formData.team_size
+        })
+        .eq('id', team.id)
+
+      if (error) {
+        console.error('Error updating team:', error)
+        return
+      }
+
+      // Update substitute status for all players
+      const { error: clearError } = await supabase
+        .from('players')
+        .update({ is_substitute: false })
+        .eq('team_id', team.id)
+      
+      if (clearError) {
+        console.error('Error clearing substitutes:', clearError)
+      }
+
+      if (formData.substitute_id) {
+        const { error: setError } = await supabase
+          .from('players')
+          .update({ is_substitute: true })
+          .eq('id', formData.substitute_id)
+        
+        if (setError) {
+          console.error('Error setting substitute:', setError)
+        }
+      }
+
+      setEditing(false)
+      fetchTeamData() // Refresh data
+    } catch (error) {
+      console.error('Error updating team:', error)
+    }
+  }
+
+  const handleRemoveMember = async (memberId: string) => {
+    try {
+      const supabase = createClient()
+      
+      const { error } = await supabase
+        .from('players')
+        .update({ team_id: null, looking_for_team: true })
+        .eq('id', memberId)
+
+      if (error) {
+        console.error('Error removing member:', error)
+        return
+      }
+
+      await supabase
+        .from('team_invitations')
+        .delete()
+        .eq('team_id', team.id)
+        .eq('invited_player_id', memberId)
+        .eq('status', 'pending')
+
+      await supabase
+        .from('team_join_requests')
+        .delete()
+        .eq('team_id', team.id)
+        .eq('player_id', memberId)
+        .eq('status', 'pending')
+
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert([{
+          user_id: memberId,
+          type: 'team_member_removed',
+          title: `Removed from ${team.name}`,
+          message: `You have been removed from ${team.name} by the team captain.`,
+          data: {
+            team_id: team.id,
+            team_name: team.name
+          }
+        }])
+
+      if (notificationError) {
+        console.error('Error creating removal notification:', notificationError)
+      }
+
+      fetchTeamData()
+    } catch (error) {
+      console.error('Error removing member:', error)
+    }
+  }
+
+  const handleJoinRequestAction = async (requestId: string, action: 'accept' | 'reject') => {
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      const response = await fetch(`/api/team-join-requests/${requestId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ action }),
+      })
+
+      if (response.ok) {
+        fetchTeamData()
+      } else {
+        const error = await response.json()
+        if (error.error !== 'Join request not found or already processed') {
+          console.error(`Error ${action}ing join request:`, error.error)
+        } else {
+          fetchTeamData()
+        }
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing join request:`, error)
+    }
+  }
+
+  const handleRoleToggle = (role: string) => {
+    setFormData(prev => ({
+      ...prev,
+      open_positions: prev.open_positions.includes(role)
+        ? prev.open_positions.filter(r => r !== role)
+        : [...prev.open_positions, role]
+    }))
+  }
+
+  const handleDeleteTeam = async () => {
+    if (!confirm('Are you sure you want to delete your team? This action cannot be undone and will remove all team members.')) {
+      return
+    }
+
+    try {
+      const supabase = createClient()
+      
+      const { data: members } = await supabase
+        .from('players')
+        .select('id, summoner_name')
+        .eq('team_id', team.id)
+        .neq('id', currentUserId)
+      
+      if (members && members.length > 0) {
+        const notifications = members.map(member => ({
+          user_id: member.id,
+          type: 'team_member_removed',
+          title: `${team.name} has been disbanded`,
+          message: `The team captain has disbanded ${team.name}. You are now a free agent.`,
+          data: {
+            team_id: team.id,
+            team_name: team.name
+          }
+        }))
+
+        await supabase
+          .from('notifications')
+          .insert(notifications)
+      }
+
+      const { error: memberError } = await supabase
+        .from('players')
+        .update({ team_id: null, looking_for_team: true })
+        .eq('team_id', team.id)
+
+      if (memberError) {
+        console.error('Error removing team members:', memberError)
+        return
+      }
+
+      const { error: teamError } = await supabase
+        .from('teams')
+        .delete()
+        .eq('id', team.id)
+
+      if (teamError) {
+        console.error('Error deleting team:', teamError)
+        return
+      }
+
+      router.push('/')
+    } catch (error) {
+      console.error('Error deleting team:', error)
+    }
+  }
+
+  const fetchTeamData = async () => {
+    // This will be called to refresh data after management actions
+    // Call the main fetchTeamData function inside useEffect
+    const fetchFunction = async () => {
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        setCurrentUserId(user?.id || null)
+
+        // Check if user has a team
+        if (user) {
+          const { data: playerData, error: playerError } = await supabase
+            .from('players')
+            .select('team_id')
+            .eq('id', user.id)
+            .single()
+          
+          if (playerError) {
+            setHasPlayerProfile(false)
+          } else {
+            setHasPlayerProfile(true)
+            
+            if (playerData?.team_id) {
+              const { data: teamData } = await supabase
+                .from('teams')
+                .select('*')
+                .eq('id', playerData.team_id)
+                .single()
+              
+              setUserTeam(teamData)
+            }
+
+            // Check if user has a pending request to this team
+            const { data: requestData } = await supabase
+              .from('team_join_requests')
+              .select('id')
+              .eq('player_id', user.id)
+              .eq('team_id', id)
+              .eq('status', 'pending')
+              .single()
+            
+            if (requestData) {
+              setPendingRequest(requestData.id)
+            }
+          }
+        }
+
+        // Fetch team data
+        const { data: teamData, error: teamError } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('id', id)
+          .single()
+
+        if (teamError) {
+          console.error('Error fetching team:', teamError)
+          return
+        }
+
+        setTeam(teamData)
+
+        // Fetch team members
+        const { data: membersData, error: membersError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('team_id', id)
+
+        if (!membersError && membersData) {
+          setMembers(membersData)
+          await fetchProfileIconUrls(membersData)
+          
+          if (user?.id && membersData.some(m => m.id === user.id)) {
+            setUserTeam(teamData)
+          }
+
+          // Load management data if user is captain
+          if (user?.id === teamData.captain_id) {
+            const substituteMember = membersData?.find((p: any) => p.is_substitute)
+            
+            setFormData({
+              name: teamData.name,
+              description: teamData.description || '',
+              open_positions: teamData.open_positions || [],
+              recruiting_status: teamData.recruiting_status,
+              team_size: teamData.team_size || 6,
+              substitute_id: substituteMember?.id || null
+            })
+
+            const { data: requestsData } = await supabase
+              .from('team_join_requests')
+              .select(`
+                *,
+                player:players(summoner_name, main_role, tier, discord)
+              `)
+              .eq('team_id', id)
+              .eq('status', 'pending')
+              .order('created_at', { ascending: false})
+
+            setJoinRequests(requestsData || [])
+
+            const { data: tournamentsData } = await supabase
+              .from('tournament_registrations')
+              .select(`
+                *,
+                tournament:tournaments(*)
+              `)
+              .eq('team_id', id)
+              .in('status', ['approved', 'Confirmed'])
+              .order('registered_at', { ascending: false })
+
+            setTournaments(tournamentsData || [])
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error)
+      }
+    }
+
+    await fetchFunction()
   }
 
   const handleRequestToJoin = async () => {
@@ -217,6 +599,48 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
             console.log('User is a member of this team, setting userTeam')
             setUserTeam(teamData)
           }
+
+          // Load management data if user is captain
+          if (currentUserId === teamData.captain_id) {
+            // Find the substitute player
+            const substituteMember = membersData?.find((p: any) => p.is_substitute)
+            
+            // Initialize form data
+            setFormData({
+              name: teamData.name,
+              description: teamData.description || '',
+              open_positions: teamData.open_positions || [],
+              recruiting_status: teamData.recruiting_status,
+              team_size: teamData.team_size || 6,
+              substitute_id: substituteMember?.id || null
+            })
+
+            // Fetch pending join requests
+            const { data: requestsData } = await supabase
+              .from('team_join_requests')
+              .select(`
+                *,
+                player:players(summoner_name, main_role, tier, discord)
+              `)
+              .eq('team_id', id)
+              .eq('status', 'pending')
+              .order('created_at', { ascending: false})
+
+            setJoinRequests(requestsData || [])
+
+            // Fetch tournament registrations
+            const { data: tournamentsData } = await supabase
+              .from('tournament_registrations')
+              .select(`
+                *,
+                tournament:tournaments(*)
+              `)
+              .eq('team_id', id)
+              .in('status', ['approved', 'Confirmed'])
+              .order('registered_at', { ascending: false })
+
+            setTournaments(tournamentsData || [])
+          }
         }
       } catch (error) {
         console.error('Error:', error)
@@ -300,32 +724,61 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
           {/* Main Team Info */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="xl:col-span-2 space-y-4 lg:space-y-6">
             {/* Team Header Card */}
             <Card className="bg-gradient-to-br from-card to-secondary/30 border-border overflow-hidden">
               <div className="h-2 bg-gradient-to-r from-primary to-accent"></div>
-              <div className="p-8">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-4xl font-bold">{team.name}</h1>
+              <div className="p-4 sm:p-6 lg:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 mb-6">
+                  {/* Team Avatar */}
+                  <div className="relative group flex-shrink-0 mx-auto sm:mx-0">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-4 border-border bg-gradient-to-br from-primary/10 to-accent/10">
+                      {team.team_avatar ? (
+                        <Image 
+                          src={getTeamAvatarUrl(team.team_avatar)} 
+                          alt="Team Avatar"
+                          width={96}
+                          height={96}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Shield className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    {isCaptain && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setShowAvatarPicker(true)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 text-center sm:text-left">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{team.name}</h1>
                       {isCaptain && (
-                        <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
+                        <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white w-fit mx-auto sm:mx-0">
                           <Crown className="h-3 w-3 mr-1" />
                           Your Team
                         </Badge>
                       )}
                     </div>
-                    <p className="text-muted-foreground flex items-center gap-2">
+                    <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2">
                       <Users className="h-4 w-4" />
                       Captain: {captain?.summoner_name || captain?.riot_games_name || 'Unknown'}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-center sm:text-right">
                     <div className="text-sm text-muted-foreground mb-1">Team Founded</div>
-                    <div className="font-semibold flex items-center gap-2">
+                    <div className="font-semibold flex items-center justify-center sm:justify-end gap-2">
                       <Calendar className="h-4 w-4" />
                       {team.created_at ? new Date(team.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown'}
                     </div>
@@ -336,7 +789,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                   {team.description || 'No description provided.'}
                 </p>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <div className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-primary" />
                     <span className="text-sm font-medium">Team Size</span>
@@ -376,18 +829,18 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
             {/* Team Members */}
             <Card className="bg-gradient-to-br from-card to-secondary/30 border-border">
               <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />
-                    <h3 className="text-xl font-bold">Team Roster</h3>
+                    <h3 className="text-lg sm:text-xl font-bold">Team Roster</h3>
                   </div>
                   <Badge variant="outline">{members.length}/{teamSize} Members</Badge>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   {members.map(member => (
-                    <div key={member.id} className="bg-gradient-to-r from-secondary/20 to-background rounded-lg p-4 border border-border hover:border-primary/50 transition-all">
-                      <div className="flex items-start gap-4">
+                    <div key={member.id} className="bg-gradient-to-r from-secondary/20 to-background rounded-lg p-3 sm:p-4 border border-border hover:border-primary/50 transition-all">
+                      <div className="flex items-start gap-3 sm:gap-4">
                         {/* Profile Icon with Rank Badge */}
                         <div className="relative flex-shrink-0">
                           <div className="relative">
@@ -736,6 +1189,44 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
             </Card>
           </div>
         </div>
+        
+        {/* Avatar Picker Dialog */}
+        <Dialog open={showAvatarPicker} onOpenChange={setShowAvatarPicker}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto mx-4">
+            <DialogHeader>
+              <DialogTitle>Choose Team Avatar</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 sm:gap-3 md:gap-4 p-2 sm:p-4">
+              {Array.from({ length: 4016 - 3905 + 1 }, (_, i) => 3905 + i).map((avatarId) => (
+                <button
+                  key={avatarId}
+                  onClick={() => handleUpdateTeamAvatar(avatarId)}
+                  disabled={updatingAvatar}
+                  className={`relative group rounded-lg overflow-hidden border-2 transition-all hover:border-primary hover:scale-105 aspect-square ${
+                    team.team_avatar === avatarId ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+                  }`}
+                >
+                  <Image
+                    src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`}
+                    alt={`Avatar ${avatarId}`}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                  {team.team_avatar === avatarId && (
+                    <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                      <div className="bg-primary rounded-full p-1">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </main>
   )
