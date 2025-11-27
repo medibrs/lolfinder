@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
   const authRoutes = ['/auth']
   const isAuthRoute = authRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
-  )
+  ) && !request.nextUrl.pathname.startsWith('/auth/signout') && !request.nextUrl.pathname.startsWith('/auth/callback')
 
   if (isAuthRoute && user) {
     // Check if user has a profile

@@ -58,7 +58,7 @@ export default function NotificationPermission() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+    <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto sm:left-auto sm:right-4 sm:mx-0">
       <div className="bg-card border border-border rounded-lg shadow-lg p-4 relative">
         <button
           onClick={dismissPrompt}
@@ -80,11 +80,11 @@ export default function NotificationPermission() {
               Enable browser notifications to get instant updates about tournaments, team invitations, and important announcements.
             </p>
             
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={requestPermission}
                 size="sm"
-                className="bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
               >
                 <Bell className="w-4 h-4 mr-1" />
                 Enable Notifications
@@ -93,6 +93,7 @@ export default function NotificationPermission() {
                 onClick={dismissPrompt}
                 size="sm"
                 variant="outline"
+                className="w-full sm:w-auto"
               >
                 <BellOff className="w-4 h-4 mr-1" />
                 Not Now

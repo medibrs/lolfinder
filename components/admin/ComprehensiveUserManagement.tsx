@@ -107,21 +107,31 @@ export default function ComprehensiveUserManagement() {
   }
 
   const deleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone and will remove ALL related data including their auth account.')) {
       return
     }
 
     setDeleting(userId)
     try {
-      // Delete user profile first
-      await supabase.from('players').delete().eq('id', userId)
-      
-      // In real implementation, you'd also delete the auth user via admin API
-      
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete user')
+      }
+
       // Update local state
       setUsers(prev => prev.filter(user => user.id !== userId))
-    } catch (error) {
+      alert('User deleted successfully.')
+    } catch (error: any) {
       console.error('Error deleting user:', error)
+      alert(`Failed to delete user: ${error.message}`)
     } finally {
       setDeleting(null)
     }

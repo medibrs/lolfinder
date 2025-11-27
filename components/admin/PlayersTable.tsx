@@ -126,12 +126,26 @@ export default function PlayersTable() {
   }
 
   const deletePlayer = async (playerId: string) => {
-    if (confirm('Are you sure you want to delete this player?')) {
+    if (confirm('Are you sure you want to delete this player? This will remove their account and all related data.')) {
       try {
-        await fetch(`/api/players/${playerId}`, { method: 'DELETE' })
+        const response = await fetch('/api/admin/delete-user', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: playerId })
+        })
+
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.error || 'Failed to delete player')
+        }
+
         setPlayers(players.filter(p => p.id !== playerId))
-      } catch (error) {
+        alert('Player deleted successfully')
+      } catch (error: any) {
         console.error('Error deleting player:', error)
+        alert(`Failed to delete player: ${error.message}`)
       }
     }
   }

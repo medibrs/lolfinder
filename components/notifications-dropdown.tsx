@@ -203,7 +203,7 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
       </Button>
 
       {isOpen && (
-        <Card className="absolute right-0 top-full mt-2 w-80 bg-background border-border shadow-lg z-50">
+        <Card className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-background border-border shadow-lg z-50 sm:w-80">
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">Notifications</h3>
@@ -237,8 +237,8 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
                   <div className="flex items-start gap-3">
                     {getNotificationIcon(notification.type)}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="font-medium text-sm break-words">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1 break-words">
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
@@ -246,12 +246,12 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
                       </p>
 
                       {notification.type === 'team_invitation' && notification.data.invitation_id && (
-                        <div className="flex gap-2 mt-3">
+                        <div className="flex flex-col sm:flex-row gap-2 mt-3">
                           <Button
                             size="sm"
                             onClick={() => handleInvitationResponse(notification.data.invitation_id!, 'accept')}
                             disabled={loading}
-                            className="text-xs"
+                            className="text-xs flex-1"
                           >
                             Accept
                           </Button>
@@ -260,7 +260,7 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
                             variant="outline"
                             onClick={() => handleInvitationResponse(notification.data.invitation_id!, 'reject')}
                             disabled={loading}
-                            className="text-xs"
+                            className="text-xs flex-1"
                           >
                             Reject
                           </Button>
@@ -282,7 +282,7 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
                         variant="ghost"
                         size="sm"
                         onClick={() => markAsRead([notification.id])}
-                        className="h-6 w-6 p-0"
+                        className="h-6 w-6 p-0 flex-shrink-0"
                       >
                         <X className="h-3 w-3" />
                       </Button>

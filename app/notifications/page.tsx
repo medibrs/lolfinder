@@ -444,15 +444,15 @@ export default function NotificationsPage() {
                     : ''
                 }`}
               >
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
                       <div className="mt-1 flex-shrink-0">
                         {getNotificationIcon(notification)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <h3 className="font-semibold">{notification.title}</h3>
+                          <h3 className="font-semibold text-sm sm:text-base break-words flex-1">{notification.title}</h3>
                           {!notification.read && (
                             <Badge variant="default" className="text-xs">New</Badge>
                           )}
@@ -462,7 +462,7 @@ export default function NotificationsPage() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-muted-foreground mb-3">{notification.message}</p>
+                        <p className="text-muted-foreground mb-3 text-sm break-words">{notification.message}</p>
                         
                         {/* Display detailed team info for invitations */}
                         {notification.type === 'team_invitation' && notification.data?.team && (
@@ -491,10 +491,10 @@ export default function NotificationsPage() {
                             {notification.data.team.members?.length > 0 && (
                               <div>
                                 <p className="text-xs text-muted-foreground mb-2">Current Roster:</p>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-1 sm:gap-2">
                                   {notification.data.team.members.map((member: any, idx: number) => (
-                                    <Badge key={idx} variant="secondary" className="text-xs">
-                                      {member.summoner_name} • {member.tier?.split(' ')[0]} {member.main_role}
+                                    <Badge key={idx} variant="secondary" className="text-xs break-words max-w-full">
+                                      <span className="truncate">{member.summoner_name} • {member.tier?.split(' ')[0]} {member.main_role}</span>
                                     </Badge>
                                   ))}
                                 </div>
@@ -504,17 +504,17 @@ export default function NotificationsPage() {
                             {/* Inviter Info */}
                             {notification.data.inviter && (
                               <div className="pt-2 border-t border-border">
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                   <div>
                                     <p className="text-xs text-muted-foreground">Invited by:</p>
-                                    <p className="font-medium">{notification.data.inviter.summoner_name}</p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="font-medium break-words">{notification.data.inviter.summoner_name}</p>
+                                    <p className="text-sm text-muted-foreground break-words">
                                       {notification.data.inviter.tier} • {notification.data.inviter.main_role}
                                       {notification.data.inviter.secondary_role && ` / ${notification.data.inviter.secondary_role}`}
                                     </p>
                                   </div>
                                   {notification.data.inviter.opgg_link && (
-                                    <Button variant="outline" size="sm" asChild>
+                                    <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
                                       <a
                                         href={notification.data.inviter.opgg_link}
                                         target="_blank"
@@ -537,19 +537,19 @@ export default function NotificationsPage() {
                             {notification.data.player.alreadyOnTeam && (
                               <div className="mb-3 p-3 bg-orange-500/10 border border-orange-500/50 rounded-lg">
                                 <div className="flex items-center gap-2 text-orange-500">
-                                  <AlertCircle className="w-4 h-4" />
-                                  <span className="font-medium text-sm">
+                                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                  <span className="font-medium text-sm break-words">
                                     This player is already on a team: {notification.data.player.currentTeamName}
                                   </span>
                                 </div>
                               </div>
                             )}
                             
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                               <div className="flex items-center gap-3">
                                 <div>
-                                  <p className="font-medium">{notification.data.player.summoner_name}</p>
-                                  <p className="text-sm text-muted-foreground">
+                                  <p className="font-medium break-words">{notification.data.player.summoner_name}</p>
+                                  <p className="text-sm text-muted-foreground break-words">
                                     {notification.data.player.tier} • {notification.data.player.main_role}
                                     {notification.data.player.secondary_role && ` / ${notification.data.player.secondary_role}`}
                                   </p>
@@ -560,6 +560,7 @@ export default function NotificationsPage() {
                                   variant="outline"
                                   size="sm"
                                   asChild
+                                  className="w-full sm:w-auto"
                                 >
                                   <a
                                     href={notification.data.player.opgg_link}
@@ -576,12 +577,12 @@ export default function NotificationsPage() {
                         
                         {/* Team Invitation Actions - only show for pending invitations */}
                         {notification.type === 'team_invitation' && notification.data?.invitation_id && (
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                             <Button
                               onClick={() => handleInvitationAction(notification, 'accept')}
                               disabled={processingAction === notification.id}
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700"
+                              className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                             >
                               {processingAction === notification.id ? (
                                 'Processing...'
@@ -597,6 +598,7 @@ export default function NotificationsPage() {
                               disabled={processingAction === notification.id}
                               size="sm"
                               variant="outline"
+                              className="w-full sm:w-auto"
                             >
                               {processingAction === notification.id ? (
                                 'Processing...'
@@ -612,12 +614,12 @@ export default function NotificationsPage() {
                         
                         {/* Team Join Request Actions */}
                         {notification.type === 'team_join_request' && notification.data?.request_id && (
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                             <Button
                               onClick={() => handleJoinRequestAction(notification, 'accept')}
                               disabled={processingAction === notification.id || notification.data.player?.alreadyOnTeam}
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed w-full sm:w-auto"
                             >
                               {processingAction === notification.id ? (
                                 'Processing...'
@@ -635,6 +637,7 @@ export default function NotificationsPage() {
                               disabled={processingAction === notification.id}
                               size="sm"
                               variant="outline"
+                              className="w-full sm:w-auto"
                             >
                               {processingAction === notification.id ? (
                                 'Processing...'
