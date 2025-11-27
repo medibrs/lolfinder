@@ -227,81 +227,21 @@ export default function SettingsPage() {
                 <div className="space-y-3 sm:flex sm:items-center sm:justify-between">
                   <div>
                     <h4 className="font-medium">Password</h4>
-                    <p className="text-sm text-muted-foreground">Change your password</p>
+                    <p className="text-sm text-muted-foreground">Managed by your social login provider</p>
                   </div>
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => setShowPasswordForm(!showPasswordForm)}
+                    disabled
                     className="w-full sm:w-auto"
                   >
-                    {showPasswordForm ? 'Cancel' : 'Change Password'}
+                    Change Password
                   </Button>
                 </div>
                 
-                {showPasswordForm && (
-                  <form onSubmit={handlePasswordChange} className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                    {passwordError && (
-                      <Alert className="border-red-200 bg-red-50">
-                        <AlertDescription className="text-red-800">
-                          {passwordError}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    
-                    {passwordSuccess && (
-                      <Alert className="border-green-200 bg-green-50">
-                        <AlertDescription className="text-green-800">
-                          {passwordSuccess}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password">Current Password</Label>
-                      <Input
-                        id="current-password"
-                        type="password"
-                        value={passwordData.currentPassword}
-                        onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">New Password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm New Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={passwordData.confirmPassword}
-                        onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      disabled={passwordLoading}
-                      className="w-full"
-                    >
-                      {passwordLoading ? 'Updating...' : 'Update Password'}
-                    </Button>
-                  </form>
-                )}
+                <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+                  Since you're logged in via {user.app_metadata.provider || 'a social provider'}, please change your password directly on their platform (Google, Discord, etc.).
+                </div>
               </div>
               
               <div className="space-y-3 sm:flex sm:items-center sm:justify-between">
