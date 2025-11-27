@@ -375,103 +375,113 @@ export default function TeamsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredTeams.length > 0 ? (
               filteredTeams.map(team => (
-                <Card key={team.id} className="bg-card border-border p-6 hover:border-primary transition">
-                  <div className="mb-4">
-                    <h3 className="text-2xl font-bold">{team.name}</h3>
-                    {team.description && (
-                      <p className="text-muted-foreground">{team.description}</p>
-                    )}
-                  </div>
-                  
-                  {/* Team Info */}
-                  <div className="mb-4 space-y-2">
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-muted-foreground">Members:</span>
-                      <span className="font-medium">{team.current_members}/{team.team_size}</span>
-                      {team.current_members >= parseInt(team.team_size) && (
-                        <span className="text-xs text-red-500 font-semibold">FULL</span>
-                      )}
-                    </div>
-                    {team.captain && (
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="text-muted-foreground">Captain:</span>
-                        <span className="font-medium">{team.captain.summoner_name}</span>
-                      </div>
-                    )}
-                    {team.average_rank && (
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="text-muted-foreground">Avg Rank:</span>
-                        <span className="font-medium">{team.average_rank}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Team Roster */}
-                  {team.members && team.members.length > 0 && (
+                <div key={team.id} onClick={() => router.push(`/teams/${team.id}`)}>
+                  <Card className="bg-card border-border p-6 hover:border-primary transition cursor-pointer group">
                     <div className="mb-4">
-                      <p className="text-xs text-muted-foreground mb-2">Roster:</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {team.members.map((member: any, idx: number) => (
-                          <span 
-                            key={idx} 
-                            className="bg-muted/50 text-xs px-2 py-1 rounded"
-                          >
-                            {member.tier?.split(' ')[0]} {member.main_role}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Open Positions */}
-                  <div className="mb-6">
-                    <div className="flex flex-wrap gap-2">
-                      {team.open_positions.length > 0 ? (
-                        team.open_positions.map((role: string) => (
-                          <span key={role} className="bg-accent/20 text-accent px-2 py-1 rounded text-sm font-medium">
-                            Need {role}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Team is full</span>
+                      <h3 className="text-2xl font-bold group-hover:text-primary transition">{team.name}</h3>
+                      {team.description && (
+                        <p className="text-muted-foreground">{team.description}</p>
                       )}
                     </div>
-                  </div>
-                  
-                  {user && team.captain_id === user.id ? (
-                    <Button asChild className="w-full bg-yellow-600 hover:bg-yellow-700">
-                      <a href="/manage-team">Manage Team</a>
-                    </Button>
-                  ) : user && userTeam?.id === team.id ? (
-                    <Button asChild className="w-full bg-green-600 hover:bg-green-700">
-                      <a href="/view-team">View Team</a>
-                    </Button>
-                  ) : user && userTeam ? (
-                    <Button disabled className="w-full">
-                      Already in a team
-                    </Button>
-                  ) : team.current_members >= parseInt(team.team_size) ? (
-                    <Button disabled className="w-full">
-                      Team is Full
-                    </Button>
-                  ) : user && pendingRequests[team.id] ? (
-                    <Button 
-                      onClick={() => handleCancelRequest(team.id)}
-                      disabled={cancellingRequest === team.id}
-                      className="w-full bg-orange-600 hover:bg-orange-700"
-                    >
-                      {cancellingRequest === team.id ? 'Cancelling...' : 'Cancel Request'}
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={() => handleRequestToJoin(team.id, team.name)}
-                      disabled={sendingRequest === team.id}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                    >
-                      {sendingRequest === team.id ? 'Sending...' : 'Request to Join'}
-                    </Button>
-                  )}
-                </Card>
+                    
+                    {/* Team Info */}
+                    <div className="mb-4 space-y-2">
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-muted-foreground">Members:</span>
+                        <span className="font-medium">{team.current_members}/{team.team_size}</span>
+                        {team.current_members >= parseInt(team.team_size) && (
+                          <span className="text-xs text-red-500 font-semibold">FULL</span>
+                        )}
+                      </div>
+                      {team.captain && (
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="text-muted-foreground">Captain:</span>
+                          <span className="font-medium">{team.captain.summoner_name}</span>
+                        </div>
+                      )}
+                      {team.average_rank && (
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="text-muted-foreground">Avg Rank:</span>
+                          <span className="font-medium">{team.average_rank}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Team Roster */}
+                    {team.members && team.members.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs text-muted-foreground mb-2">Roster:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {team.members.map((member: any, idx: number) => (
+                            <span 
+                              key={idx} 
+                              className="bg-muted/50 text-xs px-2 py-1 rounded"
+                            >
+                              {member.tier?.split(' ')[0]} {member.main_role}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Open Positions */}
+                    <div className="mb-6">
+                      <div className="flex flex-wrap gap-2">
+                        {team.open_positions.length > 0 ? (
+                          team.open_positions.map((role: string) => (
+                            <span key={role} className="bg-accent/20 text-accent px-2 py-1 rounded text-sm font-medium">
+                              Need {role}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Team is full</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div onClick={(e) => e.stopPropagation()}>
+                      {user && team.captain_id === user.id ? (
+                        <Button asChild className="w-full bg-yellow-600 hover:bg-yellow-700" onClick={(e) => e.stopPropagation()}>
+                          <a href="/manage-team">Manage Team</a>
+                        </Button>
+                      ) : user && userTeam?.id === team.id ? (
+                        <Button asChild className="w-full bg-green-600 hover:bg-green-700" onClick={(e) => e.stopPropagation()}>
+                          <a href="/view-team">View Team</a>
+                        </Button>
+                      ) : user && userTeam ? (
+                        <Button disabled className="w-full" onClick={(e) => e.stopPropagation()}>
+                          Already in a team
+                        </Button>
+                      ) : team.current_members >= parseInt(team.team_size) ? (
+                        <Button disabled className="w-full" onClick={(e) => e.stopPropagation()}>
+                          Team is Full
+                        </Button>
+                      ) : user && pendingRequests[team.id] ? (
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleCancelRequest(team.id)
+                          }}
+                          disabled={cancellingRequest === team.id}
+                          className="w-full bg-orange-600 hover:bg-orange-700"
+                        >
+                          {cancellingRequest === team.id ? 'Cancelling...' : 'Cancel Request'}
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRequestToJoin(team.id, team.name)
+                          }}
+                          disabled={sendingRequest === team.id}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                        >
+                          {sendingRequest === team.id ? 'Sending...' : 'Request to Join'}
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                </div>
               ))
             ) : (
               <div className="col-span-full text-center py-12">

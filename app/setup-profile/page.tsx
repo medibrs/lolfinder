@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -91,13 +92,33 @@ export default function SetupProfilePage() {
 
           // Fetch team information if player is in a team
           if (existingProfile.team_id) {
-            const { data: teamData } = await supabase
+            // Verify the user is actually in this team
+            const { data: teamData, error: teamError } = await supabase
               .from('teams')
               .select('*')
               .eq('id', existingProfile.team_id)
               .single()
             
-            setUserTeam(teamData)
+            // Double-check by verifying there's a player record with this team_id
+            if (!teamError && teamData) {
+              const { data: verifyMember } = await supabase
+                .from('players')
+                .select('id')
+                .eq('id', user.id)
+                .eq('team_id', existingProfile.team_id)
+                .single()
+              
+              if (verifyMember) {
+                setUserTeam(teamData)
+              } else {
+                // User is not actually in this team, clear the team_id
+                await supabase
+                  .from('players')
+                  .update({ team_id: null })
+                  .eq('id', user.id)
+                setUserTeam(null)
+              }
+            }
           }
         }
       } catch (error) {
@@ -214,11 +235,13 @@ export default function SetupProfilePage() {
                       </p>
                     </div>
                     <Button
-                      onClick={handleLeaveTeam}
+                      asChild
                       variant="outline"
-                      className="border-red-500 text-red-400 hover:bg-red-500/20"
+                      className="border-purple-500 text-purple-400 hover:bg-purple-500/20"
                     >
-                      Leave Team
+                      <Link href={`/teams/${userTeam.id}`}>
+                        {userTeam.captain_id === userId ? 'Manage Team' : 'View Team'}
+                      </Link>
                     </Button>
                   </div>
                 </div>
