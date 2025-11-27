@@ -55,7 +55,7 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
             Select an avatar for your team. Only available avatars are shown.
           </p>
         </DialogHeader>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-3 md:gap-4 p-3 sm:p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0 p-3 sm:p-4">
           {Array.from({ length: 4016 - 3905 + 1 }, (_, i) => 3905 + i)
             .filter((avatarId) => {
               // Show if it's the current avatar or if it's not taken
@@ -69,24 +69,24 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
                   key={avatarId}
                   onClick={() => handleAvatarSelect(avatarId)}
                   disabled={disabled}
-                  className={`relative group rounded-lg overflow-hidden border-2 transition-all active:scale-95 aspect-square focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                  className={`relative group rounded-none overflow-hidden border-2 transition-all active:scale-95 aspect-square focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                     isCurrentAvatar 
                       ? 'border-primary ring-2 ring-primary/20' 
-                      : 'border-border active:border-primary'
+                      : 'border-border active:border-primary hover:border-primary hover:scale-105'
                   }`}
                   title={isCurrentAvatar ? 'Current Avatar' : 'Available'}
                 >
                   <Image
                     src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`}
                     alt={`Avatar ${avatarId}`}
-                    width={80}
-                    height={80}
+                    width={300}
+                    height={300}
                     className="w-full h-full object-cover"
                   />
                   {isCurrentAvatar && (
                     <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                      <div className="bg-primary rounded-full p-1">
-                        <svg className="w-4 h-4 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="bg-primary rounded-full p-2">
+                        <svg className="w-6 h-6 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       </div>
