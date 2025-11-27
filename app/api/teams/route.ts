@@ -9,6 +9,7 @@ const createTeamSchema = z.object({
   captain_id: z.string().uuid(),
   open_positions: z.array(z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support'])).default([]),
   recruiting_status: z.enum(['Open', 'Closed', 'Full']).default('Open'),
+  team_avatar: z.number().min(3905).max(4016).optional(),
 });
 
 // GET /api/teams - List all teams with optional filtering
@@ -106,6 +107,27 @@ export async function POST(request: NextRequest) {
         { error: 'You have already created a team and cannot create another' },
         { status: 403 }
       );
+    }
+
+    // Check if avatar is already taken (if avatar is provided)
+    if (validatedData.team_avatar) {
+      const { data: existingAvatarTeam, error: avatarCheckError } = await supabase
+        .from('teams')
+        .select('id, name')
+        .eq('team_avatar', validatedData.team_avatar)
+        .single();
+
+      if (avatarCheckError && avatarCheckError.code !== 'PGRST116') { // PGRST116 is "not found" error
+        console.error('Error checking avatar availability:', avatarCheckError);
+        return NextResponse.json({ error: 'Failed to check avatar availability' }, { status: 500 });
+      }
+
+      if (existingAvatarTeam) {
+        return NextResponse.json({ 
+          error: 'Avatar already taken', 
+          message: `This avatar is already being used by ${existingAvatarTeam.name}` 
+        }, { status: 409 });
+      }
     }
 
     // Create the team

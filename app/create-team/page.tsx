@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AvatarPicker, AvatarPreview } from '@/components/AvatarPicker'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
@@ -26,11 +27,13 @@ export default function CreateTeamPage() {
     captain_id: '',
     team_size: '5' as '5' | '6', // 5 players (main) or 6 players (5 + sub)
     open_positions: [] as string[],
-    recruiting_status: 'Open' as 'Open' | 'Closed' | 'Full'
+    recruiting_status: 'Open' as 'Open' | 'Closed' | 'Full',
+    team_avatar: null as number | null
   })
 
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
 
   useEffect(() => {
     // Get current user and check if they can create a team
@@ -343,6 +346,32 @@ export default function CreateTeamPage() {
               />
             </div>
 
+            {/* Team Avatar */}
+            <div>
+              <Label>Team Avatar</Label>
+              <div className="flex items-center gap-4 mt-2">
+                <AvatarPreview 
+                  avatarId={formData.team_avatar}
+                  showEditButton={true}
+                  onEdit={() => setShowAvatarPicker(true)}
+                  size="md"
+                />
+                <div className="flex-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAvatarPicker(true)}
+                  >
+                    {formData.team_avatar ? 'Change Avatar' : 'Choose Avatar'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Select a unique avatar for your team from League of Legends profile icons
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Team Size */}
             <div>
               <Label htmlFor="team_size">Team Size *</Label>
@@ -408,6 +437,14 @@ export default function CreateTeamPage() {
               </Button>
             </div>
           </form>
+          
+          {/* Avatar Picker Dialog */}
+          <AvatarPicker
+            open={showAvatarPicker}
+            onOpenChange={setShowAvatarPicker}
+            currentAvatar={formData.team_avatar}
+            onAvatarSelect={(avatarId) => setFormData(prev => ({ ...prev, team_avatar: avatarId }))}
+          />
         </Card>
       </div>
     </main>
