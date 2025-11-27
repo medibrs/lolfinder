@@ -61,7 +61,43 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const [profileIconUrls, setProfileIconUrls] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [userTeam, setUserTeam] = useState<any>(null)
+  const [pendingRequest, setPendingRequest] = useState<string | null>(null)
+  const [sendingRequest, setSendingRequest] = useState(false)
   const supabase = createClient()
+
+  const handleRequestToJoin = async () => {
+    if (!currentUserId || sendingRequest) return
+
+    try {
+      setSendingRequest(true)
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/team-join-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          team_id: id,
+          message: `I'd like to join ${team.name}!`
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPendingRequest(data.id)
+      } else {
+        const error = await response.json()
+        console.error('Error sending join request:', error.error)
+      }
+    } catch (error) {
+      console.error('Error sending join request:', error)
+    } finally {
+      setSendingRequest(false)
+    }
+  }
 
   const fetchProfileIconUrls = async (members: any[]) => {
     const urls: Record<string, string> = {};
@@ -87,6 +123,41 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUserId(user?.id || null)
 
+        // Check if user has a team
+        if (user) {
+          const { data: playerData } = await supabase
+            .from('players')
+            .select('team_id')
+            .eq('id', user.id)
+            .single()
+          
+          console.log('Player data:', playerData)
+          
+          if (playerData?.team_id) {
+            const { data: teamData } = await supabase
+              .from('teams')
+              .select('*')
+              .eq('id', playerData.team_id)
+              .single()
+            
+            console.log('User team data:', teamData)
+            setUserTeam(teamData)
+          }
+
+          // Check if user has a pending request to this team
+          const { data: requestData } = await supabase
+            .from('team_join_requests')
+            .select('id')
+            .eq('player_id', user.id)
+            .eq('team_id', id)
+            .eq('status', 'pending')
+            .single()
+          
+          if (requestData) {
+            setPendingRequest(requestData.id)
+          }
+        }
+
         // Fetch team data
         const { data: teamData, error: teamError } = await supabase
           .from('teams')
@@ -111,6 +182,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
           setMembers(membersData)
           // Fetch profile icon URLs for members
           await fetchProfileIconUrls(membersData)
+          
+          // Additional check: if current user is in this team's members, ensure userTeam is set
+          if (currentUserId && membersData.some(m => m.id === currentUserId)) {
+            console.log('User is a member of this team, setting userTeam')
+            setUserTeam(teamData)
+          }
         }
       } catch (error) {
         console.error('Error:', error)
@@ -410,9 +487,94 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
                 
                 {members.length < teamSize && (
-                  <div className="mt-4 p-4 border-2 border-dashed border-border rounded-lg text-center text-muted-foreground">
-                    <UserPlus className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">{teamSize - members.length} slots available</p>
+                  <div className="mt-4 p-4 border-2 border-dashed border-border rounded-lg text-center">
+                    {(() => {
+                      console.log('UI Check - currentUserId:', currentUserId)
+                      console.log('UI Check - userTeam:', userTeam)
+                      console.log('UI Check - isCaptain:', isCaptain)
+                      console.log('UI Check - recruiting_status:', team.recruiting_status)
+                      console.log('UI Check - pendingRequest:', pendingRequest)
+                      
+                      const canRequestToJoin = currentUserId && !userTeam && !isCaptain && team.recruiting_status === 'Open'
+                      console.log('UI Check - canRequestToJoin:', canRequestToJoin)
+                      
+                      return canRequestToJoin ? (
+                        // User has no team and can request to join
+                        <div className="space-y-3">
+                          <UserPlus className="h-8 w-8 mx-auto mb-2 text-primary" />
+                          <p className="text-sm font-medium text-foreground">
+                            {teamSize - members.length} slots available
+                          </p>
+                          {pendingRequest ? (
+                            <div className="space-y-2">
+                              <Button disabled className="w-full bg-orange-600">
+                                Request Sent
+                              </Button>
+                              <p className="text-xs text-muted-foreground">
+                                Waiting for captain to review your request
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <Button 
+                                onClick={handleRequestToJoin}
+                                disabled={sendingRequest || members.length >= teamSize}
+                                className="w-full bg-primary hover:bg-primary/90"
+                              >
+                                {sendingRequest ? 'Sending...' : 'Request to Join This Team'}
+                              </Button>
+                              <p className="text-xs text-muted-foreground">
+                                Click to request joining this team
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ) : currentUserId && userTeam ? (
+                        // User already has a team
+                        <div className="space-y-3">
+                          <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            {teamSize - members.length} slots available
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            You're already in a team
+                          </p>
+                        </div>
+                      ) : isCaptain ? (
+                        // User is the captain
+                        <div className="space-y-3">
+                          <Crown className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
+                          <p className="text-sm font-medium text-foreground">
+                            {teamSize - members.length} slots available
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            You're the captain of this team
+                          </p>
+                        </div>
+                      ) : team.recruiting_status !== 'Open' ? (
+                        // Team is not recruiting
+                        <div className="space-y-3">
+                          <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            {teamSize - members.length} slots available
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Team is not currently recruiting
+                          </p>
+                        </div>
+                      ) : (
+                        // Default slots available (user not logged in)
+                        <div className="space-y-3">
+                          <UserPlus className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            {teamSize - members.length} slots available
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Sign in to request joining this team
+                          </p>
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
               </div>
