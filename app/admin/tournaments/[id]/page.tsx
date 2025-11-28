@@ -5,8 +5,9 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ArrowLeft, Save, Trophy, Calendar, Users, Settings, 
-  BarChart3, Copy, Trash2, AlertTriangle
+  BarChart3, Copy, Trash2, AlertTriangle, GitBranch
 } from 'lucide-react'
+import BracketManager from '@/components/admin/tournament/BracketManager'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -60,43 +61,30 @@ export default function TournamentManagePage() {
   useEffect(() => {
     async function fetchTournament() {
       try {
-        const supabase = createClient()
-        const isNumber = /^\d+$/.test(tournamentId)
+        const response = await fetch(`/api/tournaments/${tournamentId}`)
+        const data = await response.json()
         
-        let query = supabase.from('tournaments').select('*')
-        
-        if (isNumber) {
-          query = query.eq('tournament_number', parseInt(tournamentId))
-        } else {
-          query = query.eq('id', tournamentId)
+        if (!response.ok) {
+          console.error('Failed to fetch tournament:', data.error)
+          return
         }
-        
-        const { data, error } = await query.single()
-        
-        if (error) {
-          console.error('Failed to fetch tournament:', error)
-        } else {
-          // Fetch registration count
-          const { count: registrationCount } = await supabase
-            .from('tournament_registrations')
-            .select('*', { count: 'exact', head: true })
-            .eq('tournament_id', data.id)
           
-          setTournament({
-            ...data,
-            description: data.description || '',
-            prize_pool: data.prize_pool || '',
-            format: data.format || 'Single_Elimination',
-            registration_deadline: data.registration_deadline || '',
-            current_round: data.current_round || 0,
-            total_rounds: data.total_rounds || 0,
-            is_active: data.is_active !== false,
-            swiss_rounds: data.swiss_rounds || 5,
-            enable_top_cut: data.enable_top_cut || false,
-            top_cut_size: data.top_cut_size || 8,
-            registration_count: registrationCount || 0,
-          })
-        }
+        console.log('Fetched tournament:', data.id, data.name, 'Count:', data.registered_teams_count)
+        
+        setTournament({
+          ...data,
+          description: data.description || '',
+          prize_pool: data.prize_pool || '',
+          format: data.format || 'Single_Elimination',
+          registration_deadline: data.registration_deadline || '',
+          current_round: data.current_round || 0,
+          total_rounds: data.total_rounds || 0,
+          is_active: data.is_active !== false,
+          swiss_rounds: data.swiss_rounds || 5,
+          enable_top_cut: data.enable_top_cut || false,
+          top_cut_size: data.top_cut_size || 8,
+          registration_count: data.registered_teams_count || 0,
+        })
       } catch (error) {
         console.error('Failed to fetch tournament:', error)
       } finally {
@@ -283,9 +271,10 @@ export default function TournamentManagePage() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full grid grid-cols-3 lg:w-[600px]">
+            <TabsList className="w-full grid grid-cols-4 lg:w-[700px]">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="format">Format & Rules</TabsTrigger>
+              <TabsTrigger value="bracket">Bracket</TabsTrigger>
               <TabsTrigger value="advanced">Advanced</TabsTrigger>
             </TabsList>
             
@@ -451,6 +440,16 @@ export default function TournamentManagePage() {
                   </Card>
                 </TabsContent>
                 
+                {/* Bracket Tab */}
+                <TabsContent value="bracket" className="mt-0 space-y-6">
+                  <BracketManager 
+                    tournamentId={tournament.id}
+                    tournamentStatus={tournament.status}
+                    tournamentFormat={tournament.format}
+                    maxTeams={tournament.max_teams}
+                  />
+                </TabsContent>
+
                 {/* Advanced Tab */}
                 <TabsContent value="advanced" className="mt-0 space-y-6">
                   <Card>
@@ -508,9 +507,28 @@ export default function TournamentManagePage() {
                 <Card>
                   <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
                   <CardContent className="space-y-2">
-                    <Button variant="secondary" className="w-full justify-start"><Users className="mr-2 h-4 w-4" />Manage Teams</Button>
-                    <Button variant="secondary" className="w-full justify-start"><Settings className="mr-2 h-4 w-4" />Generate Brackets</Button>
-                    <Button variant="secondary" className="w-full justify-start"><Trophy className="mr-2 h-4 w-4" />Update Standings</Button>
+                    <Button 
+                      variant="secondary" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveTab('bracket')}
+                    >
+                      <GitBranch className="mr-2 h-4 w-4" />
+                      Manage Bracket
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveTab('format')}
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Format Settings
+                    </Button>
+                    <Button variant="secondary" className="w-full justify-start" asChild>
+                      <Link href={`/admin?tab=registrations&tournament=${tournament.id}`}>
+                        <Users className="mr-2 h-4 w-4" />
+                        View Registrations
+                      </Link>
+                    </Button>
                   </CardContent>
                 </Card>
               </div>

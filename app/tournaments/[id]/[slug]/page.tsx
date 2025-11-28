@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { Calendar, Trophy, Users, Clock, DollarSign, Info, CheckCircle, XCircle, AlertCircle, Shield } from 'lucide-react';
+import { Calendar, Trophy, Users, Clock, DollarSign, Info, CheckCircle, XCircle, AlertCircle, Shield, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { getRankImage } from '@/lib/rank-utils';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 type Props = {
   params: Promise<{
@@ -59,7 +60,8 @@ async function getRegisteredTeams(tournamentId: string) {
   const { data: registrations, error: regError } = await supabase
     .from('tournament_registrations')
     .select('id, status, registered_at, team_id')
-    .eq('tournament_id', tournamentId);
+    .eq('tournament_id', tournamentId)
+    .eq('status', 'approved');
   
   if (regError) {
     console.error('Error fetching registrations:', regError);
@@ -309,7 +311,13 @@ export default async function TournamentEventPage({ params }: Props) {
                                   ) : (
                                     <div className="w-3.5 h-3.5 flex-shrink-0" />
                                   )}
-                                  <span className="text-zinc-300 truncate">
+                                  {member.id === team.captain_id && (
+                                    <Crown className="w-3 h-3 text-yellow-500 flex-shrink-0" />
+                                  )}
+                                  <span className={cn(
+                                    "truncate",
+                                    member.id === team.captain_id ? "text-yellow-400 font-medium" : "text-zinc-300"
+                                  )}>
                                     {member.summoner_name?.split('#')[0]}
                                   </span>
                                 </div>

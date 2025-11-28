@@ -39,11 +39,16 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const { data, error } = await supabase
-      .from('tournaments')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const isNumber = /^\d+$/.test(id);
+    let query = supabase.from('tournaments').select('*');
+    
+    if (isNumber) {
+      query = query.eq('tournament_number', parseInt(id));
+    } else {
+      query = query.eq('id', id);
+    }
+    
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -52,11 +57,12 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Get registration count
+    // Get registration count - only approved teams
     const { count } = await supabase
       .from('tournament_registrations')
       .select('*', { count: 'exact', head: true })
-      .eq('tournament_id', id);
+      .eq('tournament_id', data.id)
+      .eq('status', 'approved');
 
     return NextResponse.json({ ...data, registered_teams_count: count || 0 });
   } catch (error) {
