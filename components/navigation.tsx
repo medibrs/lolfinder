@@ -25,6 +25,7 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { Menu, HelpCircle, MessageSquare, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import FeatureRequestDialog from '@/components/FeatureRequestDialog'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -335,14 +336,16 @@ export default function Navigation() {
                         <MessageSquare className="h-4 w-4" />
                         Contact Support
                       </a>
-                      <a 
-                        href="mailto:features@teamfinder.gg?subject=Feature Request"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-2"
-                      >
-                        <Lightbulb className="h-4 w-4" />
-                        Request Feature
-                      </a>
+                      <FeatureRequestDialog>
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="text-base font-medium px-3 py-2 h-auto rounded-md hover:bg-accent transition flex items-center gap-2 w-full justify-start"
+                        >
+                          <Lightbulb className="h-4 w-4" />
+                          Request Feature
+                        </Button>
+                      </FeatureRequestDialog>
                       <a 
                         href="#"
                         onClick={() => setMobileMenuOpen(false)}
@@ -562,16 +565,18 @@ export default function Navigation() {
                       </div>
                     </a>
                     
-                    <a 
-                      href="mailto:features@teamfinder.gg?subject=Feature Request" 
-                      className="flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors border border-border"
-                    >
-                      <Lightbulb className="h-5 w-5 text-muted-foreground" />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">Request a Feature</span>
-                        <p className="text-xs text-muted-foreground">Share your ideas with us</p>
-                      </div>
-                    </a>
+                    <FeatureRequestDialog>
+                      <Button 
+                        variant="ghost" 
+                        className="flex items-center gap-3 p-3 h-auto justify-start w-full rounded-md hover:bg-accent transition-colors border border-border"
+                      >
+                        <Lightbulb className="h-5 w-5 text-muted-foreground" />
+                        <div className="flex-1 text-left">
+                          <span className="text-sm font-medium">Request a Feature</span>
+                          <p className="text-xs text-muted-foreground">Share your ideas with us</p>
+                        </div>
+                      </Button>
+                    </FeatureRequestDialog>
                     
                     <a 
                       href="#" 

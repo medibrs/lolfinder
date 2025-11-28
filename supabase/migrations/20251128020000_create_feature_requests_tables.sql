@@ -1,0 +1,2 @@
+-- Feature Request System Tables
+-- Created for LoLFinder platform to handle user feature requests
