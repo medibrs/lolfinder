@@ -448,17 +448,27 @@ export default function ViewTeamPage() {
               <CardContent>
                 {tournaments.length > 0 ? (
                   <div className="space-y-3">
-                    {tournaments.map((reg: any) => (
-                      <div key={reg.id} className="p-3 border rounded-lg">
-                        <div className="font-medium">{reg.tournament?.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(reg.tournament?.start_date).toLocaleDateString()}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Registered: {new Date(reg.registered_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    ))}
+                    {tournaments.map((reg: any) => {
+                      const tournament = reg.tournament
+                      const slug = tournament?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'tournament'
+                      const tournamentUrl = `/tournaments/${tournament?.tournament_number}/${slug}`
+                      
+                      return (
+                        <Link 
+                          key={reg.id} 
+                          href={tournamentUrl}
+                          className="block p-3 border rounded-lg hover:border-primary/50 hover:bg-secondary/20 transition-all"
+                        >
+                          <div className="font-medium text-primary hover:underline">{tournament?.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(tournament?.start_date).toLocaleDateString()}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Registered: {new Date(reg.registered_at).toLocaleDateString()}
+                          </div>
+                        </Link>
+                      )
+                    })}
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-4 text-sm">
