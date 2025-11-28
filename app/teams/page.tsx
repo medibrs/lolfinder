@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
 import { cache, CacheConfig } from '@/lib/cache'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Shield, Users, Trophy, Search } from 'lucide-react'
 import Image from 'next/image'
 
@@ -451,7 +452,17 @@ export default function TeamsPage() {
                       {/* Average Rank */}
                       {team.average_rank && (
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-muted-foreground">Avg Rank:</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1">
+                                <span className="text-sm font-medium text-muted-foreground">Avg Rank:</span>
+                                <span className="text-xs text-muted-foreground cursor-help">ⓘ</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs max-w-xs">Based on ranked players only. Unranked players are excluded from this calculation.</p>
+                            </TooltipContent>
+                          </Tooltip>
                           <span className="text-sm font-semibold">{team.average_rank}</span>
                         </div>
                       )}

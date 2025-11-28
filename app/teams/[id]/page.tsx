@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,7 @@ import { Shield, Trophy, Users, Calendar, UserPlus, Edit, Gamepad2, Crown } from
 import { AvatarPicker, AvatarPreview } from '@/components/AvatarPicker'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
-const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger', 'Unranked']
+const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
 
 const getTierColor = (tier: string) => {
   const colors: { [key: string]: string } = {
@@ -327,9 +328,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const teamSize = team.team_size || 5
   const averageTier = members.length > 0 
     ? members.reduce((acc, m) => {
-        const tierIndex = TIERS.indexOf(m.tier || 'Unranked')
-        return acc + tierIndex
-      }, 0) / members.length
+        const tierIndex = TIERS.indexOf((m.tier || '').split(' ')[0])
+        return tierIndex >= 0 ? acc + tierIndex : acc
+      }, 0) / members.filter(m => {
+        const tierIndex = TIERS.indexOf((m.tier || '').split(' ')[0])
+        return tierIndex >= 0
+      }).length
     : 0
 
   return (
@@ -377,7 +381,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-4 border-border bg-gradient-to-br from-primary/10 to-accent/10">
                       {team.team_avatar ? (
                         <Image 
-                          src={getTeamAvatarUrl(team.team_avatar)} 
+                          src={getTeamAvatarUrl(team.team_avatar)!} 
                           alt="Team Avatar"
                           width={96}
                           height={96}
@@ -385,7 +389,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Shield className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />
+                          <Shield className="h-10 w-10 text-primary" />
                         </div>
                       )}
                     </div>
@@ -814,7 +818,17 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Average Rank</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm text-muted-foreground">Average Rank</span>
+                          <span className="text-xs text-muted-foreground cursor-help">ⓘ</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs max-w-xs">Based on ranked players only. Unranked players are excluded from this calculation.</p>
+                      </TooltipContent>
+                    </Tooltip>
                     <Badge className={`${getTierColor(TIERS[Math.round(averageTier)] || 'Unranked')} text-white text-xs`}>
                       {TIERS[Math.round(averageTier)] || 'Unranked'}
                     </Badge>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
+import { cache } from '@/lib/cache';
 
 // DELETE /api/team-join-requests/[id] - Cancel own join request (for players)
 export async function DELETE(
@@ -210,6 +211,10 @@ export async function PUT(
       } else {
         console.log('Acceptance notification created successfully');
       }
+
+      // Invalidate teams cache to trigger recalculation of average rank
+      await cache.invalidate('all_teams', 'teams');
+      await cache.invalidate('search_teams', 'search');
 
       return NextResponse.json({ message: 'Join request accepted successfully' });
 

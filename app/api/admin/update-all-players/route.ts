@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { validateAndFetchRiotData } from '@/lib/riot';
+import { cache } from '@/lib/cache';
 
 // Admin-only route to update all existing players with fresh Riot API data
 export async function POST(request: NextRequest) {
@@ -96,6 +97,11 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Update complete! Success: ${results.success}, Failed: ${results.failed}`);
+
+    // Invalidate teams cache to trigger recalculation of average rank for all teams
+    // since this operation updates player ranks across all teams
+    await cache.invalidate('all_teams', 'teams');
+    await cache.invalidate('search_teams', 'search');
 
     return NextResponse.json({
       message: 'Player update completed',

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 import { validateAndFetchRiotData } from '@/lib/riot';
+import { cache } from '@/lib/cache';
 
 // Validation schema for updates - tier and opgg_url are now auto-fetched from Riot API
 const updatePlayerSchema = z.object({
@@ -103,6 +104,12 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // Invalidate teams cache to trigger recalculation of average rank if player is in a team
+    if (data.team_id) {
+      await cache.invalidate('all_teams', 'teams');
+      await cache.invalidate('search_teams', 'search');
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -127,6 +134,13 @@ export async function DELETE(
   try {
     const { id } = await params;
     
+    // Get player data before deletion to check if they were in a team
+    const { data: playerData } = await supabase
+      .from('players')
+      .select('team_id')
+      .eq('id', id)
+      .single();
+    
     const { error } = await supabase
       .from('players')
       .delete()
@@ -134,6 +148,12 @@ export async function DELETE(
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // Invalidate teams cache to trigger recalculation of average rank if player was in a team
+    if (playerData?.team_id) {
+      await cache.invalidate('all_teams', 'teams');
+      await cache.invalidate('search_teams', 'search');
     }
 
     return NextResponse.json({ message: 'Player deleted successfully' });

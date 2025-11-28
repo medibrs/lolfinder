@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { cache } from '@/lib/cache';
 
 // POST /api/teams/[id]/leave - Leave a team
 export async function POST(
@@ -82,6 +83,10 @@ export async function POST(
           player_id: currentPlayer.id,
         }
       }]);
+
+    // Invalidate teams cache to trigger recalculation of average rank
+    await cache.invalidate('all_teams', 'teams');
+    await cache.invalidate('search_teams', 'search');
 
     return NextResponse.json({ message: 'Left team successfully' });
   } catch (error) {

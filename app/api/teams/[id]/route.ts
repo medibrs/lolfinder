@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
+import { cache } from '@/lib/cache';
 
 // Validation schema for updates
 const updateTeamSchema = z.object({
@@ -115,6 +116,10 @@ export async function DELETE(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // Invalidate teams cache to trigger recalculation of average rank
+    await cache.invalidate('all_teams', 'teams');
+    await cache.invalidate('search_teams', 'search');
 
     return NextResponse.json({ message: 'Team deleted successfully' });
   } catch (error) {
