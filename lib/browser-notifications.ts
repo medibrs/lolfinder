@@ -41,7 +41,6 @@ export class BrowserNotificationManager {
   
   async requestPermission(): Promise<NotificationPermission> {
     if (typeof Notification === 'undefined') {
-      console.log('🔕 Notifications not supported on this device/browser')
       return 'default'
     }
 
@@ -51,7 +50,6 @@ export class BrowserNotificationManager {
 
     try {
       // On mobile, permissions often need to be requested from a user gesture
-      console.log('🔐 Requesting notification permission...')
       
       // Check if we're in a secure context (required for notifications)
       if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
@@ -61,7 +59,6 @@ export class BrowserNotificationManager {
       const permission = await Notification.requestPermission()
       this.permission = permission
       
-      console.log('🔐 Permission result:', permission)
       return permission
     } catch (error) {
       console.error('❌ Error requesting notification permission:', error)
@@ -78,31 +75,25 @@ export class BrowserNotificationManager {
   }
 
   async showNotification(notification: NotificationOptions): Promise<boolean> {
-    console.log('🔔 Attempting to show browser notification:', notification)
     
     if (!this.isSupported()) {
-      console.log('❌ Browser notifications not supported on this device')
       return false
     }
 
     // Check if user is actively browsing the site
     if (this.isUserActiveOnSite()) {
-      console.log('👁️ User is actively browsing, skipping browser notification')
       return false
     }
 
     const permission = await this.requestPermission()
     
     if (permission !== 'granted') {
-      console.log('❌ Browser notifications not permitted:', permission)
       return false
     }
 
-    console.log('✅ Browser notifications supported, permission: granted')
 
     try {
       const notificationContent = this.getNotificationContent(notification)
-      console.log('� Creating notification with:', notificationContent)
 
       // Mobile-specific notification options
       const notificationOptions: BrowserNotificationOptions = {
@@ -120,7 +111,6 @@ export class BrowserNotificationManager {
 
       // Handle click
       browserNotification.onclick = () => {
-        console.log('🔔 Notification clicked')
         if (notificationContent.url) {
           window.location.href = notificationContent.url
         }
@@ -135,7 +125,6 @@ export class BrowserNotificationManager {
         }
       }, closeTime)
 
-      console.log('✅ Browser notification shown successfully')
       return true
     } catch (error) {
       console.error('❌ Error showing browser notification:', error)
@@ -162,7 +151,6 @@ export class BrowserNotificationManager {
     // Also check if the user was recently active (within last 30 seconds)
     const isRecentlyActive = Date.now() - this.lastActivityTime < 30000
     
-    console.log('👁: User activity check:', {
       isPageVisible,
       isWindowFocused,
       isRecentlyActive,
@@ -203,17 +191,14 @@ export class BrowserNotificationManager {
 
     // Track page visibility changes
     document.addEventListener('visibilitychange', () => {
-      console.log('👁️ Page visibility changed:', document.hidden ? 'hidden' : 'visible')
     })
 
     // Track window focus
     window.addEventListener('focus', () => {
-      console.log('👁️ Window focused')
       updateLastActivity()
     })
 
     window.addEventListener('blur', () => {
-      console.log('👁️ Window blurred')
     })
   }
 
@@ -222,7 +207,6 @@ export class BrowserNotificationManager {
   }
 
   private showMobileFallback(notification: NotificationOptions): void {
-    console.log('📱 Showing mobile fallback notification')
     
     // Create a simple in-app notification banner
     const fallback = document.createElement('div')
@@ -280,8 +264,6 @@ export class BrowserNotificationManager {
   }
 
   getNotificationContent(notification: any): NotificationData {
-    console.log('🔔 Processing notification:', notification)
-    console.log('🔔 Notification fields:', {
       id: notification.id,
       type: notification.type,
       message: notification.message,
@@ -299,7 +281,6 @@ export class BrowserNotificationManager {
                    (notification.data && notification.data.message) ||
                    'You have a new notification'
     
-    console.log('🔔 Extracted message:', message)
     
     const baseContent: NotificationData = {
       title: 'New Notification',
@@ -368,7 +349,6 @@ export class BrowserNotificationManager {
         }
 
       default:
-        console.log('🔔 Unknown notification type, using default:', notification.type)
         
         // Create a more informative default message
         let defaultBody = message
