@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 interface UseRealtimeChatProps {
   roomName: string
@@ -32,20 +32,14 @@ export function useRealtimeChat({
   profileIconId,
   enablePersistence = true 
 }: UseRealtimeChatProps) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [channel, setChannel] = useState<ReturnType<typeof supabase.channel> | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(enablePersistence)
 
-  // Load message history from database when component mounts
-  useEffect(() => {
-    if (enablePersistence) {
-      loadMessageHistory()
-    }
-  }, [roomName, enablePersistence])
-
-  const loadMessageHistory = async () => {
+  // Load message history from database
+  const loadMessageHistory = useCallback(async () => {
     try {
       setIsLoading(true)
       
@@ -117,7 +111,14 @@ export function useRealtimeChat({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase, roomName])
+
+  // Load message history from database when component mounts
+  useEffect(() => {
+    if (enablePersistence) {
+      loadMessageHistory()
+    }
+  }, [enablePersistence, loadMessageHistory])
 
   useEffect(() => {
     const newChannel = supabase.channel(roomName)
@@ -159,8 +160,10 @@ export function useRealtimeChat({
 
       if (!content.trim()) return // Don't send empty messages
 
+      const tempId = crypto.randomUUID() // Temporary ID for optimistic update
+      
       const message: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: tempId,
         content: content.trim(),
         user: {
           name: username,
@@ -170,21 +173,16 @@ export function useRealtimeChat({
         createdAt: new Date().toISOString(),
       }
 
-      // Update local state immediately for the sender
+      // Update local state immediately for the sender (optimistic update)
       setMessages((current) => [...current, message])
 
       try {
-        // Send via broadcast for real-time delivery
-        await channel.send({
-          type: 'broadcast',
-          event: EVENT_MESSAGE_TYPE,
-          payload: message,
-        })
+        let finalMessageId = tempId
 
-        // Save to database if persistence is enabled
+        // Save to database first if persistence is enabled to get the real ID
         if (enablePersistence) {
           try {
-            const { error } = await supabase
+            const { data, error } = await supabase
               .from('chat_messages')
               .insert({
                 room_name: roomName,
@@ -192,6 +190,8 @@ export function useRealtimeChat({
                 user_name: message.user.name,
                 user_id: userId
               })
+              .select('id')
+              .single()
 
             if (error) {
               // If table doesn't exist, just log and continue - real-time still works
@@ -200,19 +200,37 @@ export function useRealtimeChat({
               } else {
                 console.error('Error saving message to database:', error)
               }
+            } else if (data) {
+              // Use the database-generated ID
+              finalMessageId = data.id
+              // Update local state with the real database ID
+              setMessages((current) => 
+                current.map(msg => 
+                  msg.id === tempId 
+                    ? { ...msg, id: finalMessageId }
+                    : msg
+                )
+              )
             }
           } catch (dbError) {
             console.error('Database error:', dbError)
             // Continue with real-time functionality even if DB fails
           }
         }
+
+        // Send via broadcast for real-time delivery with the final ID
+        await channel.send({
+          type: 'broadcast',
+          event: EVENT_MESSAGE_TYPE,
+          payload: { ...message, id: finalMessageId },
+        })
       } catch (error) {
         console.error('Error sending message:', error)
         // Remove the message from local state if it failed to send
-        setMessages((current) => current.filter(msg => msg.id !== message.id))
+        setMessages((current) => current.filter(msg => msg.id !== tempId))
       }
     },
-    [channel, isConnected, username, userId, profileIconId, roomName, enablePersistence]
+    [channel, isConnected, username, userId, profileIconId, roomName, enablePersistence, supabase]
   )
 
   const deleteMessage = useCallback(
@@ -222,13 +240,18 @@ export function useRealtimeChat({
       try {
         // Update message content to "Message deleted" in database
         if (enablePersistence) {
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from('chat_messages')
             .update({ content: 'Message deleted' })
             .eq('id', messageId)
+            .select()
 
-          if (error && error.code !== 'PGRST116') {
-            console.error('Error deleting message:', error)
+          if (error) {
+            if (error.code !== 'PGRST116') {
+              console.error('Error deleting message from database:', error)
+            }
+          } else {
+            console.log('Message deleted from database:', messageId, data)
           }
         }
 
@@ -259,7 +282,7 @@ export function useRealtimeChat({
         )
       }
     },
-    [channel, isConnected, enablePersistence]
+    [channel, isConnected, enablePersistence, supabase]
   )
 
   return { 

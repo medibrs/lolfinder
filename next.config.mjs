@@ -6,9 +6,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    suppressHydrationWarning: true,
-  },
 }
 
 export default nextConfig
