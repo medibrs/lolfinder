@@ -38,6 +38,7 @@ export default function Navigation() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
+  const [unreadTeamMessages, setUnreadTeamMessages] = useState(0)
   const supabase = createClient()
 
   // Helper function to get team avatar URL
@@ -148,6 +149,34 @@ export default function Navigation() {
     }
   }
 
+  // Listen for team chat messages
+  useEffect(() => {
+    if (!user || !userTeam) return
+
+    const roomName = `team-${userTeam.id}`
+    const channel = supabase.channel(roomName)
+
+    channel
+      .on('broadcast', { event: 'message' }, (payload) => {
+        // Don't count own messages
+        if (payload.payload.user?.id !== user.id) {
+          setUnreadTeamMessages(prev => prev + 1)
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user, userTeam, supabase])
+
+  // Reset unread count when user visits team chat pages
+  useEffect(() => {
+    if ((pathname === '/team-chat' || pathname === '/manage-team' || pathname === '/view-team') && userTeam) {
+      setUnreadTeamMessages(0)
+    }
+  }, [pathname, userTeam])
+
   if (loading) {
     return (
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -198,23 +227,20 @@ export default function Navigation() {
             )}
             {userTeam && (
               <Button 
-                asChild 
-                variant="default" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium px-3 py-2 rounded-lg shadow-lg text-sm"
+                variant="ghost" 
+                className="relative h-10 w-10 rounded-full"
+                asChild
               >
-                <Link 
-                  href={isCaptain ? "/manage-team" : "/view-team"}
-                  className="flex items-center gap-2"
-                >
-                  <Image
-                    src={getTeamAvatarUrl(userTeam.team_avatar)}
-                    alt="Team Avatar"
-                    width={16}
-                    height={16}
-                    className="rounded-full"
-                  />
-                  <span className="hidden sm:inline">{isCaptain ? "Manage" : "Team"}</span>
-                  <span className="sm:hidden">Team</span>
+                <Link href={isCaptain ? "/manage-team" : "/view-team"}>
+                  <Avatar>
+                    <AvatarImage src={getTeamAvatarUrl(userTeam.team_avatar)} alt="Team Avatar" />
+                    <AvatarFallback>Team</AvatarFallback>
+                  </Avatar>
+                  {unreadTeamMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                      {unreadTeamMessages > 9 ? '9+' : unreadTeamMessages}
+                    </span>
+                  )}
                 </Link>
               </Button>
             )}
@@ -565,22 +591,20 @@ export default function Navigation() {
           <div className="hidden md:flex items-center gap-2">
             {userTeam && (
               <Button 
-                asChild 
-                variant="default" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium px-3 py-2 rounded-lg shadow-lg"
+                variant="ghost" 
+                className="relative h-10 w-10 rounded-full"
+                asChild
               >
-                <Link 
-                  href={isCaptain ? "/manage-team" : "/view-team"}
-                  className="flex items-center gap-2"
-                >
-                  <Image
-                    src={getTeamAvatarUrl(userTeam.team_avatar)}
-                    alt="Team Avatar"
-                    width={20}
-                    height={20}
-                    className="rounded-full"
-                  />
-                  {isCaptain ? "Manage Team" : "My Team"}
+                <Link href={isCaptain ? "/manage-team" : "/view-team"}>
+                  <Avatar>
+                    <AvatarImage src={getTeamAvatarUrl(userTeam.team_avatar)} alt="Team Avatar" />
+                    <AvatarFallback>Team</AvatarFallback>
+                  </Avatar>
+                  {unreadTeamMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                      {unreadTeamMessages > 9 ? '9+' : unreadTeamMessages}
+                    </span>
+                  )}
                 </Link>
               </Button>
             )}
