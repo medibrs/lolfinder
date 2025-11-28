@@ -44,6 +44,26 @@ top_cut_size INTEGER DEFAULT 8 -- Top cut to elimination bracket
 enable_top_cut BOOLEAN DEFAULT false
 ```
 
+### **Match Format Fields**
+```sql
+opening_best_of INTEGER DEFAULT 1      -- Standard round matches (Bo1)
+progression_best_of INTEGER DEFAULT 3  -- Win to advance matches (Bo3)
+elimination_best_of INTEGER DEFAULT 3  -- Lose to be eliminated matches (Bo3)
+```
+
+These fields control the best-of format for different match types:
+
+| Field | Default | Description | Example |
+|-------|---------|-------------|---------|
+| `opening_best_of` | 1 | Standard round matches | Swiss rounds 1-2, early bracket rounds |
+| `progression_best_of` | 3 | Matches where winning advances/qualifies | Swiss 2-0 vs 2-0 (playing for 3-0) |
+| `elimination_best_of` | 3 | Matches where losing means elimination | Swiss 0-2 vs 0-2, all bracket matches |
+
+**Usage by Format:**
+- **Swiss**: Uses all three - opening for early rounds, progression for 2-0 matches, elimination for 0-2 matches
+- **Single/Double Elimination**: Primarily uses `elimination_best_of` since all matches are elimination matches
+- **Round Robin**: Typically uses `opening_best_of` for all matches
+
 ## 🧩 Linked Tournaments (Multi-Stage)
 The system supports linking multiple tournaments together to form a complete event series (e.g., Qualifiers → Group Stage → Playoffs).
 
@@ -227,6 +247,7 @@ INSERT INTO tournaments (
 - **v2.0**: Added status and format fields
 - **v3.0**: Added Swiss tournament support
 - **v4.0**: Enhanced configuration and lifecycle management
+- **v5.0**: Added match format settings (opening_best_of, progression_best_of, elimination_best_of)
 
 ### **Backward Compatibility**
 - All new fields have sensible defaults
