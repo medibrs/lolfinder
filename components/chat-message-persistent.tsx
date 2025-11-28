@@ -44,6 +44,8 @@ export const ChatMessageItem = ({
     setShowActions(false)
   }
 
+  const isDeleted = message.content === 'Message deleted'
+
   return (
     <div className={`flex mt-2 gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}>
       {!isOwn && (
@@ -78,31 +80,27 @@ export const ChatMessageItem = ({
                 hour12: true,
               })}
             </span>
-          </div>
-        )}
-        <div
-          className={cn(
-            'py-2 px-3 rounded-xl text-sm relative group',
-            isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
-          )}
-          onMouseEnter={() => canDelete && setShowActions(true)}
-          onMouseLeave={() => setShowActions(false)}
-        >
-          {message.content}
-          
-          {/* Delete button for own messages */}
-          {canDelete && isOwn && showActions && (
-            <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Delete button inline with header for own messages */}
+            {canDelete && isOwn && !isDeleted && (
               <Button
-                variant="destructive"
+                variant="ghost"
                 size="icon"
-                className="h-6 w-6 rounded-full shadow-lg"
+                className="h-5 w-5 text-muted-foreground hover:text-destructive"
                 onClick={handleDelete}
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
-            </div>
+            )}
+          </div>
+        )}
+        <div
+          className={cn(
+            'py-2 px-3 rounded-xl text-sm',
+            isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
+            isDeleted && 'italic opacity-60'
           )}
+        >
+          {message.content}
         </div>
       </div>
 

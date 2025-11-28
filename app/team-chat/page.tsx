@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { TeamChat } from '@/components/team/TeamChat'
 import { createClient } from '@/lib/supabase/client'
-import { MessageSquare, Users, ArrowLeft, Settings } from 'lucide-react'
+import { MessageSquare, Users } from 'lucide-react'
 import Link from 'next/link'
 
 interface Team {
@@ -133,16 +132,6 @@ export default function TeamChatPage() {
 
   return (
     <div className="container mx-auto pt-24 pb-4">
-      {/* Simple Back Button */}
-      <div className="mb-4">
-        <Link href="/view-team">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Team
-          </Button>
-        </Link>
-      </div>
-
       {/* Full Width Chat */}
       <TeamChat
         teamId={team.id}

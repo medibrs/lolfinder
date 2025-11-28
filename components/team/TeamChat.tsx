@@ -88,7 +88,6 @@ export function TeamChat({
           roomName={roomName}
           username={summonerName} // Use summoner name from player profile
           enablePersistence={true}
-          showClearHistory={isCaptain} // Only captains can clear team chat history
           maxHeight={compact ? "350px" : "480px"}
         />
       </CardContent>

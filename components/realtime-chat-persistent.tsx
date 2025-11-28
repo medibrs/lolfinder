@@ -9,7 +9,7 @@ import {
 } from '@/hooks/use-realtime-chat-persistent'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Send, Trash2, History } from 'lucide-react'
+import { Send, History } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -19,7 +19,6 @@ interface RealtimeChatPersistentProps {
   onMessage?: (messages: ChatMessage[]) => void
   messages?: ChatMessage[]
   enablePersistence?: boolean
-  showClearHistory?: boolean
   maxHeight?: string
 }
 
@@ -40,11 +39,9 @@ export const RealtimeChatPersistent = ({
   onMessage,
   messages: propMessages,
   enablePersistence = true,
-  showClearHistory = false,
   maxHeight = "400px"
 }: RealtimeChatPersistentProps) => {
   const [newMessage, setNewMessage] = useState('')
-  const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [profileIconId, setProfileIconId] = useState<number | undefined>(undefined)
 
@@ -78,7 +75,6 @@ export const RealtimeChatPersistent = ({
     messages: hookMessages,
     sendMessage,
     deleteMessage,
-    clearHistory,
     isConnected,
     isLoading
   } = useRealtimeChat({
@@ -109,11 +105,6 @@ export const RealtimeChatPersistent = ({
     },
     [newMessage, sendMessage]
   )
-
-  const handleClearHistory = useCallback(async () => {
-    await clearHistory()
-    setShowClearConfirm(false)
-  }, [clearHistory])
 
   const handleDeleteMessage = useCallback(async (messageId: string) => {
     await deleteMessage(messageId)
@@ -151,18 +142,6 @@ export const RealtimeChatPersistent = ({
             </div>
           )}
         </div>
-        
-        {showClearHistory && enablePersistence && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowClearConfirm(true)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Clear
-          </Button>
-        )}
       </div>
 
       {/* Messages */}
@@ -194,31 +173,6 @@ export const RealtimeChatPersistent = ({
           ))
         )}
       </div>
-
-      {/* Clear History Confirmation */}
-      {showClearConfirm && (
-        <div className="p-3 border-b bg-destructive/10">
-          <p className="text-sm text-destructive mb-2">
-            Are you sure you want to clear all messages in this room? This cannot be undone.
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleClearHistory}
-            >
-              Clear All
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowClearConfirm(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Input */}
       <form onSubmit={handleSendMessage} className="p-4 border-t">

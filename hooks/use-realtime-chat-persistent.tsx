@@ -208,68 +208,48 @@ export function useRealtimeChat({
       if (!enablePersistence) return
 
       try {
-        // Delete from database
+        // Update message content to "Message deleted" instead of removing
         const { error } = await supabase
           .from('chat_messages')
-          .delete()
+          .update({ content: 'Message deleted' })
           .eq('id', messageId)
 
         if (error) {
-          // If table doesn't exist, just remove from local state
+          // If table doesn't exist, just update local state
           if (error.code === 'PGRST116') {
-            console.log('Chat messages table not available - removing from local view only')
+            console.log('Chat messages table not available - updating local view only')
           } else {
             console.error('Error deleting message:', error)
           }
-          // Still remove from local state even if DB fails
         }
 
-        // Remove from local state
-        setMessages((current) => current.filter(msg => msg.id !== messageId))
+        // Update local state to show "Message deleted"
+        setMessages((current) => 
+          current.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, content: 'Message deleted' }
+              : msg
+          )
+        )
       } catch (error) {
         console.error('Error deleting message:', error)
-        // Still remove from local state
-        setMessages((current) => current.filter(msg => msg.id !== messageId))
+        // Still update local state
+        setMessages((current) => 
+          current.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, content: 'Message deleted' }
+              : msg
+          )
+        )
       }
     },
     [enablePersistence]
-  )
-
-  const clearHistory = useCallback(
-    async () => {
-      if (!enablePersistence) return
-
-      try {
-        const { error } = await supabase
-          .from('chat_messages')
-          .delete()
-          .eq('room_name', roomName)
-
-        if (error) {
-          // If table doesn't exist, just clear local state
-          if (error.code === 'PGRST116') {
-            console.log('Chat messages table not available - clearing local view only')
-          } else {
-            console.error('Error clearing chat history:', error)
-          }
-          // Still clear local state even if DB fails
-        }
-
-        setMessages([])
-      } catch (error) {
-        console.error('Error clearing chat history:', error)
-        // Still clear local state
-        setMessages([])
-      }
-    },
-    [enablePersistence, roomName]
   )
 
   return { 
     messages, 
     sendMessage, 
     deleteMessage,
-    clearHistory,
     isConnected, 
     isLoading 
   }
