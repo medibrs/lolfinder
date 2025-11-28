@@ -154,9 +154,7 @@ export default function AdminTabs({ stats }: AdminTabsProps) {
       )}
 
       {activeTab === 'tournaments' && (
-        <Card className="bg-card border-border p-6">
-          <div className="text-4xl mb-4">🎮</div>
-          <h3 className="text-xl font-bold mb-4">Tournament Management</h3>
+        <Card className="bg-card border-border p-0">
           <TournamentsTable />
         </Card>
       )}

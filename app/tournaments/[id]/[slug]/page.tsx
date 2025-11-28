@@ -335,28 +335,17 @@ export default async function TournamentEventPage({ params }: Props) {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Registration Status */}
+            {/* Registration - Empty for now */}
             <Card className="border-zinc-800">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Registration</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {tournamentStatus.status === 'upcoming' ? (
-                  <Button className="w-full" size="sm">
-                    Register Your Team
-                  </Button>
-                ) : tournamentStatus.status === 'live' ? (
-                  <div className="text-center py-4">
-                    <AlertCircle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                    <p className="text-sm text-zinc-400">Registration Closed</p>
-                    <p className="text-xs text-zinc-500">Tournament is live</p>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                    <p className="text-sm text-zinc-400">Tournament Completed</p>
-                  </div>
-                )}
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-zinc-500 mx-auto mb-2" />
+                  <p className="text-sm text-zinc-400">Registration system moved</p>
+                  <p className="text-xs text-zinc-500 mt-1">This space reserved for future features</p>
+                </div>
               </CardContent>
             </Card>
 

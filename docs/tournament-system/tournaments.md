@@ -29,6 +29,9 @@ total_rounds INTEGER DEFAULT 0
 prize_distribution TEXT -- JSON string for prize distribution
 bracket_settings TEXT -- JSON string for bracket-specific settings
 is_active BOOLEAN DEFAULT true
+parent_tournament_id UUID REFERENCES tournaments(id) ON DELETE CASCADE
+stage_order INTEGER DEFAULT 0 -- 0=Main/Standalone, 1=Stage 1, 2=Stage 2, etc.
+stage_type VARCHAR(50) DEFAULT 'Main' -- 'Group_Stage', 'Playoffs', 'Qualifier'
 ```
 
 ### **Swiss-Specific Fields**
@@ -39,6 +42,24 @@ swiss_points_per_draw INTEGER DEFAULT 1
 swiss_points_per_loss INTEGER DEFAULT 0
 top_cut_size INTEGER DEFAULT 8 -- Top cut to elimination bracket
 enable_top_cut BOOLEAN DEFAULT false
+```
+
+## 🧩 Linked Tournaments (Multi-Stage)
+The system supports linking multiple tournaments together to form a complete event series (e.g., Qualifiers → Group Stage → Playoffs).
+
+### **Structure**
+- **Parent Tournament**: The main container or the previous stage
+- **Child Tournament**: The next stage, linked via `parent_tournament_id`
+- **Stage Order**: Defines the sequence (1, 2, 3...)
+
+### **Promotion Logic**
+Teams can be promoted from one stage to another using the `promote_teams` function:
+```sql
+SELECT promote_teams(
+    source_tournament_uuid,
+    target_tournament_uuid,
+    number_of_teams_to_promote
+);
 ```
 
 ## 📊 Enums

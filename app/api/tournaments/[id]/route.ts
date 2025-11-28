@@ -11,6 +11,23 @@ const updateTournamentSchema = z.object({
   prize_pool: z.string().optional(),
   max_teams: z.number().int().positive().optional(),
   rules: z.string().optional(),
+  format: z.enum(['Single_Elimination', 'Double_Elimination', 'Round_Robin', 'Swiss']).optional(),
+  registration_deadline: z.string().optional().nullable(),
+  status: z.enum(['Registration', 'Registration_Closed', 'Seeding', 'In_Progress', 'Completed', 'Cancelled']).optional(),
+  current_round: z.number().int().min(0).optional(),
+  total_rounds: z.number().int().min(0).optional(),
+  is_active: z.boolean().optional(),
+  swiss_rounds: z.number().int().min(1).optional(),
+  swiss_points_per_win: z.number().int().min(0).optional(),
+  swiss_points_per_draw: z.number().int().min(0).optional(),
+  swiss_points_per_loss: z.number().int().min(0).optional(),
+  enable_top_cut: z.boolean().optional(),
+  top_cut_size: z.number().int().min(2).optional(),
+  prize_distribution: z.string().optional().nullable(),
+  bracket_settings: z.string().optional().nullable(),
+  opening_best_of: z.number().int().min(1).max(5).optional(),
+  progression_best_of: z.number().int().min(1).max(5).optional(),
+  elimination_best_of: z.number().int().min(1).max(5).optional(),
 });
 
 // GET /api/tournaments/[id] - Get a single tournament
