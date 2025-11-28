@@ -72,7 +72,8 @@ export const RealtimeChatPersistent = ({
     sendMessage,
     deleteMessage,
     isConnected,
-    isLoading
+    isLoading,
+    isReconnecting
   } = useRealtimeChat({
     roomName,
     username: chatUsername,
@@ -122,11 +123,11 @@ export const RealtimeChatPersistent = ({
             <div
               className={cn(
                 'w-2 h-2 rounded-full',
-                isConnected ? 'bg-green-500' : 'bg-red-500'
+                isConnected ? 'bg-green-500' : isReconnecting ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
               )}
             />
             <span className="text-sm text-muted-foreground">
-              {isConnected ? 'Connected' : 'Disconnected'}
+              {isConnected ? 'Connected' : isReconnecting ? 'Reconnecting...' : 'Disconnected'}
             </span>
           </div>
           {enablePersistence && (

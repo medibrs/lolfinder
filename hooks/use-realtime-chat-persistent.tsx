@@ -120,13 +120,127 @@ export function useRealtimeChat({
     }
   }, [enablePersistence, loadMessageHistory])
 
+  // Reconnection logic
+  const [reconnectAttempts, setReconnectAttempts] = useState(0)
+  const MAX_RECONNECT_ATTEMPTS = 5
+  const RECONNECT_DELAY_MS = 3000
+
+  const reconnect = useCallback(async () => {
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      console.log('Max reconnection attempts reached')
+      return
+    }
+
+    console.log(`Attempting to reconnect... (attempt ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`)
+    setReconnectAttempts(prev => prev + 1)
+
+    // Remove old channel if exists
+    if (channel) {
+      await supabase.removeChannel(channel)
+    }
+
+    // Create new channel and subscribe
+    const newChannel = supabase.channel(roomName)
+    
+    newChannel
+      .on('broadcast', { event: EVENT_MESSAGE_TYPE }, (payload) => {
+        const newMessage = payload.payload as ChatMessage
+        setMessages((current) => {
+          // Avoid duplicate messages
+          if (current.some(msg => msg.id === newMessage.id)) {
+            return current
+          }
+          return [...current, newMessage]
+        })
+      })
+      .on('broadcast', { event: EVENT_DELETE_TYPE }, (payload) => {
+        const { messageId } = payload.payload as { messageId: string }
+        setMessages((current) => 
+          current.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, content: 'Message deleted' }
+              : msg
+          )
+        )
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true)
+          setReconnectAttempts(0) // Reset on successful connection
+          console.log('Reconnected successfully!')
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setIsConnected(false)
+        }
+      })
+
+    setChannel(newChannel)
+  }, [channel, roomName, supabase, reconnectAttempts])
+
+  // Auto-reconnect when disconnected
+  useEffect(() => {
+    let reconnectTimer: NodeJS.Timeout | null = null
+
+    if (!isConnected && channel && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      // Wait before attempting reconnection
+      reconnectTimer = setTimeout(() => {
+        reconnect()
+      }, RECONNECT_DELAY_MS)
+    }
+
+    return () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+      }
+    }
+  }, [isConnected, channel, reconnectAttempts, reconnect])
+
+  // Listen for online/offline events
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('Network came back online, attempting to reconnect...')
+      setReconnectAttempts(0) // Reset attempts when network comes back
+      reconnect()
+    }
+
+    const handleOffline = () => {
+      console.log('Network went offline')
+      setIsConnected(false)
+    }
+
+    // Handle visibility change (tab becomes active again)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !isConnected) {
+        console.log('Tab became visible, checking connection...')
+        setReconnectAttempts(0)
+        reconnect()
+      }
+    }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [isConnected, reconnect])
+
+  // Initial channel setup
   useEffect(() => {
     const newChannel = supabase.channel(roomName)
 
     newChannel
       .on('broadcast', { event: EVENT_MESSAGE_TYPE }, (payload) => {
         const newMessage = payload.payload as ChatMessage
-        setMessages((current) => [...current, newMessage])
+        setMessages((current) => {
+          // Avoid duplicate messages
+          if (current.some(msg => msg.id === newMessage.id)) {
+            return current
+          }
+          return [...current, newMessage]
+        })
       })
       .on('broadcast', { event: EVENT_DELETE_TYPE }, (payload) => {
         const { messageId } = payload.payload as { messageId: string }
@@ -142,7 +256,8 @@ export function useRealtimeChat({
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true)
-        } else {
+          setReconnectAttempts(0)
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           setIsConnected(false)
         }
       })
@@ -152,7 +267,7 @@ export function useRealtimeChat({
     return () => {
       supabase.removeChannel(newChannel)
     }
-  }, [roomName, username, profileIconId, supabase])
+  }, [roomName, supabase])
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -290,6 +405,7 @@ export function useRealtimeChat({
     sendMessage, 
     deleteMessage,
     isConnected, 
-    isLoading 
+    isLoading,
+    isReconnecting: !isConnected && reconnectAttempts > 0 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS
   }
 }
