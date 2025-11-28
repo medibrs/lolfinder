@@ -40,6 +40,12 @@ export default function Navigation() {
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
   const supabase = createClient()
 
+  // Helper function to get team avatar URL
+  const getTeamAvatarUrl = (avatarId: number) => {
+    if (!avatarId) return '/default-avatar.svg'
+    return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
+  }
+
   // Global notifications hook
   const { notifications, unreadCount } = useRealtimeNotifications(user?.id || null)
 
@@ -187,6 +193,28 @@ export default function Navigation() {
               <Button variant="ghost" className="relative h-10 w-10 rounded-full" asChild>
                 <Link href="/notifications">
                   <CurrentUserAvatar unreadCount={unreadCount} />
+                </Link>
+              </Button>
+            )}
+            {userTeam && (
+              <Button 
+                asChild 
+                variant="default" 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium px-3 py-2 rounded-lg shadow-lg text-sm"
+              >
+                <Link 
+                  href={isCaptain ? "/manage-team" : "/view-team"}
+                  className="flex items-center gap-2"
+                >
+                  <Image
+                    src={getTeamAvatarUrl(userTeam.team_avatar)}
+                    alt="Team Avatar"
+                    width={16}
+                    height={16}
+                    className="rounded-full"
+                  />
+                  <span className="hidden sm:inline">{isCaptain ? "Manage" : "Team"}</span>
+                  <span className="sm:hidden">Team</span>
                 </Link>
               </Button>
             )}
@@ -535,6 +563,27 @@ export default function Navigation() {
 
           {/* Desktop Avatar/Auth */}
           <div className="hidden md:flex items-center gap-2">
+            {userTeam && (
+              <Button 
+                asChild 
+                variant="default" 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium px-3 py-2 rounded-lg shadow-lg"
+              >
+                <Link 
+                  href={isCaptain ? "/manage-team" : "/view-team"}
+                  className="flex items-center gap-2"
+                >
+                  <Image
+                    src={getTeamAvatarUrl(userTeam.team_avatar)}
+                    alt="Team Avatar"
+                    width={20}
+                    height={20}
+                    className="rounded-full"
+                  />
+                  {isCaptain ? "Manage Team" : "My Team"}
+                </Link>
+              </Button>
+            )}
             {isAdmin && pathname !== '/admin' && (
               <Button asChild variant="outline" className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 hover:text-yellow-700">
                 <Link href="/admin">Admin</Link>
