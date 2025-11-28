@@ -7,7 +7,7 @@ import { cache } from '@/lib/cache';
 // Validation schema for updates - tier and opgg_url are now auto-fetched from Riot API
 const updatePlayerSchema = z.object({
   summoner_name: z.string().min(1).max(255),
-  discord: z.string().min(1).max(255),
+  discord: z.string().max(255).optional(),
   main_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
   secondary_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
   looking_for_team: z.boolean(),
@@ -118,9 +118,9 @@ export async function PUT(
         { status: 400 }
       );
     }
-    console.error('Error updating player:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

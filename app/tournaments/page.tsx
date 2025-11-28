@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -18,11 +19,13 @@ interface Tournament {
   end_date: string
   prize_pool?: string
   rules?: string
+  tournament_number?: number
   created_at: string
   updated_at: string
 }
 
 export default function TournamentsPage() {
+  const router = useRouter()
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
   const [initialLoad, setInitialLoad] = useState(true)
@@ -35,6 +38,23 @@ export default function TournamentsPage() {
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
   const [profileChecked, setProfileChecked] = useState(false)
   const supabase = createClient()
+
+  // Generate URL-friendly slug from tournament name
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .trim()
+  }
+
+  // Navigate to tournament event page
+  const handleTournamentClick = (tournament: Tournament) => {
+    const slug = generateSlug(tournament.name)
+    const tournamentId = tournament.tournament_number || tournament.id
+    router.push(`/tournaments/${tournamentId}/${slug}`)
+  }
 
   useEffect(() => {
     fetchData()
@@ -277,11 +297,16 @@ export default function TournamentsPage() {
 
         {initialLoad ? (
           <div className="grid grid-cols-1 gap-4">
-            {/* Skeleton loaders for tournaments */}
+            {/* Skeleton loaders for tournaments - matching card preview design */}
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="relative border-zinc-800 overflow-hidden p-0">
-                {/* Tournament Header Skeleton */}
-                <div className="relative h-28 md:h-32 bg-muted/30">
+              <Card key={i} className="relative border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-300 group p-0">
+                {/* Full Card Background Image */}
+                <div className="absolute inset-0 bg-cover bg-top opacity-50">
+                  <Skeleton className="w-full h-full" />
+                </div>
+                
+                {/* Tournament Header - matching h-28 md:h-32 */}
+                <div className="relative h-28 md:h-32">
                   <div className="relative h-full flex flex-col justify-end p-4 md:p-6">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
@@ -293,8 +318,8 @@ export default function TournamentsPage() {
                   </div>
                 </div>
 
-                {/* Tournament Details Skeleton */}
-                <div className="relative px-4 md:px-6 py-3 bg-zinc-900/60 border-t border-zinc-700/50">
+                {/* Tournament Details - Compact blur section */}
+                <div className="relative px-4 md:px-6 py-3 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50">
                   <div className="grid grid-cols-3 gap-2 md:gap-8 mb-3">
                     <div className="text-center md:text-left">
                       <Skeleton className="h-3 w-8 mb-1" />
@@ -326,7 +351,11 @@ export default function TournamentsPage() {
                 const dateRange = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
                 
                 return (
-                  <Card key={tournament.id} className="relative border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-300 group p-0">
+                  <Card 
+                    key={tournament.id} 
+                    className="relative border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-300 group p-0 cursor-pointer"
+                    onClick={() => handleTournamentClick(tournament)}
+                  >
                     {/* Full Card Background Image */}
                     <div 
                       className="absolute inset-0 bg-cover bg-top"
@@ -400,7 +429,10 @@ export default function TournamentsPage() {
                           </div>
                         ) : tournamentStatus.status === 'upcoming' ? (
                           <Button 
-                            onClick={() => handleRegister(tournament.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRegister(tournament.id)
+                            }}
                             disabled={registering === tournament.id}
                             className="w-full bg-primary hover:bg-primary/90 text-white font-semibold"
                           >

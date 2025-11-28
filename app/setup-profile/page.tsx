@@ -191,7 +191,8 @@ export default function SetupProfilePage() {
         const errorData = await response.json()
         console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, errorData)
         // Show Riot API validation errors to the user
-        setRiotError(errorData.error || 'Failed to save profile')
+        const errorMessage = errorData.error || errorData.details?.[0]?.message || 'Failed to save profile'
+        setRiotError(errorMessage)
       }
     } catch (error) {
       console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, error)
