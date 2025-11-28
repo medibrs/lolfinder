@@ -360,15 +360,15 @@ export default function BracketManager({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Step 1: Generate Seeding */}
+          {/* Seeding Actions */}
           <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
-              1
+              <Trophy className="h-4 w-4" />
             </div>
             <div className="flex-1">
-              <h4 className="font-medium mb-1">Generate Seeding</h4>
+              <h4 className="font-medium mb-1">Seeding Actions</h4>
               <p className="text-sm text-muted-foreground mb-3">
-                Create initial seeding from approved team registrations
+                Create and arrange tournament seeding from approved teams
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button 
@@ -389,71 +389,14 @@ export default function BracketManager({
                   <Trophy className="h-4 w-4 mr-2" />
                   Seed by Tier
                 </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 2: Adjust Seeding */}
-          <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
-              2
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium mb-1">Adjust Seeding (Optional)</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Manually reorder teams by dragging or using arrows below
-              </p>
-              <div className="flex flex-wrap gap-2">
                 <Button 
-                  size="sm" 
-                  variant="secondary"
-                  onClick={handleRandomizeSeeds}
-                  disabled={actionLoading !== null || !canEditSeeding || participants.length === 0}
+                  variant="destructive"
+                  onClick={() => setShowResetDialog(true)}
+                  disabled={actionLoading !== null || !bracketGenerated}
                 >
-                  <Shuffle className="h-4 w-4 mr-2" />
-                  Shuffle
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Reset Bracket
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="secondary"
-                  onClick={handleSeedByRank}
-                  disabled={actionLoading !== null || !canEditSeeding || participants.length === 0}
-                >
-                  <Trophy className="h-4 w-4 mr-2" />
-                  Order by Tier
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 3: Generate Bracket */}
-          <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
-              3
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium mb-1">Generate Bracket</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Create the tournament bracket with current seeding ({tournamentFormat?.replace('_', ' ')})
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  onClick={handleGenerateBracket}
-                  disabled={actionLoading !== null || bracketGenerated || participants.length < 2}
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Generate Bracket
-                </Button>
-                {bracketGenerated && (
-                  <Button 
-                    variant="destructive"
-                    onClick={() => setShowResetDialog(true)}
-                    disabled={actionLoading !== null}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset Bracket
-                  </Button>
-                )}
               </div>
             </div>
           </div>

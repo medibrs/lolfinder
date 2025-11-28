@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { getRankImage } from '@/lib/rank-utils';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import TournamentBracket from '@/components/tournaments/TournamentBracket';
 
 type Props = {
   params: Promise<{
@@ -217,22 +218,12 @@ export default async function TournamentEventPage({ params }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Tournament Info - Empty for now */}
-            <Card className="border-zinc-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Info className="h-5 w-5 text-primary" />
-                  Tournament Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center py-8">
-                  <Trophy className="h-12 w-12 text-zinc-500 mx-auto mb-2" />
-                  <p className="text-sm text-zinc-400">Tournament details moved to banner</p>
-                  <p className="text-xs text-zinc-500 mt-1">This space reserved for future features</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Tournament Bracket */}
+            <TournamentBracket
+              tournamentId={tournament.id}
+              tournamentFormat={tournament.format}
+              tournamentStatus={tournament.status}
+            />
 
             {/* Teams Attending */}
             <Card className="border-zinc-800">
