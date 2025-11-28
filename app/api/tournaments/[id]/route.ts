@@ -67,6 +67,22 @@ export async function GET(
   }
 }
 
+// Calculate total rounds based on format and team count
+function calculateTotalRounds(format: string, maxTeams: number, swissRounds: number): number {
+  switch (format) {
+    case 'Single_Elimination':
+      return Math.ceil(Math.log2(maxTeams));
+    case 'Double_Elimination':
+      return Math.ceil(Math.log2(maxTeams)) * 2;
+    case 'Round_Robin':
+      return maxTeams - 1;
+    case 'Swiss':
+      return swissRounds;
+    default:
+      return Math.ceil(Math.log2(maxTeams));
+  }
+}
+
 // PUT /api/tournaments/[id] - Update a tournament
 export async function PUT(
   request: NextRequest,
@@ -87,6 +103,23 @@ export async function PUT(
           { status: 400 }
         );
       }
+    }
+
+    // Auto-calculate total_rounds based on format and max_teams
+    // Fetch current tournament to get existing values for calculation
+    const { data: currentTournament } = await supabase
+      .from('tournaments')
+      .select('format, max_teams, swiss_rounds')
+      .eq('id', id)
+      .single();
+    
+    if (currentTournament) {
+      // Use validated data if provided, otherwise fall back to current values
+      const format = validatedData.format ?? currentTournament.format ?? 'Single_Elimination';
+      const maxTeams = validatedData.max_teams ?? currentTournament.max_teams ?? 8;
+      const swissRounds = validatedData.swiss_rounds ?? currentTournament.swiss_rounds ?? 5;
+      
+      validatedData.total_rounds = calculateTotalRounds(format, maxTeams, swissRounds);
     }
 
     const { data, error } = await supabase

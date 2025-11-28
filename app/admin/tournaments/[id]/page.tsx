@@ -112,41 +112,12 @@ export default function TournamentManagePage() {
     setHasUnsavedChanges(true)
   }
 
-  // Calculate total rounds based on format and team count
-  const calculateTotalRounds = (format: string, maxTeams: number, swissRounds: number): number => {
-    switch (format) {
-      case 'Single_Elimination':
-        return Math.ceil(Math.log2(maxTeams))
-      case 'Double_Elimination':
-        // Winners bracket + losers bracket + grand final
-        return Math.ceil(Math.log2(maxTeams)) * 2
-      case 'Round_Robin':
-        return maxTeams - 1
-      case 'Swiss':
-        return swissRounds
-      default:
-        return Math.ceil(Math.log2(maxTeams))
-    }
-  }
-
   const handleSave = async () => {
     if (!tournament) return
     setSaving(true)
     try {
-      // Auto-calculate total_rounds based on format
-      const calculatedTotalRounds = calculateTotalRounds(
-        tournament.format || 'Single_Elimination',
-        tournament.max_teams,
-        tournament.swiss_rounds || 5
-      )
-      console.log('Tournament Save:', {
-        format: tournament.format,
-        max_teams: tournament.max_teams,
-        swiss_rounds: tournament.swiss_rounds,
-        calculated_total_rounds: calculatedTotalRounds
-      })
-      
       // Only send fields that can be updated
+      // Note: total_rounds is auto-calculated by the backend based on format/max_teams
       const updateData = {
         name: tournament.name,
         description: tournament.description,
@@ -157,7 +128,6 @@ export default function TournamentManagePage() {
         format: tournament.format,
         registration_deadline: tournament.registration_deadline || null,
         current_round: tournament.current_round,
-        total_rounds: calculatedTotalRounds,
         is_active: tournament.is_active,
         swiss_rounds: tournament.swiss_rounds,
         enable_top_cut: tournament.enable_top_cut,

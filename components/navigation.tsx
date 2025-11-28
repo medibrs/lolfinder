@@ -361,13 +361,89 @@ export default function Navigation() {
                         </Link>
                       )}
                       {isAdmin && (
-                        <Link 
-                          href="/admin" 
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition text-yellow-600"
-                        >
-                          Admin Dashboard
-                        </Link>
+                        <>
+                          <Link 
+                            href="/admin" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition text-yellow-600"
+                          >
+                            Admin Dashboard
+                          </Link>
+                          {pathname?.startsWith('/admin') && (
+                            <div className="pl-4 space-y-1 border-l-2 border-yellow-600/30 ml-3">
+                              <Link 
+                                href="/admin?tab=overview" 
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={cn(
+                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                  activeAdminTab === 'overview' && "text-primary font-medium bg-accent"
+                                )}
+                              >
+                                Overview
+                              </Link>
+                              <Link 
+                                href="/admin?tab=players" 
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={cn(
+                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                  activeAdminTab === 'players' && "text-primary font-medium bg-accent"
+                                )}
+                              >
+                                Players
+                              </Link>
+                              <Link 
+                                href="/admin?tab=teams" 
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={cn(
+                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                  activeAdminTab === 'teams' && "text-primary font-medium bg-accent"
+                                )}
+                              >
+                                Teams
+                              </Link>
+                              <Link 
+                                href="/admin?tab=tournaments" 
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={cn(
+                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                  activeAdminTab === 'tournaments' && "text-primary font-medium bg-accent"
+                                )}
+                              >
+                                Tournaments
+                              </Link>
+                              <Link 
+                                href="/admin?tab=registrations" 
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={cn(
+                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                  activeAdminTab === 'registrations' && "text-primary font-medium bg-accent"
+                                )}
+                              >
+                                Registrations
+                              </Link>
+                              <Link 
+                                href="/admin?tab=users" 
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={cn(
+                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                  activeAdminTab === 'users' && "text-primary font-medium bg-accent"
+                                )}
+                              >
+                                Users
+                              </Link>
+                              <Link 
+                                href="/admin?tab=feature-requests" 
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={cn(
+                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                  activeAdminTab === 'feature-requests' && "text-primary font-medium bg-accent"
+                                )}
+                              >
+                                Feature Requests
+                              </Link>
+                            </div>
+                          )}
+                        </>
                       )}
                       <Link 
                         href="/notifications" 
