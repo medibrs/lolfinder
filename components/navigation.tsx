@@ -218,13 +218,6 @@ export default function Navigation() {
           
           {/* Mobile Menu */}
           <div className="flex md:hidden items-center gap-2">
-            {user && (
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full" asChild>
-                <Link href="/notifications">
-                  <CurrentUserAvatar unreadCount={unreadCount} />
-                </Link>
-              </Button>
-            )}
             {userTeam && (
               <Button 
                 variant="ghost" 
@@ -241,6 +234,13 @@ export default function Navigation() {
                       {unreadTeamMessages > 9 ? '9+' : unreadTeamMessages}
                     </span>
                   )}
+                </Link>
+              </Button>
+            )}
+            {user && (
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full" asChild>
+                <Link href="/notifications">
+                  <CurrentUserAvatar unreadCount={unreadCount} />
                 </Link>
               </Button>
             )}

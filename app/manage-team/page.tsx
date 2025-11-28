@@ -504,19 +504,19 @@ export default function ManageTeamPage() {
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <h1 className="text-4xl font-bold flex items-center gap-3">
               <Crown className="w-8 h-8 text-yellow-500" />
               Manage Team
             </h1>
-            <div className="flex items-center gap-2">
-              <Button asChild variant="default">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Button asChild variant="default" className="w-full sm:w-auto">
                 <Link href="/team-chat">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Team Chat
                 </Link>
               </Button>
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className="w-full sm:w-auto">
                 <Link href="/teams">Back to Teams</Link>
               </Button>
             </div>
