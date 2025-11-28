@@ -151,12 +151,6 @@ export class BrowserNotificationManager {
     // Also check if the user was recently active (within last 30 seconds)
     const isRecentlyActive = Date.now() - this.lastActivityTime < 30000
     
-      isPageVisible,
-      isWindowFocused,
-      isRecentlyActive,
-      lastActivityTime: new Date(this.lastActivityTime).toLocaleTimeString()
-    })
-    
     return isPageVisible && isWindowFocused && isRecentlyActive
   }
 
@@ -264,6 +258,7 @@ export class BrowserNotificationManager {
   }
 
   getNotificationContent(notification: any): NotificationData {
+    const extractedData = {
       id: notification.id,
       type: notification.type,
       message: notification.message,
@@ -271,7 +266,7 @@ export class BrowserNotificationManager {
       created_at: notification.created_at,
       read: notification.read,
       user_id: notification.user_id
-    })
+    }
     
     // Try to extract message from different possible fields
     const message = notification.message || 
@@ -280,7 +275,6 @@ export class BrowserNotificationManager {
                    notification.text ||
                    (notification.data && notification.data.message) ||
                    'You have a new notification'
-    
     
     const baseContent: NotificationData = {
       title: 'New Notification',
