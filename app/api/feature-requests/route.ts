@@ -60,6 +60,12 @@ export async function POST(request: NextRequest) {
       .eq('title', title)
       .single()
 
+    if (duplicateError && duplicateError.code !== 'PGRST116') {
+      // Error other than "not found"
+      console.error('Error checking duplicate feature request:', duplicateError)
+      return NextResponse.json({ error: 'Failed to check for duplicates' }, { status: 500 })
+    }
+
     if (existingRequest) {
       return NextResponse.json({ error: 'You have already submitted a feature request with this title' }, { status: 409 })
     }
@@ -81,6 +87,12 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Error creating feature request:', insertError)
+      
+      // If table doesn't exist
+      if (insertError.code === 'PGRST116' || insertError.message.includes('does not exist')) {
+        return NextResponse.json({ error: 'Feature requests are not available at this time' }, { status: 503 })
+      }
+      
       return NextResponse.json({ error: 'Failed to create feature request' }, { status: 500 })
     }
 
@@ -108,18 +120,13 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sort_by') || 'created_at'
     const sortOrder = searchParams.get('sort_order') || 'desc'
 
-    // Build query
+    // Build query - try with joins first, fallback to simple query if tables don't exist
     let query = supabase
       .from('feature_requests')
       .select(`
         *,
         players!feature_requests_user_id_fkey (
           summoner_name
-        ),
-        feature_categories (
-          name,
-          color,
-          icon
         )
       `, { count: 'exact' })
 
@@ -153,11 +160,25 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching feature requests:', error)
+      
+      // If table doesn't exist, return empty result
+      if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+        return NextResponse.json({
+          feature_requests: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            pages: 0
+          }
+        })
+      }
+      
       return NextResponse.json({ error: 'Failed to fetch feature requests' }, { status: 500 })
     }
 
     return NextResponse.json({
-      feature_requests: featureRequests,
+      feature_requests: featureRequests || [],
       pagination: {
         page,
         limit,
