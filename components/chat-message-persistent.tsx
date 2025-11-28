@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils'
 import type { ChatMessage } from '@/hooks/use-realtime-chat-persistent'
 import { Button } from '@/components/ui/button'
-import { Trash2, MoreHorizontal } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Trash2 } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { getProfileIconUrl } from '@/lib/ddragon'
 import Image from 'next/image'
 
@@ -21,7 +21,10 @@ export const ChatMessageItem = ({
   canDelete = false,
   onDelete 
 }: ChatMessageItemProps) => {
-  const [avatarUrl, setAvatarUrl] = useState<string>('/default-avatar.svg') // Fallback avatar
+  const [avatarUrl, setAvatarUrl] = useState<string>('/default-avatar.svg')
+  const [showDeleteButton, setShowDeleteButton] = useState(false)
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  const isLongPress = useRef(false)
 
   useEffect(() => {
     const loadAvatar = async () => {
@@ -31,7 +34,6 @@ export const ChatMessageItem = ({
           setAvatarUrl(url)
         } catch (error) {
           console.error('Error loading profile icon:', error)
-          // Keep fallback avatar
         }
       }
     }
@@ -40,12 +42,57 @@ export const ChatMessageItem = ({
 
   const handleDelete = () => {
     onDelete?.()
+    setShowDeleteButton(false)
   }
 
   const isDeleted = message.content === 'Message deleted'
 
+  // Long press handlers for mobile
+  const handleTouchStart = useCallback(() => {
+    if (!canDelete || !isOwn || isDeleted) return
+    isLongPress.current = false
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true
+      setShowDeleteButton(true)
+    }, 500) // 500ms long press
+  }, [canDelete, isOwn, isDeleted])
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
+
+  const handleTouchMove = useCallback(() => {
+    // Cancel long press if user moves finger
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
+
+  // Hide delete button when clicking outside
+  const handleClickOutside = useCallback(() => {
+    if (showDeleteButton) {
+      setShowDeleteButton(false)
+    }
+  }, [showDeleteButton])
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current)
+      }
+    }
+  }, [])
+
   return (
-    <div className={`flex mt-2 gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+    <div 
+      className={`flex mt-2 gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}
+      onClick={handleClickOutside}
+    >
       {!isOwn && (
         <div className="flex-shrink-0 flex items-end">
           <Image
@@ -55,7 +102,6 @@ export const ChatMessageItem = ({
             height={40}
             className="rounded-full"
             onError={(e) => {
-              // Fallback to default avatar on error
               const target = e.target as HTMLImageElement
               target.src = '/default-avatar.svg'
             }}
@@ -78,27 +124,44 @@ export const ChatMessageItem = ({
                 hour12: true,
               })}
             </span>
-            {/* Delete button inline with header for own messages */}
-            {canDelete && isOwn && !isDeleted && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                onClick={handleDelete}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            )}
           </div>
         )}
         <div
           className={cn(
-            'py-2 px-3 rounded-xl text-sm',
+            'py-2 px-3 rounded-xl text-sm relative group',
             isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
             isDeleted && 'italic opacity-60'
           )}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchMove={handleTouchMove}
         >
           {message.content}
+          
+          {/* Delete button - shows on hover (desktop) or long press (mobile) */}
+          {canDelete && isOwn && !isDeleted && (
+            <div 
+              className={cn(
+                'absolute -top-2 -right-2 transition-opacity',
+                // Desktop: show on hover
+                'md:opacity-0 md:group-hover:opacity-100',
+                // Mobile: show on long press
+                showDeleteButton ? 'opacity-100' : 'opacity-0 md:opacity-0'
+              )}
+            >
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-6 w-6 rounded-full shadow-lg"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDelete()
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -111,7 +174,6 @@ export const ChatMessageItem = ({
             height={40}
             className="rounded-full"
             onError={(e) => {
-              // Fallback to default avatar on error
               const target = e.target as HTMLImageElement
               target.src = '/default-avatar.svg'
             }}

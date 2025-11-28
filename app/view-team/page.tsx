@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Users, Crown, ArrowLeft, Trophy, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
+import { getProfileIconUrl } from '@/lib/ddragon'
 
 export default function ViewTeamPage() {
   const router = useRouter()
@@ -19,10 +20,28 @@ export default function ViewTeamPage() {
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [tournaments, setTournaments] = useState<any[]>([])
   const [leaving, setLeaving] = useState(false)
+  const [profileIconUrls, setProfileIconUrls] = useState<Record<string, string>>({})
 
   useEffect(() => {
     loadTeamData()
   }, [])
+
+  const fetchProfileIconUrls = async (members: any[]) => {
+    const urls: Record<string, string> = {}
+    
+    for (const member of members) {
+      if (member.profile_icon_id) {
+        try {
+          const url = await getProfileIconUrl(member.profile_icon_id)
+          urls[member.id] = url
+        } catch (error) {
+          console.error(`Failed to fetch profile icon for ${member.summoner_name}:`, error)
+        }
+      }
+    }
+    
+    setProfileIconUrls(urls)
+  }
 
   const loadTeamData = async () => {
     try {
@@ -63,17 +82,17 @@ export default function ViewTeamPage() {
 
       setTeam(teamData)
 
-      // Get team members from the view's players array or query directly
-      if (teamData.players && Array.isArray(teamData.players)) {
-        setTeamMembers(teamData.players)
-      } else {
-        // Fallback: query players directly
-        const { data: membersData } = await supabase
-          .from('players')
-          .select('*')
-          .eq('team_id', playerData.team_id)
-
-        setTeamMembers(membersData || [])
+      // Get team members from the players table directly to include profile_icon_id
+      const { data: membersData } = await supabase
+        .from('players')
+        .select('*')
+        .eq('team_id', playerData.team_id)
+      
+      setTeamMembers(membersData || [])
+      
+      // Fetch profile icon URLs for team members
+      if (membersData && membersData.length > 0) {
+        await fetchProfileIconUrls(membersData)
       }
 
       // Fetch tournament registrations (only approved - check both 'approved' and legacy 'Confirmed')
@@ -249,13 +268,49 @@ export default function ViewTeamPage() {
                   {teamMembers.map((member: any) => (
                     <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3 min-w-0">
-                        <Image 
-                          src={getRankImage(member.tier)} 
-                          alt={member.tier}
-                          width={40}
-                          height={40}
-                          className="object-contain shrink-0"
-                        />
+                        {/* Profile Icon with Rank Badge */}
+                        <div className="relative">
+                          {member.profile_icon_id ? (
+                            <Image 
+                              src={profileIconUrls[member.id] || ''}
+                              alt="Profile Icon"
+                              width={48}
+                              height={48}
+                              className="rounded-full border-2 border-border"
+                              onError={(e) => {
+                                // Fallback to question mark if image fails to load
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const fallback = parent.querySelector('.fallback-icon');
+                                  if (fallback) {
+                                    (fallback as HTMLElement).style.display = 'flex';
+                                  }
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                              <span className="text-xl">?</span>
+                            </div>
+                          )}
+                          {/* Fallback icon */}
+                          <div className="fallback-icon w-12 h-12 bg-muted rounded-full flex items-center justify-center" style={{ display: 'none' }}>
+                            <span className="text-xl">?</span>
+                          </div>
+                          {/* Rank Badge */}
+                          <div className="absolute -bottom-1 -right-1">
+                            <Image 
+                              src={getRankImage(member.tier)} 
+                              alt={member.tier}
+                              width={20}
+                              height={20}
+                              className="object-contain"
+                            />
+                          </div>
+                        </div>
+                        
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className="font-medium truncate" title={member.summoner_name}>
@@ -309,6 +364,43 @@ export default function ViewTeamPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Created</span>
                   <span className="font-bold">{new Date(team.created_at).toLocaleDateString()}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Chat Guidelines */}
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  Chat Guidelines
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-green-600 mb-2">Do's ✅</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• Be respectful and supportive</li>
+                      <li>• Share game strategies and tips</li>
+                      <li>• Schedule practice times</li>
+                      <li>• Coordinate for tournaments</li>
+                      <li>• Celebrate wins together</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-red-600 mb-2">Don'ts ❌</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• No sharing personal information</li>
+                      <li>• No spam or excessive caps</li>
+                      <li>• No inappropriate content</li>
+                    </ul>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      Remember: Team chat is for team coordination and building a positive team culture. Violations may result in team removal.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
