@@ -23,6 +23,7 @@ export interface ChatMessage {
 }
 
 const EVENT_MESSAGE_TYPE = 'message'
+const EVENT_DELETE_TYPE = 'message_deleted'
 
 export function useRealtimeChat({ 
   roomName, 
@@ -126,6 +127,17 @@ export function useRealtimeChat({
         const newMessage = payload.payload as ChatMessage
         setMessages((current) => [...current, newMessage])
       })
+      .on('broadcast', { event: EVENT_DELETE_TYPE }, (payload) => {
+        const { messageId } = payload.payload as { messageId: string }
+        // Update the message content to "Message deleted" for all users
+        setMessages((current) => 
+          current.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, content: 'Message deleted' }
+              : msg
+          )
+        )
+      })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true)
@@ -205,23 +217,27 @@ export function useRealtimeChat({
 
   const deleteMessage = useCallback(
     async (messageId: string) => {
-      if (!enablePersistence) return
+      if (!channel || !isConnected) return
 
       try {
-        // Update message content to "Message deleted" instead of removing
-        const { error } = await supabase
-          .from('chat_messages')
-          .update({ content: 'Message deleted' })
-          .eq('id', messageId)
+        // Update message content to "Message deleted" in database
+        if (enablePersistence) {
+          const { error } = await supabase
+            .from('chat_messages')
+            .update({ content: 'Message deleted' })
+            .eq('id', messageId)
 
-        if (error) {
-          // If table doesn't exist, just update local state
-          if (error.code === 'PGRST116') {
-            console.log('Chat messages table not available - updating local view only')
-          } else {
+          if (error && error.code !== 'PGRST116') {
             console.error('Error deleting message:', error)
           }
         }
+
+        // Broadcast delete event to all users in the room
+        await channel.send({
+          type: 'broadcast',
+          event: EVENT_DELETE_TYPE,
+          payload: { messageId }
+        })
 
         // Update local state to show "Message deleted"
         setMessages((current) => 
@@ -243,7 +259,7 @@ export function useRealtimeChat({
         )
       }
     },
-    [enablePersistence]
+    [channel, isConnected, enablePersistence]
   )
 
   return { 

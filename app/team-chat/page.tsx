@@ -131,7 +131,7 @@ export default function TeamChatPage() {
   }
 
   return (
-    <div className="container mx-auto pt-24 pb-4">
+    <div className="container mx-auto pt-24 pb-4 h-[calc(100vh-2rem)] overflow-hidden">
       {/* Full Width Chat */}
       <TeamChat
         teamId={team.id}

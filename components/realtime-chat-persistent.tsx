@@ -19,7 +19,6 @@ interface RealtimeChatPersistentProps {
   onMessage?: (messages: ChatMessage[]) => void
   messages?: ChatMessage[]
   enablePersistence?: boolean
-  maxHeight?: string
 }
 
 /**
@@ -29,8 +28,6 @@ interface RealtimeChatPersistentProps {
  * @param onMessage - The callback function to handle the messages
  * @param messages - The messages to display in the chat (optional, will use database if not provided)
  * @param enablePersistence - Whether to save messages to database (default: true)
- * @param showClearHistory - Whether to show clear history button (default: false)
- * @param maxHeight - Maximum height of chat messages container (default: "400px")
  * @returns The chat component
  */
 export const RealtimeChatPersistent = ({
@@ -38,8 +35,7 @@ export const RealtimeChatPersistent = ({
   username,
   onMessage,
   messages: propMessages,
-  enablePersistence = true,
-  maxHeight = "400px"
+  enablePersistence = true
 }: RealtimeChatPersistentProps) => {
   const [newMessage, setNewMessage] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -146,8 +142,7 @@ export const RealtimeChatPersistent = ({
 
       {/* Messages */}
       <div 
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-        style={{ maxHeight }}
+        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
         ref={messagesEndRef}
       >
         {isLoading ? (

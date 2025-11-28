@@ -74,7 +74,7 @@ export function TeamChat({
   const chatTitle = compact ? "Team Chat" : `${teamName} Chat`
 
   return (
-    <Card className={`mt-4 p-0 flex flex-col ${compact ? "h-[500px]" : "h-[600px]"}`}>
+    <Card className="p-0 flex flex-col h-full">
       {isCaptain && (
         <div className="px-4 pt-2 pb-2">
           <div className="flex items-center gap-2 text-xs text-blue-500">
@@ -88,7 +88,6 @@ export function TeamChat({
           roomName={roomName}
           username={summonerName} // Use summoner name from player profile
           enablePersistence={true}
-          maxHeight={compact ? "350px" : "480px"}
         />
       </CardContent>
     </Card>
