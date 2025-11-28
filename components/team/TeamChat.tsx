@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { RealtimeChatPersistent } from '@/components/realtime-chat-persistent'
-import { Users, MessageSquare, Shield } from 'lucide-react'
+import { Users, MessageSquare } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -75,14 +75,6 @@ export function TeamChat({
 
   return (
     <Card className="p-0 flex flex-col h-full">
-      {isCaptain && (
-        <div className="px-4 pt-2 pb-2">
-          <div className="flex items-center gap-2 text-xs text-blue-500">
-            <Shield className="h-3 w-3" />
-            Team Captain
-          </div>
-        </div>
-      )}
       <CardContent className="flex-1 p-0 overflow-hidden">
         <RealtimeChatPersistent
           roomName={roomName}
