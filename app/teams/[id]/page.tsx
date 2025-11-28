@@ -818,17 +818,25 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center gap-1">
-                          <span className="text-sm text-muted-foreground">Average Rank</span>
-                          <span className="text-xs text-muted-foreground cursor-help">ⓘ</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs max-w-xs">Based on ranked players only. Unranked players are excluded from this calculation.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <div className="group relative">
+                      <div className="flex items-center gap-1 cursor-help">
+                        <span className="text-sm text-muted-foreground">Average Rank</span>
+                        <span className="text-xs text-muted-foreground">ⓘ</span>
+                      </div>
+                      {/* Desktop tooltip */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="absolute inset-0 cursor-pointer" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-xs">Based on ranked players only. Unranked players are excluded from this calculation.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      {/* Mobile text display */}
+                      <div className="absolute bottom-full left-0 mb-2 hidden group-active:block bg-popover text-popover-foreground text-xs rounded-md px-3 py-1.5 shadow-md border z-50 w-48">
+                        Based on ranked players only. Unranked players are excluded from this calculation.
+                      </div>
+                    </div>
                     <Badge className={`${getTierColor(TIERS[Math.round(averageTier)] || 'Unranked')} text-white text-xs`}>
                       {TIERS[Math.round(averageTier)] || 'Unranked'}
                     </Badge>

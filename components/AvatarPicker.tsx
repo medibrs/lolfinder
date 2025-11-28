@@ -44,6 +44,7 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
   const handleAvatarSelect = async (avatarId: number) => {
     if (disabled) return
     onAvatarSelect(avatarId)
+    onOpenChange(false) // Close dialog after selection
   }
 
   return (

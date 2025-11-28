@@ -134,7 +134,12 @@ export default function CreateTeamPage() {
       })
 
       if (response.ok) {
+        const teamData = await response.json()
         setSubmitted(true)
+        // Navigate to manage team page after a short delay
+        setTimeout(() => {
+          router.push(`/manage-team`)
+        }, 2000)
       } else {
         const errorData = await response.json()
         console.error('Error creating team:', errorData)
@@ -275,14 +280,14 @@ export default function CreateTeamPage() {
               <div className="text-6xl mb-4">🏆</div>
               <h2 className="text-3xl font-bold mb-4">Team Created!</h2>
               <p className="text-muted-foreground mb-8">
-                Your team has been successfully created. You can now invite players and manage your roster.
+                Your team has been successfully created. You will be redirected to the manage team page in a moment...
               </p>
               <div className="flex gap-4 justify-center flex-wrap">
                 <Button asChild className="bg-primary hover:bg-primary/90">
-                  <Link href="/teams">View All Teams</Link>
+                  <Link href="/manage-team">Manage Team Now</Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link href="/search">Search for Players</Link>
+                  <Link href="/teams">View All Teams</Link>
                 </Button>
               </div>
             </div>

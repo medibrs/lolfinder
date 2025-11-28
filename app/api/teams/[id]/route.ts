@@ -10,6 +10,7 @@ const updateTeamSchema = z.object({
   open_positions: z.array(z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support'])).optional(),
   team_size: z.enum(['5', '6']).optional(),
   recruiting_status: z.enum(['Open', 'Closed', 'Full']).optional(),
+  captain_id: z.string().uuid().optional(),
 });
 
 // GET /api/teams/[id] - Get a single team with members
@@ -65,6 +66,52 @@ export async function PUT(
     // Validate input
     const validatedData = updateTeamSchema.parse(body);
 
+    // If captain_id is being updated, validate the transfer
+    if (validatedData.captain_id) {
+      // Get current team to verify current captain and get team name
+      const { data: currentTeam, error: teamError } = await supabase
+        .from('teams')
+        .select('captain_id, name')
+        .eq('id', id)
+        .single();
+
+      if (teamError) {
+        return NextResponse.json({ error: 'Team not found' }, { status: 404 });
+      }
+
+      // Verify the new captain is a member of the team
+      const { data: newCaptain, error: memberError } = await supabase
+        .from('players')
+        .select('*')
+        .eq('id', validatedData.captain_id)
+        .eq('team_id', id)
+        .single();
+
+      if (memberError) {
+        return NextResponse.json({ error: 'New captain must be a team member' }, { status: 400 });
+      }
+
+      // Create notification for captain transfer
+      await supabase
+        .from('notifications')
+        .insert({
+          player_id: validatedData.captain_id,
+          type: 'team_update',
+          message: `You have been promoted to captain of ${currentTeam.name || 'the team'}!`,
+          metadata: { team_id: id, action: 'captain_promotion' }
+        });
+
+      // Create notification for old captain
+      await supabase
+        .from('notifications')
+        .insert({
+          player_id: currentTeam.captain_id,
+          type: 'team_update',
+          message: `You have transferred captaincy of ${currentTeam.name || 'the team'}.`,
+          metadata: { team_id: id, action: 'captain_transfer' }
+        });
+    }
+
     const { data, error } = await supabase
       .from('teams')
       .update(validatedData)
@@ -78,6 +125,10 @@ export async function PUT(
       }
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // Invalidate teams cache to trigger recalculation of average rank
+    await cache.invalidate('all_teams', 'teams');
+    await cache.invalidate('search_teams', 'search');
 
     return NextResponse.json(data);
   } catch (error) {

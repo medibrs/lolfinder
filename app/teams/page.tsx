@@ -452,17 +452,25 @@ export default function TeamsPage() {
                       {/* Average Rank */}
                       {team.average_rank && (
                         <div className="flex items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-1">
-                                <span className="text-sm font-medium text-muted-foreground">Avg Rank:</span>
-                                <span className="text-xs text-muted-foreground cursor-help">ⓘ</span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs max-w-xs">Based on ranked players only. Unranked players are excluded from this calculation.</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <div className="group relative">
+                            <div className="flex items-center gap-1 cursor-help">
+                              <span className="text-sm font-medium text-muted-foreground">Avg Rank:</span>
+                              <span className="text-xs text-muted-foreground">ⓘ</span>
+                            </div>
+                            {/* Desktop tooltip */}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="absolute inset-0 cursor-pointer" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs max-w-xs">Based on ranked players only. Unranked players are excluded from this calculation.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {/* Mobile text display */}
+                            <div className="absolute bottom-full left-0 mb-2 hidden group-active:block bg-popover text-popover-foreground text-xs rounded-md px-3 py-1.5 shadow-md border z-50 w-48">
+                              Based on ranked players only. Unranked players are excluded from this calculation.
+                            </div>
+                          </div>
                           <span className="text-sm font-semibold">{team.average_rank}</span>
                         </div>
                       )}

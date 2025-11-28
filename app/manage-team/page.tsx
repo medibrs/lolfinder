@@ -55,6 +55,9 @@ export default function ManageTeamPage() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [updatingAvatar, setUpdatingAvatar] = useState(false)
   const [takenAvatars, setTakenAvatars] = useState<{id: number; teamName: string; teamId: string}[]>([])
+  const [showCaptainTransfer, setShowCaptainTransfer] = useState(false)
+  const [selectedNewCaptain, setSelectedNewCaptain] = useState<string | null>(null)
+  const [transferringCaptain, setTransferringCaptain] = useState(false)
 
   useEffect(() => {
     loadTeamData()
@@ -431,6 +434,36 @@ export default function ManageTeamPage() {
     }
   }
 
+  const handleTransferCaptain = async () => {
+    if (!selectedNewCaptain || !team) return
+
+    try {
+      setTransferringCaptain(true)
+      const supabase = createClient()
+
+      const response = await fetch(`/api/teams/${team.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ captain_id: selectedNewCaptain }),
+      })
+
+      if (response.ok) {
+        setShowCaptainTransfer(false)
+        setSelectedNewCaptain(null)
+        loadTeamData() // Refresh data
+      } else {
+        const errorData = await response.json()
+        console.error('Error transferring captain:', errorData)
+      }
+    } catch (error) {
+      console.error('Error transferring captain:', error)
+    } finally {
+      setTransferringCaptain(false)
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen pt-24 pb-12">
@@ -800,6 +833,15 @@ export default function ManageTeamPage() {
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Team
                 </Button>
+
+                <Button
+                  onClick={() => setShowCaptainTransfer(true)}
+                  variant="outline" 
+                  className="w-full"
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Transfer Captain
+                </Button>
               </CardContent>
             </Card>
 
@@ -891,6 +933,66 @@ export default function ManageTeamPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Captain Transfer Dialog */}
+      <Dialog open={showCaptainTransfer} onOpenChange={setShowCaptainTransfer}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Transfer Team Captain</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select a team member to transfer captaincy to. Once transferred, you will no longer be the team captain.
+            </p>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {teamMembers
+                .filter(member => member.id !== team?.captain_id)
+                .map(member => (
+                  <button
+                    key={member.id}
+                    onClick={() => setSelectedNewCaptain(member.id)}
+                    className={`w-full p-3 text-left rounded-lg border transition-colors ${
+                      selectedNewCaptain === member.id
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                        <span className="text-xs font-medium">
+                          {member.summoner_name?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{member.summoner_name}</p>
+                        <p className="text-xs text-muted-foreground">{member.main_role}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+            </div>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCaptainTransfer(false)
+                setSelectedNewCaptain(null)
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleTransferCaptain}
+              disabled={!selectedNewCaptain || transferringCaptain}
+              className="flex-1"
+            >
+              {transferringCaptain ? 'Transferring...' : 'Transfer Captain'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       {/* Avatar Picker Dialog */}
       <AvatarPicker
