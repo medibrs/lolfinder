@@ -335,16 +335,72 @@ export default async function TournamentEventPage({ params }: Props) {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Registration - Empty for now */}
+            {/* Tournament Format */}
             <Card className="border-zinc-800">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Registration</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-primary" />
+                  Format
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-center py-8">
-                  <AlertCircle className="h-12 w-12 text-zinc-500 mx-auto mb-2" />
-                  <p className="text-sm text-zinc-400">Registration system moved</p>
-                  <p className="text-xs text-zinc-500 mt-1">This space reserved for future features</p>
+              <CardContent className="space-y-4">
+                {/* Format Type */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Type</span>
+                  <Badge variant="outline" className="font-medium">
+                    {tournament.format?.replace(/_/g, ' ') || 'Single Elimination'}
+                  </Badge>
+                </div>
+                
+                {/* Swiss-specific info */}
+                {tournament.format === 'Swiss' && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-zinc-400">Swiss Rounds</span>
+                      <span className="text-sm font-medium">{tournament.swiss_rounds || 5}</span>
+                    </div>
+                    {tournament.enable_top_cut && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Top Cut</span>
+                        <span className="text-sm font-medium">Top {tournament.top_cut_size || 8} → Playoffs</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                <Separator className="bg-zinc-800" />
+                
+                {/* Match Formats */}
+                <div className="space-y-2">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Match Format</p>
+                  
+                  {tournament.format === 'Swiss' ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Opening</span>
+                        <span className="text-sm font-medium">Bo{tournament.opening_best_of || 1}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Progression</span>
+                        <span className="text-sm font-medium">Bo{tournament.progression_best_of || 3}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Elimination</span>
+                        <span className="text-sm font-medium">Bo{tournament.elimination_best_of || 3}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Matches</span>
+                        <span className="text-sm font-medium">Bo{tournament.elimination_best_of || 3}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Grand Finals</span>
+                        <span className="text-sm font-medium">Bo{tournament.finals_best_of || 5}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

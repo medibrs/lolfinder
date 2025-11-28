@@ -42,6 +42,7 @@ interface Tournament {
   opening_best_of?: number
   progression_best_of?: number
   elimination_best_of?: number
+  finals_best_of?: number
 }
 
 export default function TournamentManagePage() {
@@ -134,6 +135,7 @@ export default function TournamentManagePage() {
         opening_best_of: tournament.opening_best_of,
         progression_best_of: tournament.progression_best_of,
         elimination_best_of: tournament.elimination_best_of,
+        finals_best_of: tournament.finals_best_of,
       }
       
       const response = await fetch(`/api/tournaments/${tournament.id}`, {
@@ -395,7 +397,7 @@ export default function TournamentManagePage() {
                       <CardDescription>Configure the match format based on match type.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="opening_best_of">Opening Matches</Label>
                           <Select value={String(tournament.opening_best_of || 1)} onValueChange={(value) => handleInputChange('opening_best_of', parseInt(value))}>
@@ -431,6 +433,18 @@ export default function TournamentManagePage() {
                             </SelectContent>
                           </Select>
                           <p className="text-xs text-muted-foreground">Lose to be eliminated (e.g. 0-2 → 0-3)</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="finals_best_of">Grand Finals</Label>
+                          <Select value={String(tournament.finals_best_of || 5)} onValueChange={(value) => handleInputChange('finals_best_of', parseInt(value))}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">Best of 1</SelectItem>
+                              <SelectItem value="3">Best of 3</SelectItem>
+                              <SelectItem value="5">Best of 5</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">Championship match</p>
                         </div>
                       </div>
                     </CardContent>

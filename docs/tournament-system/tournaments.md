@@ -49,6 +49,7 @@ enable_top_cut BOOLEAN DEFAULT false
 opening_best_of INTEGER DEFAULT 1      -- Standard round matches (Bo1)
 progression_best_of INTEGER DEFAULT 3  -- Win to advance matches (Bo3)
 elimination_best_of INTEGER DEFAULT 3  -- Lose to be eliminated matches (Bo3)
+finals_best_of INTEGER DEFAULT 5       -- Grand finals match (Bo5)
 ```
 
 These fields control the best-of format for different match types:
@@ -57,11 +58,12 @@ These fields control the best-of format for different match types:
 |-------|---------|-------------|---------|
 | `opening_best_of` | 1 | Standard round matches | Swiss rounds 1-2, early bracket rounds |
 | `progression_best_of` | 3 | Matches where winning advances/qualifies | Swiss 2-0 vs 2-0 (playing for 3-0) |
-| `elimination_best_of` | 3 | Matches where losing means elimination | Swiss 0-2 vs 0-2, all bracket matches |
+| `elimination_best_of` | 3 | Matches where losing means elimination | Swiss 0-2 vs 0-2, bracket matches |
+| `finals_best_of` | 5 | Grand finals / championship match | Final match of bracket tournaments |
 
 **Usage by Format:**
-- **Swiss**: Uses all three - opening for early rounds, progression for 2-0 matches, elimination for 0-2 matches
-- **Single/Double Elimination**: Primarily uses `elimination_best_of` since all matches are elimination matches
+- **Swiss**: Uses opening, progression, and elimination based on team records
+- **Single/Double Elimination**: Uses `elimination_best_of` for bracket matches, `finals_best_of` for grand finals
 - **Round Robin**: Typically uses `opening_best_of` for all matches
 
 ## 🧩 Linked Tournaments (Multi-Stage)

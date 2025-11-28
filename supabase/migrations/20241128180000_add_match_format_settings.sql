@@ -13,7 +13,12 @@ ADD COLUMN IF NOT EXISTS progression_best_of integer DEFAULT 3;
 ALTER TABLE public.tournaments 
 ADD COLUMN IF NOT EXISTS elimination_best_of integer DEFAULT 3;
 
+-- Finals match: Grand finals / championship match
+ALTER TABLE public.tournaments 
+ADD COLUMN IF NOT EXISTS finals_best_of integer DEFAULT 5;
+
 -- Add comments for documentation
 COMMENT ON COLUMN public.tournaments.opening_best_of IS 'Best-of format for standard opening round matches (default: Bo1)';
 COMMENT ON COLUMN public.tournaments.progression_best_of IS 'Best-of format for progression/qualification matches (default: Bo3)';
 COMMENT ON COLUMN public.tournaments.elimination_best_of IS 'Best-of format for elimination matches (default: Bo3)';
+COMMENT ON COLUMN public.tournaments.finals_best_of IS 'Best-of format for grand finals/championship match (default: Bo5)';

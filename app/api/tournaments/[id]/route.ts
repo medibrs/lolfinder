@@ -28,6 +28,7 @@ const updateTournamentSchema = z.object({
   opening_best_of: z.number().int().min(1).max(5).optional(),
   progression_best_of: z.number().int().min(1).max(5).optional(),
   elimination_best_of: z.number().int().min(1).max(5).optional(),
+  finals_best_of: z.number().int().min(1).max(5).optional(),
 });
 
 // GET /api/tournaments/[id] - Get a single tournament
