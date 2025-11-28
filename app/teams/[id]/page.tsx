@@ -481,7 +481,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                   <Badge variant="outline">{members.length}/{teamSize} Members</Badge>
                 </div>
                 
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   {members.map(member => (
                     <div key={member.id} className="bg-gradient-to-r from-secondary/20 to-background rounded-lg p-3 sm:p-4 border border-border hover:border-primary/50 transition-all">
                       <div className="flex items-start gap-3 sm:gap-4">
