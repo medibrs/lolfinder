@@ -336,10 +336,9 @@ export default function Navigation() {
                         <MessageSquare className="h-4 w-4" />
                         Contact Support
                       </a>
-                      <FeatureRequestDialog>
+                      <FeatureRequestDialog onClose={() => setMobileMenuOpen(false)}>
                         <Button 
                           variant="ghost" 
-                          onClick={() => setMobileMenuOpen(false)}
                           className="text-base font-medium px-3 py-2 h-auto rounded-md hover:bg-accent transition flex items-center gap-2 w-full justify-start"
                         >
                           <Lightbulb className="h-4 w-4" />

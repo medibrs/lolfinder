@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 
 interface FeatureRequestDialogProps {
   children: React.ReactNode
+  onClose?: () => void
 }
 
 const CATEGORIES = [
@@ -31,7 +32,7 @@ const PRIORITIES = [
   { value: 'High', label: 'High', color: 'bg-red-500' },
 ]
 
-export default function FeatureRequestDialog({ children }: FeatureRequestDialogProps) {
+export default function FeatureRequestDialog({ children, onClose }: FeatureRequestDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -113,7 +114,12 @@ export default function FeatureRequestDialog({ children }: FeatureRequestDialogP
   const selectedCategory = CATEGORIES.find(cat => cat.value === formData.category)
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+    setOpen(newOpen)
+    if (newOpen && onClose) {
+      onClose()
+    }
+  }}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
