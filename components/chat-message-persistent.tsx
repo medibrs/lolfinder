@@ -10,6 +10,7 @@ interface ChatMessageItemProps {
   message: ChatMessage
   isOwn?: boolean
   showHeader?: boolean
+  showAvatar?: boolean
   canDelete?: boolean
   onDelete?: () => void
 }
@@ -17,7 +18,8 @@ interface ChatMessageItemProps {
 export const ChatMessageItem = ({ 
   message, 
   isOwn = false, 
-  showHeader = true, 
+  showHeader = true,
+  showAvatar = true,
   canDelete = false,
   onDelete 
 }: ChatMessageItemProps) => {
@@ -90,22 +92,24 @@ export const ChatMessageItem = ({
 
   return (
     <div 
-      className={`flex mt-2 gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}
+      className={`flex ${showAvatar ? 'mt-4' : 'mt-1'} gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}
       onClick={handleClickOutside}
     >
       {!isOwn && (
-        <div className="flex-shrink-0 flex items-end">
-          <Image
-            src={avatarUrl}
-            alt={message.user.name}
-            width={40}
-            height={40}
-            className="rounded-full"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              target.src = '/default-avatar.svg'
-            }}
-          />
+        <div className="flex-shrink-0 flex items-end w-10">
+          {showAvatar && (
+            <Image
+              src={avatarUrl}
+              alt={message.user.name}
+              width={40}
+              height={40}
+              className="rounded-full"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.src = '/default-avatar.svg'
+              }}
+            />
+          )}
         </div>
       )}
       
@@ -166,18 +170,20 @@ export const ChatMessageItem = ({
       </div>
 
       {isOwn && (
-        <div className="flex-shrink-0 flex items-end">
-          <Image
-            src={avatarUrl}
-            alt={message.user.name}
-            width={40}
-            height={40}
-            className="rounded-full"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              target.src = '/default-avatar.svg'
-            }}
-          />
+        <div className="flex-shrink-0 flex items-end w-10">
+          {showAvatar && (
+            <Image
+              src={avatarUrl}
+              alt={message.user.name}
+              width={40}
+              height={40}
+              className="rounded-full"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.src = '/default-avatar.svg'
+              }}
+            />
+          )}
         </div>
       )}
     </div>

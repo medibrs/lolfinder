@@ -158,15 +158,23 @@ export const RealtimeChatPersistent = ({
             </div>
           </div>
         ) : (
-          messages.map((message) => (
-            <ChatMessageItem
-              key={message.id}
-              message={message}
-              isOwn={message.user.id === currentUser?.id}
-              canDelete={canDeleteMessages}
-              onDelete={() => handleDeleteMessage(message.id)}
-            />
-          ))
+          messages.map((message, index) => {
+            // Check if previous message was from the same user
+            const prevMessage = index > 0 ? messages[index - 1] : null
+            const isFirstInGroup = !prevMessage || prevMessage.user.id !== message.user.id
+            
+            return (
+              <ChatMessageItem
+                key={message.id}
+                message={message}
+                isOwn={message.user.id === currentUser?.id}
+                canDelete={canDeleteMessages}
+                onDelete={() => handleDeleteMessage(message.id)}
+                showAvatar={isFirstInGroup}
+                showHeader={isFirstInGroup}
+              />
+            )
+          })
         )}
       </div>
 
