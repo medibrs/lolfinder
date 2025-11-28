@@ -452,7 +452,8 @@ export default function ManageTeamPage() {
       if (response.ok) {
         setShowCaptainTransfer(false)
         setSelectedNewCaptain(null)
-        loadTeamData() // Refresh data
+        // Route former captain to view team page since they're no longer captain
+        router.push(`/teams/${team.id}`)
       } else {
         const errorData = await response.json()
         console.error('Error transferring captain:', errorData)
