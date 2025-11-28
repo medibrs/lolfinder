@@ -73,8 +73,7 @@ export default function PlayersTable() {
   }
 
   const filteredPlayers = players.filter(player => {
-    const matchesSearch = player.summoner_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         player.discord.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = player.summoner_name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesTier = tierFilter === 'all' || player.tier === tierFilter
     const matchesRole = roleFilter === 'all' || player.main_role === roleFilter || player.secondary_role === roleFilter
     const matchesLft = lftFilter === 'all' || 
@@ -194,7 +193,7 @@ export default function PlayersTable() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search by name or Discord..."
+              placeholder="Search by name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -264,7 +263,6 @@ export default function PlayersTable() {
                   <TableCell>
                     <div>
                       <div className="font-medium">{player.summoner_name}</div>
-                      <div className="text-sm text-muted-foreground">{player.discord}</div>
                     </div>
                   </TableCell>
                   <TableCell>

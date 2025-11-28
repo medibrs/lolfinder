@@ -622,11 +622,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                           )}
                           
                           <div className="text-xs text-muted-foreground">
-                            {member.discord && (
-                              <div className="flex items-center gap-1">
-                                <span>Discord: {member.discord}</span>
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>

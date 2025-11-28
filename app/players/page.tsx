@@ -550,10 +550,6 @@ const fetchPlayers = async () => {
                     </div>
                   )}
                   
-                  {player.discord && (
-                    <p className="text-muted-foreground mb-4 text-sm">Discord: {player.discord}</p>
-                  )}
-                  
                   {user && userTeam && player.id !== user.id ? (
                     <div className="space-y-2">
                       {player.team_id ? (

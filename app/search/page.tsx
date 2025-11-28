@@ -777,9 +777,6 @@ export default function SearchPage() {
                         </div>
                       </div>
                     </div>
-                    {player.discord && (
-                      <p className="text-muted-foreground mb-4">Discord: {player.discord}</p>
-                    )}
                     
                     {user && userTeam && player.id !== user.id ? (
                       sentInvites[player.id] ? (

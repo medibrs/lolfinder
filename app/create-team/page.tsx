@@ -64,7 +64,7 @@ export default function CreateTeamPage() {
       // Check if user has a complete profile
       const { data: playerData, error: playerError } = await supabase
         .from('players')
-        .select('team_id, summoner_name, discord, main_role, tier')
+        .select('team_id, summoner_name, main_role, tier')
         .eq('id', userId)
         .single()
       
@@ -75,7 +75,7 @@ export default function CreateTeamPage() {
       }
       
       // Check if profile is complete
-      if (!playerData.summoner_name || !playerData.discord || !playerData.main_role || !playerData.tier) {
+      if (!playerData.summoner_name || !playerData.main_role || !playerData.tier) {
         setCanCreateTeam(false)
         setBlockReason('incomplete_profile')
         return

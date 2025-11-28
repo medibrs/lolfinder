@@ -6,7 +6,7 @@ import { validateAndFetchRiotData } from '@/lib/riot';
 // Validation schema - tier and opgg_url are now auto-fetched from Riot API
 const createPlayerSchema = z.object({
   summoner_name: z.string().min(1).max(255),
-  discord: z.string().min(1).max(255),
+  discord: z.string().max(255).optional(),
   main_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']),
   secondary_role: z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support']).optional(),
   looking_for_team: z.boolean().default(false),

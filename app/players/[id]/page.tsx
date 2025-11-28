@@ -66,10 +66,6 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
 
             <div className="space-y-4">
               <div>
-                <p className="text-muted-foreground text-sm mb-2">Discord</p>
-                <p className="font-mono font-semibold">{player.discord}</p>
-              </div>
-              <div>
                 <p className="text-muted-foreground text-sm mb-2">Member Since</p>
                 <p>{player.joinedDate}</p>
               </div>
@@ -85,9 +81,6 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
                   <a href={player.opggUrl} target="_blank" rel="noopener noreferrer">
                     View OP.GG
                   </a>
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Contact via Discord
                 </Button>
                 <Button variant="outline" className="w-full">
                   Invite to Team

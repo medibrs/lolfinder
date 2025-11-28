@@ -41,7 +41,6 @@ export default function SetupProfilePage() {
   const [userTeam, setUserTeam] = useState<any>(null)
   const [formData, setFormData] = useState({
     summoner_name: '',
-    discord: '',
     main_role: '',
     secondary_role: '',
     looking_for_team: true
@@ -82,7 +81,6 @@ export default function SetupProfilePage() {
           // Profile exists, load for editing
           setFormData({
             summoner_name: existingProfile.summoner_name || '',
-            discord: existingProfile.discord || '',
             main_role: existingProfile.main_role || '',
             secondary_role: existingProfile.secondary_role || '',
             looking_for_team: existingProfile.looking_for_team || false
@@ -276,21 +274,6 @@ export default function SetupProfilePage() {
                       <p className="text-xs text-red-400 mt-1">{riotError}</p>
                     )}
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
-                      Discord Username *
-                    </label>
-                    <Input
-                      type="text"
-                      name="discord"
-                      value={formData.discord}
-                      onChange={handleChange}
-                      placeholder="Username#1234"
-                      required
-                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
-                    />
-                  </div>
                 </div>
 
                 {/* Roles */}
@@ -358,7 +341,6 @@ export default function SetupProfilePage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="font-medium text-white truncate">{formData.summoner_name}</div>
-                          <div className="text-sm text-gray-400 truncate">{formData.discord}</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 flex-shrink-0">

@@ -12,7 +12,7 @@ CREATE TYPE registration_status_type AS ENUM ('Pending', 'Confirmed', 'Rejected'
 CREATE TABLE players (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     summoner_name VARCHAR(255) NOT NULL UNIQUE,
-    discord VARCHAR(255) NOT NULL UNIQUE,
+    discord VARCHAR(255),
     main_role role_type NOT NULL,
     secondary_role role_type,
     opgg_link VARCHAR(500),
