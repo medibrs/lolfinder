@@ -21,7 +21,6 @@ export const ChatMessageItem = ({
   canDelete = false,
   onDelete 
 }: ChatMessageItemProps) => {
-  const [showActions, setShowActions] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string>('/default-avatar.svg') // Fallback avatar
 
   useEffect(() => {
@@ -41,7 +40,6 @@ export const ChatMessageItem = ({
 
   const handleDelete = () => {
     onDelete?.()
-    setShowActions(false)
   }
 
   const isDeleted = message.content === 'Message deleted'
