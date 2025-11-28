@@ -74,27 +74,22 @@ export function TeamChat({
   const chatTitle = compact ? "Team Chat" : `${teamName} Chat`
 
   return (
-    <Card className={compact ? "h-[500px]" : "h-[600px]"}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          {chatTitle}
-          {isCaptain && (
-            <Shield className="h-4 w-4 text-blue-500" />
-          )}
-        </CardTitle>
-        <CardDescription>
-          Private communication channel for {teamName} team members.
-          Messages are saved permanently and visible to all team members.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className={`h-[${compact ? '400px' : '500px'}] p-0`}>
+    <Card className={`mt-4 p-0 flex flex-col ${compact ? "h-[500px]" : "h-[600px]"}`}>
+      {isCaptain && (
+        <div className="px-4 pt-2 pb-2">
+          <div className="flex items-center gap-2 text-xs text-blue-500">
+            <Shield className="h-3 w-3" />
+            Team Captain
+          </div>
+        </div>
+      )}
+      <CardContent className="flex-1 p-0 overflow-hidden">
         <RealtimeChatPersistent
           roomName={roomName}
           username={summonerName} // Use summoner name from player profile
           enablePersistence={true}
           showClearHistory={isCaptain} // Only captains can clear team chat history
-          maxHeight={compact ? "350px" : "450px"}
+          maxHeight={compact ? "350px" : "480px"}
         />
       </CardContent>
     </Card>

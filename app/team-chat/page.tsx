@@ -132,76 +132,18 @@ export default function TeamChatPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Link href="/view-team">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Team
-              </Button>
-            </Link>
-          </div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <MessageSquare className="h-8 w-8" />
-            {team.name} Team Chat
-          </h1>
-          <p className="text-muted-foreground">
-            Private communication channel for team members
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Badge variant={team.recruiting_status === 'Open' ? 'default' : 'secondary'}>
-            {team.recruiting_status}
-          </Badge>
-          {isCaptain && (
-            <Badge variant="outline" className="text-blue-500">
-              Captain
-            </Badge>
-          )}
-        </div>
+    <div className="container mx-auto pt-24 pb-4">
+      {/* Simple Back Button */}
+      <div className="mb-4">
+        <Link href="/view-team">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Team
+          </Button>
+        </Link>
       </div>
 
-      {/* Team Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Team Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Team Name</p>
-              <p className="font-semibold">{team.name}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Team Size</p>
-              <p className="font-semibold">{team.team_size} players</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Members</p>
-              <p className="font-semibold">{team.members?.length || 0} / {team.team_size}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Your Role</p>
-              <p className="font-semibold">{isCaptain ? 'Team Captain' : 'Team Member'}</p>
-            </div>
-          </div>
-          {team.description && (
-            <div className="mt-4">
-              <p className="text-sm font-medium text-muted-foreground">Description</p>
-              <p className="text-sm">{team.description}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Team Chat */}
+      {/* Full Width Chat */}
       <TeamChat
         teamId={team.id}
         teamName={team.name}
@@ -209,47 +151,6 @@ export default function TeamChatPage() {
         isMember={isMember}
         compact={false}
       />
-
-      {/* Chat Guidelines */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Chat Guidelines
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-6 text-sm">
-            <div>
-              <h4 className="font-semibold mb-2">✅ Do's</h4>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Coordinate practice times and strategies</li>
-                <li>• Discuss team composition and roles</li>
-                <li>• Share tournament information</li>
-                <li>• Support and encourage teammates</li>
-                <li>• Plan scrims and matches</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">❌ Don'ts</h4>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Share personal information</li>
-                <li>• Use inappropriate language</li>
-                <li>• Spam or flood the chat</li>
-                <li>• Discuss other teams negatively</li>
-                <li>• Share account credentials</li>
-              </ul>
-            </div>
-          </div>
-          {isCaptain && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <strong>Captain Note:</strong> You can clear the chat history if needed using the Clear button in the chat interface.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
 }

@@ -41,7 +41,25 @@ export default function AuthPage() {
           
           // Redirect based on profile existence
           if (playerProfile) {
-            router.push('/')
+            // User has established profile, check if they have a team
+            const { data: playerWithTeam } = await supabase
+              .from('players')
+              .select('teams(*)')
+              .eq('id', session.user.id)
+              .single()
+            
+            if (playerWithTeam?.teams && Array.isArray(playerWithTeam.teams) && playerWithTeam.teams.length > 0) {
+              const team = playerWithTeam.teams[0]
+              // Check if user is captain or member to determine correct page
+              if (team.captain_id === session.user.id) {
+                router.push('/manage-team')
+              } else {
+                router.push('/view-team')
+              }
+            } else {
+              // User has profile but no team, go to home
+              router.push('/')
+            }
           } else {
             router.push('/setup-profile')
           }
@@ -82,7 +100,25 @@ export default function AuthPage() {
             
             // Redirect based on profile existence or original destination
             if (playerProfile) {
-              router.push(redirectTo || '/')
+              // User has established profile, check if they have a team
+              const { data: playerWithTeam } = await supabase
+                .from('players')
+                .select('teams(*)')
+                .eq('id', session.user.id)
+                .single()
+              
+              if (playerWithTeam?.teams && Array.isArray(playerWithTeam.teams) && playerWithTeam.teams.length > 0) {
+                const team = playerWithTeam.teams[0]
+                // Check if user is captain or member to determine correct page
+                if (team.captain_id === session.user.id) {
+                  router.push('/manage-team')
+                } else {
+                  router.push('/view-team')
+                }
+              } else {
+                // User has profile but no team, go to home unless there's a specific redirect
+                router.push(redirectTo || '/')
+              }
             } else {
               router.push('/setup-profile')
             }

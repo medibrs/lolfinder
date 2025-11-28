@@ -66,8 +66,27 @@ export async function middleware(request: NextRequest) {
     
     // Redirect based on profile existence
     if (playerProfile) {
-      url.pathname = '/'
+      // User has established profile, check if they have a team
+      const { data: playerWithTeam } = await supabase
+        .from('players')
+        .select('teams(*)')
+        .eq('id', user.id)
+        .single()
+      
+      if (playerWithTeam?.teams && Array.isArray(playerWithTeam.teams) && playerWithTeam.teams.length > 0) {
+        const team = playerWithTeam.teams[0]
+        // Check if user is captain or member to determine correct page
+        if (team.captain_id === user.id) {
+          url.pathname = '/manage-team'
+        } else {
+          url.pathname = '/view-team'
+        }
+      } else {
+        // User has profile but no team, go to home
+        url.pathname = '/'
+      }
     } else {
+      // User needs to set up profile
       url.pathname = '/setup-profile'
     }
     
