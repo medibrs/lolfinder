@@ -2,16 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-  console.log('🔍 API Route: Starting riot-stats request')
-  
   try {
-    console.log('🔍 API Route: Creating Supabase client...')
     const supabase = await createClient()
-    console.log('🔍 API Route: Supabase client created successfully')
     
     const { searchParams } = new URL(request.url)
     const timeWindow = searchParams.get('timeWindow') || '1h'
-    console.log('🔍 API Route: Time window:', timeWindow)
 
     // Calculate time window
     const timeMultipliers: Record<string, number> = {

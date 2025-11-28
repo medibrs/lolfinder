@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Activity, Users, Trophy, Database, CheckCircle, AlertCircle } from 'lucide-react'
+import { Activity, Users, Trophy, Database, CheckCircle, AlertCircle, Lightbulb } from 'lucide-react'
 
 interface SystemHealthCardProps {
   stats: {
@@ -8,6 +8,7 @@ interface SystemHealthCardProps {
     teamsCount: number
     tournamentsCount: number
     registrationsCount: number
+    featureRequestsCount: number
   }
 }
 
@@ -87,6 +88,13 @@ export default function SystemHealthCard({ stats }: SystemHealthCardProps) {
             <div className="p-3 bg-background rounded-lg text-center">
               <p className="text-2xl font-bold text-primary">{stats.registrationsCount}</p>
               <p className="text-xs text-muted-foreground">Registrations</p>
+            </div>
+            <div className="p-3 bg-background rounded-lg text-center col-span-2">
+              <p className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
+                <Lightbulb className="h-4 w-4" />
+                {stats.featureRequestsCount}
+              </p>
+              <p className="text-xs text-muted-foreground">Feature Requests</p>
             </div>
           </div>
         </div>

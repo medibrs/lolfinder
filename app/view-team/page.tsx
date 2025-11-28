@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, Crown, ArrowLeft, Trophy } from 'lucide-react'
+import { Users, Crown, ArrowLeft, Trophy, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 
@@ -172,19 +172,27 @@ export default function ViewTeamPage() {
   return (
     <main className="min-h-screen pt-24 pb-12">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex items-center gap-4 mb-8">
-          <Button asChild variant="outline" size="icon">
-            <Link href="/teams">
-              <ArrowLeft className="w-4 h-4" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button asChild variant="outline" size="icon">
+              <Link href="/teams">
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-4xl font-bold flex items-center gap-2">
+                <Crown className="w-8 h-8 text-yellow-500" />
+                {team.name}
+              </h1>
+              <p className="text-muted-foreground">Your Team</p>
+            </div>
+          </div>
+          <Button asChild variant="default">
+            <Link href="/team-chat">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Team Chat
             </Link>
           </Button>
-          <div>
-            <h1 className="text-4xl font-bold flex items-center gap-2">
-              <Crown className="w-8 h-8 text-yellow-500" />
-              {team.name}
-            </h1>
-            <p className="text-muted-foreground">Your Team</p>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

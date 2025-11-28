@@ -6,12 +6,28 @@ export const useCurrentUserName = () => {
 
   useEffect(() => {
     const fetchProfileName = async () => {
-      const { data, error } = await createClient().auth.getSession()
-      if (error) {
-        console.error(error)
-      }
+      try {
+        const supabase = createClient()
+        
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setName('?')
+          return
+        }
 
-      setName(data.session?.user.user_metadata.full_name ?? '?')
+        // Get summoner name from player profile (never expose real names)
+        const { data: playerData } = await supabase
+          .from('players')
+          .select('summoner_name')
+          .eq('id', user.id)
+          .single()
+
+        setName(playerData?.summoner_name ?? 'Player')
+      } catch (error) {
+        console.error('Error fetching user name:', error)
+        setName('?')
+      }
     }
 
     fetchProfileName()

@@ -267,7 +267,7 @@ export default function FeatureRequestDialog({ children, open: controlledOpen, o
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                Your feature request will be reviewed by our team. You can track its status in your profile dashboard.
+                Your feature request will be reviewed by our team. We appreciate your feedback and ideas for improving LoLFinder!
               </AlertDescription>
             </Alert>
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { validateAndFetchRiotData } from '@/lib/riot';
+import { validateAndFetchRiotData, updateExistingPlayerData } from '@/lib/riot';
 import { cache } from '@/lib/cache';
 
 // Admin-only route to update all existing players with fresh Riot API data
@@ -19,23 +19,20 @@ export async function POST(request: NextRequest) {
     // TODO: Add proper admin role check here
     // For now, we'll just check if user exists (you should implement admin verification)
 
-    console.log('Starting bulk update of all players...');
 
-    // Get all players
+    // Fetch all players that have a PUUID (players created through Riot API integration)
     const { data: players, error: fetchError } = await supabase
       .from('players')
-      .select('*');
+      .select('id, summoner_name, puuid')
+      .not('puuid', 'is', null);
 
     if (fetchError) {
-      console.error('Error fetching players:', fetchError);
       return NextResponse.json({ error: 'Failed to fetch players' }, { status: 500 });
     }
 
     if (!players || players.length === 0) {
       return NextResponse.json({ message: 'No players found to update' });
     }
-
-    console.log(`Found ${players.length} players to update`);
 
     const results = {
       success: 0,
@@ -47,12 +44,11 @@ export async function POST(request: NextRequest) {
     // Update each player
     for (const player of players) {
       try {
-        console.log(`Updating ${player.summoner_name}...`);
 
-        // Re-fetch data from Riot API (log as admin user)
-        const riotData = await validateAndFetchRiotData(player.summoner_name, user.id);
+        // Use optimized update function that only makes 2 API calls instead of 3
+        const riotData = await updateExistingPlayerData(player.puuid, user.id);
 
-        // Update player with new data
+        // Update player with new data (excluding opggUrl since it doesn't change for existing players)
         const { error: updateError } = await supabase
           .from('players')
           .update({
@@ -64,13 +60,11 @@ export async function POST(request: NextRequest) {
             // Also update existing fields in case they changed
             tier: riotData.tier,
             summoner_level: riotData.summonerLevel,
-            puuid: riotData.puuid,
-            opgg_url: riotData.opggUrl,
+            // Keep existing opgg_url since it doesn't change for existing players
           })
           .eq('id', player.id);
 
         if (updateError) {
-          console.error(`Error updating ${player.summoner_name}:`, updateError);
           results.failed++;
           results.errors.push(`Failed to update ${player.summoner_name}: ${updateError.message}`);
         } else {
@@ -81,22 +75,25 @@ export async function POST(request: NextRequest) {
             rank: riotData.rank,
             league_points: riotData.leaguePoints,
             wins: riotData.wins,
-            losses: riotData.losses
+            losses: riotData.losses,
+            updated_at: new Date().toISOString()
           });
-          console.log(`✓ Updated ${player.summoner_name}: ${riotData.tier} ${riotData.rank || ''} (${riotData.wins}W/${riotData.losses}L)`);
         }
 
         // Rate limiting - wait 1.2 seconds between API calls to respect Riot's limits
         await new Promise(resolve => setTimeout(resolve, 1200));
 
       } catch (riotError: any) {
-        console.error(`Error fetching Riot data for ${player.summoner_name}:`, riotError.message);
         results.failed++;
-        results.errors.push(`Riot API error for ${player.summoner_name}: ${riotError.message}`);
+        // Provide detailed error messages for PUUID lookup failures
+        if (riotError.message.includes('PUUID') || riotError.message.includes('banned') || riotError.message.includes('manual verification')) {
+          results.errors.push(`PUUID lookup failed for ${player.summoner_name}: ${riotError.message}. This player may need manual attention.`);
+        } else {
+          results.errors.push(`Riot API error for ${player.summoner_name}: ${riotError.message}`);
+        }
       }
     }
 
-    console.log(`Update complete! Success: ${results.success}, Failed: ${results.failed}`);
 
     // Invalidate teams cache to trigger recalculation of average rank for all teams
     // since this operation updates player ranks across all teams

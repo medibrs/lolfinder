@@ -108,22 +108,21 @@ async function updateExistingPlayers() {
   try {
     console.log('Fetching existing players...');
     
+    // Fetch all players that have a PUUID (players created through Riot API integration)
     const { data: players, error: fetchError } = await supabase
       .from('players')
-      .select('*');
+      .select('id, summoner_name, puuid')
+      .not('puuid', 'is', null);
     
     if (fetchError) {
       console.error('Error fetching players:', fetchError);
       return;
     }
     
-    console.log(`Found ${players.length} players to update`);
-    
     for (const player of players) {
       try {
-        console.log(`Updating ${player.summoner_name}...`);
         
-        const riotData = await validateAndFetchRiotData(player.summoner_name);
+        const riotData = await updateExistingPlayerData(player.puuid);
         
         const { error: updateError } = await supabase
           .from('players')
@@ -135,15 +134,12 @@ async function updateExistingPlayers() {
             losses: riotData.losses,
             tier: riotData.tier,
             summoner_level: riotData.summonerLevel,
-            puuid: riotData.puuid,
-            opgg_url: riotData.opggUrl,
+            // Keep existing puuid and opgg_url since they don't change
           })
           .eq('id', player.id);
         
         if (updateError) {
-          console.error(`Error updating ${player.summoner_name}:`, updateError);
         } else {
-          console.log(`✓ Updated ${player.summoner_name}: ${riotData.tier} ${riotData.rank || ''} (${riotData.wins}W/${riotData.losses}L)`);
         }
         
         // Rate limiting

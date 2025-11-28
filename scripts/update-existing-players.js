@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const { validateAndFetchRiotData } = require('../lib/riot');
+const { validateAndFetchRiotData, updateExistingPlayerData } = require('../lib/riot');
 
 require('dotenv').config({ path: '.env.local' });
 
@@ -13,9 +13,11 @@ async function updateExistingPlayers() {
     console.log('Fetching existing players...');
     
     // Get all players
+    // Fetch all players that have a PUUID (players created through Riot API integration)
     const { data: players, error: fetchError } = await supabase
       .from('players')
-      .select('*');
+      .select('id, summoner_name, puuid')
+      .not('puuid', 'is', null);
     
     if (fetchError) {
       console.error('Error fetching players:', fetchError);
@@ -26,10 +28,9 @@ async function updateExistingPlayers() {
     
     for (const player of players) {
       try {
-        console.log(`Updating ${player.summoner_name}...`);
         
-        // Re-fetch data from Riot API
-        const riotData = await validateAndFetchRiotData(player.summoner_name);
+        // Use optimized update function that only makes 2 API calls instead of 3
+        const riotData = await updateExistingPlayerData(player.puuid);
         
         // Update player with new data
         const { error: updateError } = await supabase
@@ -43,15 +44,12 @@ async function updateExistingPlayers() {
             // Also update existing fields in case they changed
             tier: riotData.tier,
             summoner_level: riotData.summonerLevel,
-            puuid: riotData.puuid,
-            opgg_url: riotData.opggUrl,
+            // Keep existing puuid and opgg_url since they don't change
           })
           .eq('id', player.id);
         
         if (updateError) {
-          console.error(`Error updating ${player.summoner_name}:`, updateError);
         } else {
-          console.log(`✓ Updated ${player.summoner_name}: ${riotData.tier} ${riotData.rank || ''} (${riotData.wins}W/${riotData.losses}L)`);
         }
         
         // Rate limiting - wait 1 second between API calls

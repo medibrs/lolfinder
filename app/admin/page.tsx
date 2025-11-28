@@ -12,6 +12,7 @@ async function getAdminStats() {
     { count: teamsCount },
     { count: tournamentsCount },
     { count: registrationsCount },
+    { count: featureRequestsCount },
     { data: recentPlayers },
     { data: recentTournaments }
   ] = await Promise.all([
@@ -19,6 +20,7 @@ async function getAdminStats() {
     supabase.from('teams').select('*', { count: 'exact', head: true }),
     supabase.from('tournaments').select('*', { count: 'exact', head: true }),
     supabase.from('tournament_registrations').select('*', { count: 'exact', head: true }),
+    supabase.from('feature_requests').select('*', { count: 'exact', head: true }),
     supabase.from('players').select('*').order('created_at', { ascending: false }).limit(5),
     supabase.from('tournaments').select('*').order('created_at', { ascending: false }).limit(5)
   ])
@@ -28,6 +30,7 @@ async function getAdminStats() {
     teamsCount: teamsCount || 0,
     tournamentsCount: tournamentsCount || 0,
     registrationsCount: registrationsCount || 0,
+    featureRequestsCount: featureRequestsCount || 0,
     recentPlayers: recentPlayers || [],
     recentTournaments: recentTournaments || []
   }

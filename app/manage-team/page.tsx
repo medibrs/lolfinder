@@ -26,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle, Edit } from 'lucide-react'
+import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle, Edit, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cache } from '@/lib/cache'
 import { getRankImage } from '@/lib/rank-utils'
@@ -509,9 +509,17 @@ export default function ManageTeamPage() {
               <Crown className="w-8 h-8 text-yellow-500" />
               Manage Team
             </h1>
-            <Button asChild variant="outline">
-              <Link href="/teams">Back to Teams</Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="default">
+                <Link href="/team-chat">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Team Chat
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/teams">Back to Teams</Link>
+              </Button>
+            </div>
           </div>
           <p className="text-muted-foreground">
             As team captain, you can manage your team settings and members

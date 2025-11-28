@@ -21,12 +21,10 @@ export const RIOT_RATE_LIMITS = {
 };
 
 export async function logRiotRequest(data: RiotLogData) {
-  console.log('🔥 Attempting to log Riot request:', data);
   
   try {
     // Use regular client-side supabase client
     const supabaseClient = createClient();
-    console.log('🔥 Supabase client created');
     
     const insertData = {
       user_id: data.userId || null,
@@ -40,28 +38,24 @@ export async function logRiotRequest(data: RiotLogData) {
       user_agent: data.userAgent,
     };
     
-    console.log('🔥 Insert data prepared:', insertData);
     
     const { data: result, error } = await supabaseClient
       .from('riot_request_logs')
       .insert(insertData)
       .select();
 
-    console.log('🔥 Insert result:', { result, error });
 
     if (error) {
       console.error('❌ Failed to log Riot request:', error);
       return;
     }
     
-    console.log('✅ Successfully logged Riot request');
   } catch (error) {
     console.error('❌ Error in logRiotRequest:', error);
   }
 }
 
 export async function getRiotApiUsageStats(timeWindow: string = '1h') {
-  console.log('🔍 Fetching Riot API stats for time window:', timeWindow);
   
   try {
     // Use server-side client to bypass RLS issues
@@ -78,21 +72,18 @@ export async function getRiotApiUsageStats(timeWindow: string = '1h') {
     );
     
     const timeAgo = new Date(Date.now() - parseTimeWindow(timeWindow)).toISOString();
-    console.log('🔍 Querying logs since:', timeAgo);
     
     const { data, error } = await supabaseAdmin
       .from('riot_request_logs')
       .select('*')
       .gte('created_at', timeAgo);
 
-    console.log('🔍 Query result:', { data, error });
 
     if (error) {
       console.error('❌ Error fetching Riot API stats:', error);
       throw error;
     }
 
-    console.log('🔍 Raw data length:', data?.length || 0);
 
     // Group by endpoint and calculate usage
     const stats = {
@@ -106,13 +97,11 @@ export async function getRiotApiUsageStats(timeWindow: string = '1h') {
     };
 
     if (!data || data.length === 0) {
-      console.log('🔍 No data found, returning empty stats');
       return stats;
     }
 
     // Calculate endpoint-specific stats
     data.forEach(log => {
-      console.log('🔍 Processing log:', log);
       
       if (log.riot_api_endpoint.includes('account/v1')) {
         stats.account++;
@@ -131,7 +120,6 @@ export async function getRiotApiUsageStats(timeWindow: string = '1h') {
     stats.errorRate = Math.round((stats.errorRate / stats.total) * 100);
     stats.avgResponseTime = Math.round(stats.avgResponseTime / stats.total);
 
-    console.log('🔍 Calculated stats:', stats);
 
     // Calculate rate limit status
     const timeMultiplier = timeWindow === '1m' ? 1 : timeWindow === '10s' ? 0.167 : 1;
@@ -158,7 +146,6 @@ export async function getRiotApiUsageStats(timeWindow: string = '1h') {
       league: { used: number; limit: number; percentage: number };
     };
 
-    console.log('🔍 Final stats with rate limits:', stats);
     return stats;
   } catch (error) {
     console.error('❌ Error fetching Riot API stats:', error);

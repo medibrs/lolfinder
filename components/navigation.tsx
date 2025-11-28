@@ -443,11 +443,20 @@ export default function Navigation() {
                 <Link 
                   href="/admin?tab=users" 
                   className={cn(
-                    "text-foreground hover:text-primary transition text-sm",
+                    "text-sm font-medium px-3 py-2 rounded-md transition",
                     activeAdminTab === 'users' && "text-primary font-medium"
                   )}
                 >
-                  User Roles
+                  Users
+                </Link>
+                <Link 
+                  href="/admin?tab=feature-requests" 
+                  className={cn(
+                    "text-sm font-medium px-3 py-2 rounded-md transition",
+                    activeAdminTab === 'feature-requests' && "text-primary font-medium"
+                  )}
+                >
+                  Feature Requests
                 </Link>
               </>
             ) : user ? (

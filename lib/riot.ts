@@ -228,3 +228,60 @@ export async function validateAndFetchRiotData(summonerName: string, userId?: st
 
   return result;
 }
+
+// Optimized function for updating existing players using stored PUUID
+// Only makes 2 API calls instead of 3, saving 33% on rate limits and improving performance
+export async function updateExistingPlayerData(puuid: string, userId?: string) {
+  if (!RIOT_API_KEY) {
+    throw new Error('Riot API Key is not configured');
+  }
+
+  if (!puuid) {
+    throw new Error('PUUID is required for updating existing player data');
+  }
+
+  try {
+    // 1. Get Summoner Info (Level, Profile Icon) - using stored PUUID
+    const summoner = await getSummonerByPuuid(puuid, userId);
+    if (!summoner) {
+      throw new Error('League of Legends profile not found for this PUUID. Player may have been banned or account deleted.');
+    }
+
+    // 2. Get Ranked Info (Tier, Rank, LP, Wins, Losses) - using stored PUUID
+    const entries = await getLeagueEntries(puuid, userId);
+    const soloQueue = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
+    
+    let tier = 'Unranked';
+    let rank = null;
+    let leaguePoints = 0;
+    let wins = 0;
+    let losses = 0;
+    
+    if (soloQueue && soloQueue.tier) {
+      // Normalize to Title Case (e.g. "EMERALD" -> "Emerald") to match app conventions
+      tier = soloQueue.tier.charAt(0) + soloQueue.tier.slice(1).toLowerCase();
+      rank = soloQueue.rank; // I, II, III, IV
+      leaguePoints = soloQueue.leaguePoints;
+      wins = soloQueue.wins;
+      losses = soloQueue.losses;
+    }
+
+    const result = {
+      puuid: puuid,
+      summonerLevel: summoner.summonerLevel,
+      profileIconId: summoner.profileIconId,
+      tier: tier, // Title Case e.g. "Emerald" or "Unranked"
+      rank: rank, // I, II, III, IV or null for unranked
+      leaguePoints: leaguePoints,
+      wins: wins,
+      losses: losses,
+    };
+
+    return result;
+  } catch (error) {
+    // If PUUID lookup fails, the player may have changed their name or been banned
+    // In this case, we should fall back to the full lookup or mark the player as needing attention
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to update player with PUUID ${puuid}: ${errorMessage}. Player may need manual verification.`);
+  }
+}

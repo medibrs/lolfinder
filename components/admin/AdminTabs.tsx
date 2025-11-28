@@ -8,6 +8,7 @@ import PlayersTable from '@/components/admin/PlayersTable'
 import TeamsTable from '@/components/admin/TeamsTable'
 import TournamentsTable from '@/components/admin/TournamentsTable'
 import RegistrationsTable from '@/components/admin/RegistrationsTable'
+import FeatureRequestsTable from '@/components/admin/FeatureRequestsTable'
 import CreateTournamentCard from '@/components/admin/CreateTournamentCard'
 import SystemHealthCard from '@/components/admin/SystemHealthCard'
 import ComprehensiveUserManagement from '@/components/admin/ComprehensiveUserManagement'
@@ -20,6 +21,7 @@ interface AdminTabsProps {
     teamsCount: number
     tournamentsCount: number
     registrationsCount: number
+    featureRequestsCount: number
     recentPlayers: any[]
     recentTournaments: any[]
   }
@@ -172,6 +174,17 @@ export default function AdminTabs({ stats }: AdminTabsProps) {
           <div className="text-4xl mb-4">🔐</div>
           <h3 className="text-xl font-bold mb-4">User Role Management</h3>
           <ComprehensiveUserManagement />
+        </Card>
+      )}
+
+      {activeTab === 'feature-requests' && (
+        <Card className="bg-card border-border p-6">
+          <div className="text-4xl mb-4">💡</div>
+          <h3 className="text-xl font-bold mb-4">Feature Request Management</h3>
+          <p className="text-muted-foreground mb-6">
+            Manage and respond to user-submitted feature requests. Total requests: {stats.featureRequestsCount}
+          </p>
+          <FeatureRequestsTable />
         </Card>
       )}
     </div>
