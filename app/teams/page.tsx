@@ -97,15 +97,11 @@ export default function TeamsPage() {
           .eq('id', authUser.id)
           .single()
         
-        console.log('Teams page - Player data:', playerData)
-        console.log('Teams page - Player error:', playerError)
         
         if (playerError) {
-          console.log('Teams page - User does not have a player profile')
           setHasPlayerProfile(false)
           setProfileChecked(true)
         } else {
-          console.log('Teams page - User has a player profile')
           setHasPlayerProfile(true)
           setProfileChecked(true)
           
@@ -148,11 +144,9 @@ export default function TeamsPage() {
       // Try to get from cache first
       const cachedTeams = await cache.get<any[]>(cacheKey, cacheOptions)
       if (cachedTeams) {
-        console.log('🎯 Teams Cache HIT - Loading teams from cache')
         setTeams(cachedTeams)
         setLoading(false) // Hide loading immediately when cache is available
       } else {
-        console.log('❌ Teams Cache MISS - Loading teams from database')
       }
 
       // Always fetch fresh data in background
@@ -199,7 +193,6 @@ export default function TeamsPage() {
       
       // Update cache with fresh data
       await cache.set(cacheKey, teamsWithMembers, cacheOptions)
-      console.log('💾 Teams Cache SET - Stored fresh team data in cache')
     } catch (error) {
       console.error('Error:', error)
     } finally {

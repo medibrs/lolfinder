@@ -37,6 +37,7 @@ export default function Navigation() {
   const [isCaptain, setIsCaptain] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
   const supabase = createClient()
 
   // Global notifications hook
@@ -336,15 +337,17 @@ export default function Navigation() {
                         <MessageSquare className="h-4 w-4" />
                         Contact Support
                       </a>
-                      <FeatureRequestDialog onClose={() => setMobileMenuOpen(false)}>
-                        <Button 
-                          variant="ghost" 
-                          className="text-base font-medium px-3 py-2 h-auto rounded-md hover:bg-accent transition flex items-center gap-2 w-full justify-start"
-                        >
-                          <Lightbulb className="h-4 w-4" />
-                          Request Feature
-                        </Button>
-                      </FeatureRequestDialog>
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => {
+                          setMobileMenuOpen(false)
+                          setTimeout(() => setFeatureDialogOpen(true), 100)
+                        }}
+                        className="text-base font-medium px-3 py-2 h-auto rounded-md hover:bg-accent transition flex items-center gap-2 w-full justify-start"
+                      >
+                        <Lightbulb className="h-4 w-4" />
+                        Request Feature
+                      </Button>
                       <a 
                         href="#"
                         onClick={() => setMobileMenuOpen(false)}
@@ -652,6 +655,11 @@ export default function Navigation() {
           </div>
         </div>
       </div>
+      
+      {/* Standalone Feature Request Dialog */}
+      <FeatureRequestDialog open={featureDialogOpen} onOpenChange={setFeatureDialogOpen}>
+        <div />
+      </FeatureRequestDialog>
     </nav>
   )
 }

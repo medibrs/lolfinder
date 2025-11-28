@@ -12,7 +12,9 @@ import { Lightbulb, Send, Loader2, Info } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 interface FeatureRequestDialogProps {
-  children: React.ReactNode
+  children?: React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   onClose?: () => void
 }
 
@@ -32,8 +34,11 @@ const PRIORITIES = [
   { value: 'High', label: 'High', color: 'bg-red-500' },
 ]
 
-export default function FeatureRequestDialog({ children, onClose }: FeatureRequestDialogProps) {
-  const [open, setOpen] = useState(false)
+export default function FeatureRequestDialog({ children, open: controlledOpen, onOpenChange, onClose }: FeatureRequestDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = isControlled ? onOpenChange! : setInternalOpen
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
@@ -120,9 +125,7 @@ export default function FeatureRequestDialog({ children, onClose }: FeatureReque
       onClose()
     }
   }}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
