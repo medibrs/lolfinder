@@ -10,7 +10,7 @@ type Props = {
 
 export default function TournamentEventLayout({ children }: Props) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Tournament Event Navigation will go here */}
       <main className="flex-1">
         {children}

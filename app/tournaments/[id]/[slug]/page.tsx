@@ -168,7 +168,7 @@ export default async function TournamentEventPage({ params }: Props) {
         {/* Header with Background */}
         <div className="relative h-48 md:h-64 rounded-xl overflow-hidden mb-6">
           <div 
-            className="absolute inset-0 bg-cover bg-center"
+            className="absolute inset-0 bg-cover bg-center bg-zinc-900"
             style={{
               backgroundImage: 'url(/leet_lol_header.jpg)',
               filter: 'brightness(0.4)'
