@@ -250,9 +250,9 @@ export default function Navigation() {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px]">
+              <SheetContent side="right" className="w-[280px] flex flex-col">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <nav className="flex flex-col gap-2 mt-6">
+                <nav className="flex flex-col gap-2 mt-6 overflow-y-auto flex-1">
                   {user ? (
                     // Authenticated user links
                     <>
