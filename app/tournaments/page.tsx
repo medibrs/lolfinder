@@ -414,16 +414,16 @@ export default function TournamentsPage() {
                       {/* Registration Button */}
                       {user && userTeam ? (
                         registrationStatuses[tournament.id] === 'approved' ? (
-                          <div className="w-full py-2.5 px-4 rounded-md bg-green-600/20 border border-green-600/50 text-green-400 font-semibold text-sm text-center flex items-center justify-center gap-2">
+                          <div className="w-full py-2.5 px-4 rounded-md bg-green-600/20 border border-green-600/50 text-green-400 font-semibold text-sm text-center flex items-center justify-center gap-2 pointer-events-none">
                             <CheckCircle className="h-4 w-4" />
                             Registered
                           </div>
                         ) : registrationStatuses[tournament.id] === 'pending' ? (
-                          <div className="w-full py-2.5 px-4 rounded-md bg-yellow-600/20 border border-yellow-600/50 text-yellow-400 font-semibold text-sm text-center">
+                          <div className="w-full py-2.5 px-4 rounded-md bg-yellow-600/20 border border-yellow-600/50 text-yellow-400 font-semibold text-sm text-center pointer-events-none">
                             ⏳ Pending Approval
                           </div>
                         ) : registrationStatuses[tournament.id] === 'rejected' ? (
-                          <div className="w-full py-2.5 px-4 rounded-md bg-red-600/20 border border-red-600/50 text-red-400 font-semibold text-sm text-center flex items-center justify-center gap-2">
+                          <div className="w-full py-2.5 px-4 rounded-md bg-red-600/20 border border-red-600/50 text-red-400 font-semibold text-sm text-center flex items-center justify-center gap-2 pointer-events-none">
                             <XCircle className="h-4 w-4" />
                             Registration Declined
                           </div>
@@ -439,12 +439,12 @@ export default function TournamentsPage() {
                             {registering === tournament.id ? 'Registering...' : 'Register Team'}
                           </Button>
                         ) : (
-                          <div className="w-full py-2.5 px-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-500 font-semibold text-sm text-center">
+                          <div className="w-full py-2.5 px-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-500 font-semibold text-sm text-center pointer-events-none">
                             Registration Closed
                           </div>
                         )
                       ) : user ? (
-                        <div className="w-full py-2.5 px-4 rounded-md bg-zinc-800/50 border border-zinc-700 text-zinc-400 font-semibold text-sm text-center">
+                        <div className="w-full py-2.5 px-4 rounded-md bg-zinc-800/50 border border-zinc-700 text-zinc-400 font-semibold text-sm text-center pointer-events-none">
                           Create a Team First
                         </div>
                       ) : null}
