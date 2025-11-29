@@ -358,7 +358,7 @@ export default function TournamentsPage() {
                   >
                     {/* Full Card Background Image */}
                     <div 
-                      className="absolute inset-0 bg-cover bg-top"
+                      className="absolute inset-0 bg-cover bg-top pointer-events-none"
                       style={{
                         backgroundImage: 'url(/leet_lol_header.jpg)',
                         filter: 'brightness(0.6)'
@@ -366,7 +366,7 @@ export default function TournamentsPage() {
                     />
                     
                     {/* Tournament Header */}
-                    <div className="relative h-28 md:h-32">
+                    <div className="relative h-28 md:h-32 pointer-events-none">
                       <div className="relative h-full flex flex-col justify-end p-4 md:p-6">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-start justify-between gap-2">
@@ -395,7 +395,7 @@ export default function TournamentsPage() {
                     </div>
 
                     {/* Tournament Details - Compact blur section */}
-                    <div className="relative px-4 md:px-6 py-3 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50">
+                    <div className="relative px-4 md:px-6 py-3 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50 pointer-events-none">
                       <div className="grid grid-cols-3 gap-2 md:gap-8 mb-3">
                         <div className="text-center md:text-left">
                           <p className="text-zinc-400 text-[10px] md:text-xs uppercase tracking-wider">Date</p>
@@ -434,7 +434,7 @@ export default function TournamentsPage() {
                               handleRegister(tournament.id)
                             }}
                             disabled={registering === tournament.id}
-                            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold"
+                            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold pointer-events-auto"
                           >
                             {registering === tournament.id ? 'Registering...' : 'Register Team'}
                           </Button>
