@@ -4,17 +4,37 @@ import { SwissMatchCardWrapper } from './swiss-match-card-wrapper'
 import { SwissMatchCardTeam } from './swiss-match-card'
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { SwissMatchCard } from './swiss-match-card'
+import { TopCutCard, TopCutCardTeam } from './top-cut-card'
+
+interface SwissRound {
+  title: string
+  type?: 'matches' | 'topcut'
+  teamPairs?: Array<{
+    team1: SwissMatchCardTeam | null
+    team2: SwissMatchCardTeam | null
+    status: 'live' | 'scheduled' | 'done'
+    winner?: 'team1' | 'team2' | null
+  }>
+  matches?: Array<{
+    team1: SwissMatchCardTeam | null
+    team2: SwissMatchCardTeam | null
+    status: 'live' | 'scheduled' | 'done'
+    winner?: 'team1' | 'team2' | null
+  }>
+  topCut?: {
+    title?: string
+    teams?: TopCutCardTeam[]
+    leftTeams?: TopCutCardTeam[]
+    rightTeams?: TopCutCardTeam[]
+    leftTitle?: string
+    rightTitle?: string
+    backgroundColor?: 'green' | 'red' | 'default'
+  }
+}
 
 interface SwissMatchColumnProps {
-  rounds: Array<{
-    title: string
-    teamPairs: Array<{
-      team1: SwissMatchCardTeam | null
-      team2: SwissMatchCardTeam | null
-      status: 'live' | 'scheduled' | 'done'
-      winner?: 'team1' | 'team2' | null
-    }>
-  }>
+  rounds: SwissRound[]
   className?: string
 }
 
@@ -31,11 +51,23 @@ export function SwissMatchColumn({
       className
     )}>
       {rounds.map((round, index) => (
-        <SwissMatchCardWrapper
-          key={index}
-          title={round.title}
-          teamPairs={round.teamPairs}
-        />
+        round.type === 'topcut' ? (
+          <SwissMatchCardWrapper
+            key={index}
+            title={round.title}
+          >
+            <TopCutCard 
+              layout={round.topCut?.leftTeams || round.topCut?.rightTeams ? 'versus' : 'single'}
+              {...round.topCut}
+            />
+          </SwissMatchCardWrapper>
+        ) : (
+          <SwissMatchCardWrapper
+            key={index}
+            title={round.title}
+            teamPairs={round.teamPairs || round.matches || []}
+          />
+        )
       ))}
       
       {/* Empty State */}

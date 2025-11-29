@@ -2,20 +2,39 @@
 
 import { SwissMatchColumn } from './swiss-match-column'
 import { SwissMatchCardTeam } from './swiss-match-card'
+import { TopCutCardTeam } from './top-cut-card'
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/use-mobile'
 
+interface SwissRound {
+  title: string
+  type?: 'matches' | 'topcut'
+  teamPairs?: Array<{
+    team1: SwissMatchCardTeam | null
+    team2: SwissMatchCardTeam | null
+    status: 'live' | 'scheduled' | 'done'
+    winner?: 'team1' | 'team2' | null
+  }>
+  matches?: Array<{
+    team1: SwissMatchCardTeam | null
+    team2: SwissMatchCardTeam | null
+    status: 'live' | 'scheduled' | 'done'
+    winner?: 'team1' | 'team2' | null
+  }>
+  topCut?: {
+    title?: string
+    teams?: TopCutCardTeam[]
+    leftTeams?: TopCutCardTeam[]
+    rightTeams?: TopCutCardTeam[]
+    leftTitle?: string
+    rightTitle?: string
+    backgroundColor?: 'green' | 'red' | 'default'
+  }
+}
+
 interface SwissMatchContainerProps {
   columns: Array<{
-    rounds: Array<{
-      title: string
-      teamPairs: Array<{
-        team1: SwissMatchCardTeam | null
-        team2: SwissMatchCardTeam | null
-        status: 'live' | 'scheduled' | 'done'
-        winner?: 'team1' | 'team2' | null
-      }>
-    }>
+    rounds: SwissRound[]
   }>
   className?: string
 }

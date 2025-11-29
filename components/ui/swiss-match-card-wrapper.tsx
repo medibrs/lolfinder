@@ -6,18 +6,20 @@ import { useIsMobile } from '@/hooks/use-mobile'
 
 interface SwissMatchCardWrapperProps {
   title: string
-  teamPairs: Array<{
+  teamPairs?: Array<{
     team1: SwissMatchCardTeam | null
     team2: SwissMatchCardTeam | null
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
   }>
   className?: string
+  children?: React.ReactNode
 }
 
 export function SwissMatchCardWrapper({ 
   title, 
   teamPairs,
+  children,
   className 
 }: SwissMatchCardWrapperProps) {
   const isMobile = useIsMobile()
@@ -32,27 +34,24 @@ export function SwissMatchCardWrapper({
         )}>{title}</h2>
       </div>
 
-      {/* Matches - Single Column */}
-      <div className={cn(
-        "flex flex-col",
-        isMobile ? "gap-[1px]" : "gap-2"
-      )}>
-        {teamPairs.map((pair, index) => (
-          <div key={index}>
-            <SwissMatchCard
-              team1={pair.team1}
-              team2={pair.team2}
-              status={pair.status}
-              winner={pair.winner}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {teamPairs.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-zinc-400">No matches to display</p>
+      {/* Content */}
+      {children ? (
+        children
+      ) : (
+        <div className={cn(
+          "flex flex-col",
+          isMobile ? "gap-[1px]" : "gap-2"
+        )}>
+          {teamPairs?.map((pair, index) => (
+            <div key={index}>
+              <SwissMatchCard
+                team1={pair.team1}
+                team2={pair.team2}
+                status={pair.status}
+                winner={pair.winner}
+              />
+            </div>
+          ))}
         </div>
       )}
     </div>

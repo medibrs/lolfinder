@@ -6,6 +6,7 @@ import { SwissMatchCard } from '@/components/ui/swiss-match-card'
 import { SwissMatchCardWrapper } from '@/components/ui/swiss-match-card-wrapper'
 import { SwissMatchColumn } from '@/components/ui/swiss-match-column'
 import { SwissMatchContainer } from '@/components/ui/swiss-match-container'
+import { TopCutCard } from '@/components/ui/top-cut-card'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
@@ -494,6 +495,14 @@ export default function UITestPage() {
                       {
                         rounds: [
                           {
+                            type: 'topcut',
+                            title: "3:0",
+                            topCut: {
+                              teams: [realTeams[0], realTeams[2]],
+                              backgroundColor: 'green'
+                            }
+                          },
+                          {
                             title: "2:1",
                             teamPairs: [
                               { team1: realTeams[0], team2: realTeams[4], status: 'done', winner: 'team1' },
@@ -508,11 +517,30 @@ export default function UITestPage() {
                               { team1: realTeams[10], team2: realTeams[14], status: 'scheduled' },
                               { team1: realTeams[5], team2: realTeams[7], status: 'scheduled' }
                             ]
+                          },
+                          {
+                            type: 'topcut',
+                            title: "0:3",
+                            topCut: {
+                              teams: [realTeams[12], realTeams[14], realTeams[13], realTeams[15]],
+                              backgroundColor: 'red'
+                            }
                           }
                         ]
                       },
                       {
                         rounds: [
+                          {
+                            type: 'topcut',
+                            title: "",
+                            topCut: {
+                              leftTeams: [realTeams[0], realTeams[2], realTeams[4]],
+                              rightTeams: [realTeams[6], realTeams[1], realTeams[3]],
+                              leftTitle: "3:1",
+                              rightTitle: "3:2",
+                              backgroundColor: 'green'
+                            }
+                          },
                           {
                             title: "2:2",
                             teamPairs: [
@@ -520,6 +548,17 @@ export default function UITestPage() {
                               { team1: realTeams[2], team2: realTeams[1], status: 'scheduled' },
                               { team1: realTeams[4], team2: realTeams[8], status: 'scheduled' }
                             ]
+                          },
+                          {
+                            type: 'topcut',
+                            title: "",
+                            topCut: {
+                              leftTeams: [realTeams[8], realTeams[10], realTeams[12]],
+                              rightTeams: [realTeams[5], realTeams[7], realTeams[9]],
+                              leftTitle: "1:3",
+                              rightTitle: "2:3",
+                              backgroundColor: 'red'
+                            }
                           }
                         ]
                       }
@@ -555,6 +594,73 @@ export default function UITestPage() {
                 <div className="p-4 bg-muted/30 rounded-lg">
                   <SwissMatchColumn 
                     rounds={[]}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </Card>
+
+        {/* Top Cut Card Tests */}
+        <Card className="p-2 mb-8">
+          <h2 className="text-xl font-bold mb-6">Top Cut Card Component</h2>
+          
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading teams from database...</p>
+            </div>
+          ) : (
+            <>
+              {/* Winners - Single Layout (3:0) */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">Winners - Single Layout (3:0)</h3>
+                <div className="p-2 bg-muted/30 rounded-lg inline-block">
+                  <TopCutCard 
+                    title="3:0"
+                    teams={[realTeams[0], realTeams[1]]} 
+                    backgroundColor="green"
+                  />
+                </div>
+              </div>
+
+              {/* Winners - Versus Layout (3:1 | 3:2) */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">Winners - Versus Layout (3:1 | 3:2)</h3>
+                <div className="p-2 bg-muted/30 rounded-lg inline-block">
+                  <TopCutCard 
+                    layout="versus"
+                    leftTeams={[realTeams[2], realTeams[3]]} 
+                    rightTeams={[realTeams[4]]} 
+                    leftTitle="3:1"
+                    rightTitle="3:2"
+                    backgroundColor="green"
+                  />
+                </div>
+              </div>
+
+              {/* Losers - Single Layout (0:3) */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">Losers - Single Layout (0:3)</h3>
+                <div className="p-2 bg-muted/30 rounded-lg inline-block">
+                  <TopCutCard 
+                    title="0:3"
+                    teams={[realTeams[12], realTeams[13], realTeams[14], realTeams[15]]} 
+                    backgroundColor="red"
+                  />
+                </div>
+              </div>
+
+              {/* Losers - Versus Layout (1:3 | 2:3) */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">Losers - Versus Layout (1:3 | 2:3)</h3>
+                <div className="p-2 bg-muted/30 rounded-lg inline-block">
+                  <TopCutCard 
+                    layout="versus"
+                    leftTeams={[realTeams[8], realTeams[9]]} 
+                    rightTeams={[realTeams[10], realTeams[11], realTeams[12]]} 
+                    leftTitle="1:3"
+                    rightTitle="2:3"
+                    backgroundColor="red"
                   />
                 </div>
               </div>
