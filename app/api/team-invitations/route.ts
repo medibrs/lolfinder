@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if player profile is complete
-    if (!currentPlayer.summoner_name || !currentPlayer.discord || !currentPlayer.main_role || !currentPlayer.tier) {
+    if (!currentPlayer.summoner_name || !currentPlayer.main_role || !currentPlayer.tier) {
       return NextResponse.json({ error: 'Please complete your player profile before sending team invitations.' }, { status: 400 });
     }
 
