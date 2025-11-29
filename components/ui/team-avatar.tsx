@@ -5,6 +5,7 @@ import { Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getProfileIconUrl } from '@/lib/ddragon'
 import { useState, useEffect } from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 export interface TeamAvatarTeam {
   id: string
@@ -15,18 +16,20 @@ export interface TeamAvatarTeam {
 interface TeamAvatarProps {
   team: TeamAvatarTeam | null
   isWinner?: boolean
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   showTooltip?: boolean
   className?: string
 }
 
 const sizeClasses = {
+  xs: 'w-5 h-5',
   sm: 'w-7 h-7',
   md: 'w-9 h-9',
   lg: 'w-12 h-12'
 }
 
 const iconSizes = {
+  xs: 'h-2 w-2',
   sm: 'h-3 w-3',
   md: 'h-4 w-4',
   lg: 'h-5 w-5'
@@ -44,8 +47,15 @@ export function TeamAvatar({
   showTooltip = true,
   className 
 }: TeamAvatarProps) {
-  const sizeClass = sizeClasses[size]
-  const iconSize = iconSizes[size]
+  const isMobile = useIsMobile()
+  
+  // Use smaller sizes on mobile
+  const actualSize = isMobile 
+    ? (size === 'lg' ? 'sm' : size === 'md' ? 'xs' : size === 'sm' ? 'xs' : 'xs')
+    : size
+  
+  const sizeClass = sizeClasses[actualSize]
+  const iconSize = iconSizes[actualSize]
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
   useEffect(() => {

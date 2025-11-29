@@ -2,6 +2,7 @@
 
 import { SwissMatchCard, SwissMatchCardTeam } from './swiss-match-card'
 import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 interface SwissMatchCardWrapperProps {
   title: string
@@ -19,15 +20,23 @@ export function SwissMatchCardWrapper({
   teamPairs,
   className 
 }: SwissMatchCardWrapperProps) {
+  const isMobile = useIsMobile()
+  
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn("w-full flex flex-col", className)}>
       {/* Title */}
-      <div className="mb-1">
-        <h2 className="text-[12px] font-[700] text-left text-white uppercase mb-2">{title}</h2>
+      <div className={cn("mb-1", isMobile ? "mb-0" : "")}>
+        <h2 className={cn(
+          "text-left text-white uppercase",
+          isMobile ? "text-[10px] font-[600]" : "text-[12px] font-[700]"
+        )}>{title}</h2>
       </div>
 
       {/* Matches - Single Column */}
-      <div className="space-y-4">
+      <div className={cn(
+        "flex flex-col",
+        isMobile ? "gap-[1px]" : "gap-2"
+      )}>
         {teamPairs.map((pair, index) => (
           <div key={index}>
             <SwissMatchCard

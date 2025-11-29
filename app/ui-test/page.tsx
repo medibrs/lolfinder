@@ -5,6 +5,7 @@ import { TeamAvatar, getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import { SwissMatchCard } from '@/components/ui/swiss-match-card'
 import { SwissMatchCardWrapper } from '@/components/ui/swiss-match-card-wrapper'
 import { SwissMatchColumn } from '@/components/ui/swiss-match-column'
+import { SwissMatchContainer } from '@/components/ui/swiss-match-container'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
@@ -55,7 +56,27 @@ export default function UITestPage() {
   ]
 
   // Real teams for SwissMatchCard testing
-  const realTeams = teams.length >= 4 ? teams.slice(0, 4) : testTeams.slice(0, 4)
+  const realTeams = teams.length >= 16 ? teams.slice(0, 16) : [
+    // Use available teams from database, then add fallback teams
+    ...teams.slice(0, Math.min(teams.length, 16)),
+    // Add fallback teams to reach 16 total
+    { id: '1', name: 'Team Alpha', team_avatar: 29 },
+    { id: '2', name: 'Team Beta', team_avatar: 42 },
+    { id: '3', name: 'Team Gamma', team_avatar: 1 },
+    { id: '4', name: 'Team Delta', team_avatar: 33 },
+    { id: '5', name: 'Team Epsilon', team_avatar: 45 },
+    { id: '6', name: 'Team Zeta', team_avatar: 12 },
+    { id: '7', name: 'Team Eta', team_avatar: 8 },
+    { id: '8', name: 'Team Theta', team_avatar: 22 },
+    { id: '9', name: 'Team Iota', team_avatar: 18 },
+    { id: '10', name: 'Team Kappa', team_avatar: 36 },
+    { id: '11', name: 'Team Lambda', team_avatar: 54 },
+    { id: '12', name: 'Team Mu', team_avatar: 67 },
+    { id: '13', name: 'Team Nu', team_avatar: 73 },
+    { id: '14', name: 'Team Xi', team_avatar: 91 },
+    { id: '15', name: 'Team Omicron', team_avatar: 104 },
+    { id: '16', name: 'Team Pi', team_avatar: 119 }
+  ].slice(0, 16)
 
   return (
     <main className="min-h-screen pt-24 pb-12 bg-gradient-to-b from-background to-secondary/20">
@@ -398,110 +419,107 @@ export default function UITestPage() {
             </div>
           ) : (
             <>
-              {/* 3 Round Tournament */}
+              {/* Swiss Tournament Progression - 5 Columns */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">3 Round Tournament</h3>
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <SwissMatchColumn 
-                    rounds={[
+                <h3 className="text-lg font-semibold mb-4">Swiss Tournament Progression (16 Teams)</h3>
+                <div className="p-2 bg-muted/30 rounded-lg">
+                  <SwissMatchContainer 
+                    columns={[
                       {
-                        title: "Round 1",
-                        teamPairs: [
+                        rounds: [
                           {
-                            team1: realTeams[0],
-                            team2: realTeams[1],
-                            status: 'done',
-                            winner: 'team1'
-                          },
-                          {
-                            team1: realTeams[2],
-                            team2: realTeams[3],
-                            status: 'done',
-                            winner: 'team2'
+                            title: "0:0",
+                            teamPairs: [
+                              { team1: realTeams[0], team2: realTeams[1], status: 'done', winner: 'team1' },
+                              { team1: realTeams[2], team2: realTeams[3], status: 'done', winner: 'team2' },
+                              { team1: realTeams[4], team2: realTeams[5], status: 'done', winner: 'team1' },
+                              { team1: realTeams[6], team2: realTeams[7], status: 'done', winner: 'team2' },
+                              { team1: realTeams[8], team2: realTeams[9], status: 'done', winner: 'team1' },
+                              { team1: realTeams[10], team2: realTeams[11], status: 'done', winner: 'team2' },
+                              { team1: realTeams[12], team2: realTeams[13], status: 'done', winner: 'team1' },
+                              { team1: realTeams[14], team2: realTeams[15], status: 'done', winner: 'team2' }
+                            ]
                           }
                         ]
                       },
                       {
-                        title: "Round 2",
-                        teamPairs: [
+                        rounds: [
                           {
-                            team1: realTeams[0],
-                            team2: realTeams[3],
-                            status: 'live'
+                            title: "1-0",
+                            teamPairs: [
+                              { team1: realTeams[0], team2: realTeams[4], status: 'done', winner: 'team1' },
+                              { team1: realTeams[8], team2: realTeams[12], status: 'done', winner: 'team1' },
+                              { team1: realTeams[2], team2: realTeams[6], status: 'done', winner: 'team2' },
+                              { team1: realTeams[10], team2: realTeams[14], status: 'done', winner: 'team2' }
+                            ]
                           },
                           {
-                            team1: realTeams[1],
-                            team2: realTeams[2],
-                            status: 'done',
-                            winner: 'team1'
+                            title: "0-1",
+                            teamPairs: [
+                              { team1: realTeams[1], team2: realTeams[5], status: 'live' },
+                              { team1: realTeams[9], team2: realTeams[13], status: 'live' },
+                              { team1: realTeams[3], team2: realTeams[7], status: 'scheduled' },
+                              { team1: realTeams[11], team2: realTeams[15], status: 'scheduled' }
+                            ]
                           }
                         ]
                       },
                       {
-                        title: "Round 3",
-                        teamPairs: [
+                        rounds: [
                           {
-                            team1: realTeams[0],
-                            team2: realTeams[1],
-                            status: 'scheduled'
-                          }
-                        ]
-                      }
-                    ]}
-                  />
-                </div>
-              </div>
-
-              {/* Swiss Format Example */}
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">Swiss Format Example</h3>
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <SwissMatchColumn 
-                    rounds={[
-                      {
-                        title: "Round 1",
-                        teamPairs: [
-                          {
-                            team1: realTeams[0],
-                            team2: realTeams[1],
-                            status: 'done',
-                            winner: 'team1'
+                            title: "2:0",
+                            teamPairs: [
+                              { team1: realTeams[0], team2: realTeams[8], status: 'done', winner: 'team1' },
+                              { team1: realTeams[2], team2: realTeams[10], status: 'done', winner: 'team2' }
+                            ]
                           },
                           {
-                            team1: realTeams[2],
-                            team2: realTeams[3],
-                            status: 'done',
-                            winner: 'team1'
+                            title: "1:1",
+                            teamPairs: [
+                              { team1: realTeams[4], team2: realTeams[12], status: 'done', winner: 'team1' },
+                              { team1: realTeams[6], team2: realTeams[14], status: 'live' },
+                              { team1: realTeams[1], team2: realTeams[9], status: 'live' },
+                              { team1: realTeams[3], team2: realTeams[11], status: 'scheduled' }
+                            ]
+                          },
+                          {
+                            title: "0:2",
+                            teamPairs: [
+                              { team1: realTeams[5], team2: realTeams[13], status: 'scheduled' },
+                              { team1: realTeams[7], team2: realTeams[15], status: 'scheduled' }
+                            ]
                           }
                         ]
                       },
                       {
-                        title: "Round 2",
-                        teamPairs: [
+                        rounds: [
                           {
-                            team1: realTeams[0],
-                            team2: realTeams[2],
-                            status: 'live'
+                            title: "2:1",
+                            teamPairs: [
+                              { team1: realTeams[0], team2: realTeams[4], status: 'done', winner: 'team1' },
+                              { team1: realTeams[6], team2: realTeams[2], status: 'live' },
+                              { team1: realTeams[1], team2: realTeams[3], status: 'live' }
+                            ]
                           },
                           {
-                            team1: realTeams[1],
-                            team2: realTeams[3],
-                            status: 'scheduled'
+                            title: "1:2",
+                            teamPairs: [
+                              { team1: realTeams[8], team2: realTeams[12], status: 'scheduled' },
+                              { team1: realTeams[10], team2: realTeams[14], status: 'scheduled' },
+                              { team1: realTeams[5], team2: realTeams[7], status: 'scheduled' }
+                            ]
                           }
                         ]
                       },
                       {
-                        title: "Round 3",
-                        teamPairs: [
+                        rounds: [
                           {
-                            team1: null,
-                            team2: null,
-                            status: 'scheduled'
-                          },
-                          {
-                            team1: realTeams[0],
-                            team2: null,
-                            status: 'scheduled'
+                            title: "2:2",
+                            teamPairs: [
+                              { team1: realTeams[0], team2: realTeams[6], status: 'live' },
+                              { team1: realTeams[2], team2: realTeams[1], status: 'scheduled' },
+                              { team1: realTeams[4], team2: realTeams[8], status: 'scheduled' }
+                            ]
                           }
                         ]
                       }

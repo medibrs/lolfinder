@@ -3,6 +3,7 @@
 import { SwissMatchCardWrapper } from './swiss-match-card-wrapper'
 import { SwissMatchCardTeam } from './swiss-match-card'
 import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 interface SwissMatchColumnProps {
   rounds: Array<{
@@ -21,8 +22,14 @@ export function SwissMatchColumn({
   rounds,
   className 
 }: SwissMatchColumnProps) {
+  const isMobile = useIsMobile()
+  
   return (
-    <div className={cn("w-full space-y-6", className)}>
+    <div className={cn(
+      "w-full flex flex-col justify-evenly",
+      isMobile ? "gap-[8px]" : "gap-[16px]",
+      className
+    )}>
       {rounds.map((round, index) => (
         <SwissMatchCardWrapper
           key={index}
