@@ -87,7 +87,7 @@ export default function UITestPage() {
         </div>
 
         {/* Team Avatar Tests */}
-        <Card className="p-6 mb-8">
+        <Card className="p-2 mb-2">
           <h2 className="text-xl font-bold mb-6">Team Avatar Component</h2>
           
           {loading ? (
@@ -410,7 +410,7 @@ export default function UITestPage() {
         </Card>
 
         {/* Swiss Match Column Tests */}
-        <Card className="p-6 mb-8">
+        <Card className="p-2 mb-8">
           <h2 className="text-xl font-bold mb-6">Swiss Match Column Component</h2>
           
           {loading ? (

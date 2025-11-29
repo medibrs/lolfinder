@@ -54,7 +54,7 @@ export function SwissMatchCard({
   return (
     <div className={cn(
       "relative border-1 transition-all duration-200 bg-zinc-900 grid items-center",
-      isMobile ? "grid-cols-[1fr_8px_1fr] gap-[1px] px-1 py-0" : "grid-cols-[1fr_12px_1fr] gap-[2px] px-2 py-1",
+      isMobile ? "grid-cols-[1fr_8px_1fr] gap-[1px] px-[2px] py-[1px]" : "grid-cols-[1fr_12px_1fr] gap-[2px] px-2 py-1",
       status === 'live' 
         ? "border-red-500 shadow-red-500/20 shadow-lg animate-pulse" 
         : statusColors[status],
@@ -86,7 +86,7 @@ export function SwissMatchCard({
       <div className="flex justify-center">
         <div className={cn(
           "font-bold text-zinc-400 uppercase tracking-wider",
-          isMobile ? "text-[6px] tracking-tight" : "text-xs"
+          isMobile ? "text-[4px] tracking-tight" : "text-xs"
         )}>
           VS
         </div>

@@ -28,12 +28,12 @@ export function SwissMatchContainer({
   
   return (
     <div className={cn(
-      "w-full relative overflow-x-auto",
+      "w-full overflow-hidden",
       className
     )}>
       <div className={cn(
         "flex",
-        isMobile ? "gap-2 p-2" : "gap-[24px] p-4"
+        isMobile ? "gap-2 p-1" : "gap-[24px] p-4"
       )}>
         {columns.map((column, index) => (
           <SwissMatchColumn

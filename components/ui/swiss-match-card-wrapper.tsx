@@ -28,7 +28,7 @@ export function SwissMatchCardWrapper({
       <div className={cn("mb-1", isMobile ? "mb-0" : "")}>
         <h2 className={cn(
           "text-left text-white uppercase",
-          isMobile ? "text-[10px] font-[600]" : "text-[12px] font-[700]"
+          isMobile ? "text-[8px] font-[600]" : "text-[12px] font-[700]"
         )}>{title}</h2>
       </div>
 

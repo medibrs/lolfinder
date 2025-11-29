@@ -16,20 +16,22 @@ export interface TeamAvatarTeam {
 interface TeamAvatarProps {
   team: TeamAvatarTeam | null
   isWinner?: boolean
-  size?: 'xs' | 'sm' | 'md' | 'lg'
+  size?: 'xxs' | 'xs' | 'sm' | 'md' | 'lg'
   showTooltip?: boolean
   className?: string
 }
 
 const sizeClasses = {
-  xs: 'w-5 h-5',
-  sm: 'w-7 h-7',
-  md: 'w-9 h-9',
-  lg: 'w-12 h-12'
+  xxs: 'w-3 h-3',
+  xs: 'w-4 h-4',
+  sm: 'w-5 h-5',
+  md: 'w-7 h-7',
+  lg: 'w-9 h-9'
 }
 
 const iconSizes = {
-  xs: 'h-2 w-2',
+  xxs: 'h-1 w-1',
+  xs: 'h-1.5 w-1.5',
   sm: 'h-3 w-3',
   md: 'h-4 w-4',
   lg: 'h-5 w-5'
@@ -48,14 +50,14 @@ export function TeamAvatar({
   className 
 }: TeamAvatarProps) {
   const isMobile = useIsMobile()
+  const [imageError, setImageError] = useState(false)
   
   // Use smaller sizes on mobile
-  const actualSize = isMobile 
-    ? (size === 'lg' ? 'sm' : size === 'md' ? 'xs' : size === 'sm' ? 'xs' : 'xs')
-    : size
+  const actualSize = isMobile ? 'xxs' : size
   
   const sizeClass = sizeClasses[actualSize]
   const iconSize = iconSizes[actualSize]
+  
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
   useEffect(() => {
@@ -64,10 +66,14 @@ export function TeamAvatar({
     }
   }, [team?.team_avatar])
 
+  const handleImageError = () => {
+    setImageError(true)
+  }
+
   if (!team) {
     return (
       <div className={cn(
-        "rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center shadow-lg shrink-0",
+        "rounded-full bg-zinc-800 flex items-center justify-center shadow-lg shrink-0",
         sizeClass,
         className
       )}>
@@ -79,20 +85,21 @@ export function TeamAvatar({
   return (
     <div className="group relative shrink-0">
       <div className={cn(
-        "rounded-full overflow-hidden border-2 shadow-lg transition-all duration-200",
+        "rounded-full overflow-hidden shadow-lg transition-all duration-200 shrink-0",
         sizeClass,
         isWinner 
-          ? "border-green-700 shadow-green-700/20" 
-          : "border-zinc-700 hover:border-zinc-500",
+          ? "border-[1px] border-green-500 shadow-green-500/5" 
+          : "border-[1px] border-transparent hover:border-zinc-600",
         className
       )}>
-        {team.team_avatar && avatarUrl ? (
+        {team.team_avatar && avatarUrl && !imageError ? (
           <Image
             src={avatarUrl}
             alt={team.name}
             width={48}
             height={48}
             className="w-full h-full object-cover"
+            onError={handleImageError}
           />
         ) : (
           <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
