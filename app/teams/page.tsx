@@ -11,7 +11,7 @@ import { cache, CacheConfig } from '@/lib/cache'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Shield, Users, Trophy, Search } from 'lucide-react'
-import Image from 'next/image'
+import { TeamAvatar } from '@/components/ui/team-avatar'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -399,21 +399,13 @@ export default function TeamsPage() {
               filteredTeams.map((team) => (
                 <Card key={team.id} className="bg-card border-border p-6 hover:border-primary transition cursor-pointer" onClick={() => router.push(`/teams/${team.id}`)}>
                   <div className="flex items-start gap-4 mb-4">
-                    {/* Team Avatar/Icon */}
+                    {/* Team Avatar */}
                     <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center border-2 border-border overflow-hidden">
-                        {team.team_avatar ? (
-                          <Image 
-                            src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${team.team_avatar}.png`}
-                            alt="Team Avatar"
-                            width={64}
-                            height={64}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Shield className="h-8 w-8 text-primary" />
-                        )}
-                      </div>
+                      <TeamAvatar 
+                        team={team} 
+                        size="lg"
+                        showTooltip={true}
+                      />
                       {/* Team Size Badge */}
                       <div className="absolute -bottom-1 -right-1 bg-background border border-border rounded-full w-6 h-6 flex items-center justify-center">
                         <span className="text-xs font-bold">{team.current_members}</span>

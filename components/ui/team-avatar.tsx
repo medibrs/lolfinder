@@ -3,6 +3,8 @@
 import Image from 'next/image'
 import { Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getProfileIconUrl } from '@/lib/ddragon'
+import { useState, useEffect } from 'react'
 
 export interface TeamAvatarTeam {
   id: string
@@ -30,9 +32,9 @@ const iconSizes = {
   lg: 'h-5 w-5'
 }
 
-export function getTeamAvatarUrl(avatarId?: number) {
+export async function getTeamAvatarUrl(avatarId?: number) {
   if (!avatarId) return null
-  return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
+  return await getProfileIconUrl(avatarId)
 }
 
 export function TeamAvatar({ 
@@ -44,6 +46,13 @@ export function TeamAvatar({
 }: TeamAvatarProps) {
   const sizeClass = sizeClasses[size]
   const iconSize = iconSizes[size]
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (team?.team_avatar) {
+      getTeamAvatarUrl(team.team_avatar).then(setAvatarUrl)
+    }
+  }, [team?.team_avatar])
 
   if (!team) {
     return (
@@ -63,13 +72,13 @@ export function TeamAvatar({
         "rounded-full overflow-hidden border-2 shadow-lg transition-all duration-200",
         sizeClass,
         isWinner 
-          ? "border-green-500 shadow-green-500/20" 
+          ? "border-green-700 shadow-green-700/20" 
           : "border-zinc-700 hover:border-zinc-500",
         className
       )}>
-        {team.team_avatar ? (
+        {team.team_avatar && avatarUrl ? (
           <Image
-            src={getTeamAvatarUrl(team.team_avatar)!}
+            src={avatarUrl}
             alt={team.name}
             width={48}
             height={48}
@@ -85,7 +94,7 @@ export function TeamAvatar({
       {/* Tooltip */}
       {showTooltip && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/90 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-zinc-800">
-          {team.name}
+          {team?.name || 'TBD'}
         </div>
       )}
     </div>
