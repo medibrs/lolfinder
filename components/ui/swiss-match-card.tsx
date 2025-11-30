@@ -72,7 +72,7 @@ export function SwissMatchCard({
     <div className={cn(
       "relative transition-all duration-200 grid items-center rounded-md",
       getBackgroundClass(),
-      isMobile || hideVs ? "grid-cols-[auto_auto] gap-[2px] px-[2px] py-[2px] justify-center" : "grid-cols-[1fr_12px_1fr] gap-[2px] px-2 py-2",
+      isMobile || hideVs ? "grid-cols-[auto_auto] gap-[2px] px-[2px] py-[2px] justify-around" : "grid-cols-[1fr_12px_1fr] gap-[2px] px-2 py-2",
       status === 'live' && "border border-red-500/70 shadow-[0_0_10px_rgba(239,68,68,0.4)] animate-pulse",
       className
     )}>
