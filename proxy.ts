@@ -30,9 +30,38 @@ export async function proxy(request: NextRequest) {
   // IMPORTANT: Avoid writing any logic between createServerClient and
   // the line above, as it could accidentally interfere with the refresh process
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
+  
+  try {
+    const { data, error } = await supabase.auth.getUser()
+    
+    // Only clear cookies for actual token errors, not "session missing" (normal for logged out users)
+    if (error) {
+      const isTokenError = error.message?.toLowerCase().includes('refresh token') ||
+                           error.message?.toLowerCase().includes('invalid') ||
+                           error.message?.toLowerCase().includes('expired')
+      
+      if (isTokenError) {
+        console.error('Token error in proxy, clearing cookies:', error.message)
+        
+        // Clear all Supabase auth cookies to force fresh login
+        const cookiesToClear = request.cookies.getAll()
+          .filter(cookie => cookie.name.includes('supabase') || cookie.name.includes('sb-'))
+        
+        cookiesToClear.forEach(cookie => {
+          supabaseResponse.cookies.set(cookie.name, '', { maxAge: 0 })
+        })
+        
+        // Sign out to clear server-side session
+        await supabase.auth.signOut()
+      }
+      // "Auth session missing" is normal for logged out users - don't log or clear
+    } else {
+      user = data?.user
+    }
+  } catch (error: any) {
+    console.error('Auth exception in proxy:', error?.message || error)
+  }
 
   // Protected routes that require authentication
   const protectedRoutes = ['/setup-profile', '/admin']
