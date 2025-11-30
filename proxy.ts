@@ -35,33 +35,32 @@ export async function proxy(request: NextRequest) {
   try {
     const { data, error } = await supabase.auth.getUser()
     
-    // If there's an auth error (like invalid refresh token), clear the cookies
+    // Only clear cookies for actual token errors, not "session missing" (normal for logged out users)
     if (error) {
-      console.error('Auth error in proxy:', error.message)
+      const isTokenError = error.message?.toLowerCase().includes('refresh token') ||
+                           error.message?.toLowerCase().includes('invalid') ||
+                           error.message?.toLowerCase().includes('expired')
       
-      // Clear all Supabase auth cookies to force fresh login
-      const cookiesToClear = request.cookies.getAll()
-        .filter(cookie => cookie.name.includes('supabase') || cookie.name.includes('sb-'))
-      
-      cookiesToClear.forEach(cookie => {
-        supabaseResponse.cookies.set(cookie.name, '', { maxAge: 0 })
-      })
-      
-      // Sign out to clear server-side session
-      await supabase.auth.signOut()
+      if (isTokenError) {
+        console.error('Token error in proxy, clearing cookies:', error.message)
+        
+        // Clear all Supabase auth cookies to force fresh login
+        const cookiesToClear = request.cookies.getAll()
+          .filter(cookie => cookie.name.includes('supabase') || cookie.name.includes('sb-'))
+        
+        cookiesToClear.forEach(cookie => {
+          supabaseResponse.cookies.set(cookie.name, '', { maxAge: 0 })
+        })
+        
+        // Sign out to clear server-side session
+        await supabase.auth.signOut()
+      }
+      // "Auth session missing" is normal for logged out users - don't log or clear
     } else {
       user = data?.user
     }
   } catch (error: any) {
     console.error('Auth exception in proxy:', error?.message || error)
-    
-    // Clear cookies on any auth exception
-    const cookiesToClear = request.cookies.getAll()
-      .filter(cookie => cookie.name.includes('supabase') || cookie.name.includes('sb-'))
-    
-    cookiesToClear.forEach(cookie => {
-      supabaseResponse.cookies.set(cookie.name, '', { maxAge: 0 })
-    })
   }
 
   // Protected routes that require authentication
