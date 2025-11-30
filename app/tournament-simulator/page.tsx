@@ -46,421 +46,455 @@ interface SwissFormatData {
   }>
 }
 
-const mockTeams: Team[] = [
-  { id: '1', name: 'Alpha Squad', team_avatar: 1 },
-  { id: '2', name: 'Beta Force', team_avatar: 2 },
-  { id: '3', name: 'Gamma Unit', team_avatar: 3 },
-  { id: '4', name: 'Delta Team', team_avatar: 4 },
-  { id: '5', name: 'Epsilon Crew', team_avatar: 5 },
-  { id: '6', name: 'Zeta Group', team_avatar: 6 },
-  { id: '7', name: 'Eta Division', team_avatar: 7 },
-  { id: '8', name: 'Theta Battalion', team_avatar: 8 }
-]
+interface TeamRecord {
+  id: string
+  wins: number
+  losses: number
+}
 
 export default function TournamentSimulator() {
   const [tournamentData, setTournamentData] = useState<SwissFormatData | null>(null)
-  const [teamCount, setTeamCount] = useState(8) // number of teams
+  const [teamCount, setTeamCount] = useState(8)
+  const [maxWins, setMaxWins] = useState(2)
+  const [maxLosses, setMaxLosses] = useState(2)
+  
+  const [teams, setTeams] = useState<Team[]>([])
+  const [teamRecords, setTeamRecords] = useState<Map<string, TeamRecord>>(new Map())
 
-  // Generate mock teams based on count
   const generateTeams = (count: number): Team[] => {
     return Array.from({ length: count }, (_, i) => ({
       id: (i + 1).toString(),
-      name: `Team ${String.fromCharCode(65 + i)}`, // A, B, C, etc.
-      team_avatar: (i % 8) + 1 // Cycle through 8 avatars
+      name: `Team ${String.fromCharCode(65 + i)}`,
+      team_avatar: (i % 8) + 1
     }))
   }
 
-  // Initialize tournament with dynamic team count
+  // Factorial helper
+  const factorial = (n: number): number => {
+    if (n <= 1) return 1
+    return n * factorial(n - 1)
+  }
+
+  // nCr helper
+  const combinations = (n: number, k: number): number => {
+    if (k < 0 || k > n) return 0
+    return factorial(n) / (factorial(k) * factorial(n - k))
+  }
+
   const initializeTournament = () => {
-    const teams = generateTeams(teamCount)
-    const matchCount = Math.floor(teamCount / 2)
+    const newTeams = generateTeams(teamCount)
+    setTeams(newTeams)
     
-    const initialData: SwissFormatData = {
-      columns: [
-        {
-          rounds: [
-            {
-              title: "0:0",
-              teamPairs: Array.from({ length: matchCount }, (_, i) => ({
-                team1: teams[i * 2] || null,
-                team2: teams[i * 2 + 1] || null,
+    // Reset records
+    const initialRecords = new Map<string, TeamRecord>()
+    newTeams.forEach(t => {
+      initialRecords.set(t.id, { id: t.id, wins: 0, losses: 0 })
+    })
+    setTeamRecords(initialRecords)
+
+    const totalRounds = maxWins + maxLosses - 1
+    const columns = []
+    
+    const createPlaceholder = (id: string) => ({
+        id: `ph-${id}`, name: 'TBD', team_avatar: undefined
+    })
+
+    // Helper to create matches with placeholders
+    const createMatches = (matchCount: number, prefix: string) => 
+      Array.from({ length: Math.max(1, Math.floor(matchCount)) }, (_, i) => ({
+        team1: createPlaceholder(`${prefix}-m${i}-1`),
+        team2: createPlaceholder(`${prefix}-m${i}-2`),
+        status: 'scheduled' as const,
+        winner: null
+      }))
+    
+    // Helper to create topcut placeholders
+    const createTopCutTeams = (teamCount: number, prefix: string) =>
+      Array.from({ length: Math.max(1, Math.floor(teamCount)) }, (_, i) => 
+        createPlaceholder(`${prefix}-t${i}`)
+      )
+
+    // Calculate bucket capacity: N * C(r, w) / 2^r
+    const getBucketCount = (w: number, l: number) => {
+        const r = w + l
+        // For buckets that just Qualified/Eliminated, they came from r-1
+        // But here we iterate r.
+        // Standard bucket capacity at round r (before match) is determined by previous round.
+        // But theoretically it follows the distribution.
+        const count = (teamCount * combinations(r, w)) / Math.pow(2, r)
+        return count
+    }
+
+    // Generate Columns
+    for (let r = 1; r <= totalRounds; r++) {
+      const roundIndex = r - 1
+      const roundsInCol: SwissRound[] = []
+      const isLastRound = r === totalRounds
+
+      // Special handling for the last round (Double TopCut style)
+      if (isLastRound) {
+        // Qualified Top Left: (maxWins)-(maxLosses-2) -> e.g. 3-1
+        const qLeftW = maxWins
+        const qLeftL = maxLosses - 2
+        const qLeftCount = getBucketCount(qLeftW - 1, qLeftL) / 2 // Winners from previous round (approx)
+        // Actually, for Q/E buckets, the count is the winners of the previous match bucket.
+        // Previous bucket was (qLeftW-1, qLeftL). Count P. Winners P/2.
+        // Correct.
+        
+        // Qualified Top Right: (maxWins)-(maxLosses-1) -> e.g. 3-2
+        const qRightW = maxWins
+        const qRightL = maxLosses - 1
+        const qRightCount = getBucketCount(qRightW - 1, qRightL) / 2
+
+        if (qLeftL >= 0) {
+            roundsInCol.push({
+                type: 'topcut',
+                title: "",
+                topCut: {
+                    leftTitle: `${qLeftW}:${qLeftL}`,
+                    rightTitle: `${qRightW}:${qRightL}`,
+                    leftTeams: createTopCutTeams(qLeftCount, `q-left-${r}`),
+                    rightTeams: createTopCutTeams(qRightCount, `q-right-${r}`),
+                    backgroundColor: 'green'
+                }
+            })
+        } else {
+             roundsInCol.push({
+                type: 'topcut',
+                title: `${qRightW}:${qRightL}`,
+                topCut: {
+                    teams: createTopCutTeams(qRightCount, `q-single-${r}`),
+                    backgroundColor: 'green'
+                }
+             })
+        }
+
+        // Decider Match: (maxWins-1)-(maxLosses-1) -> e.g. 2-2
+        const dW = maxWins - 1
+        const dL = maxLosses - 1
+        const dCount = getBucketCount(dW, dL)
+        roundsInCol.push({
+            title: `${dW}:${dL}`,
+            isLastRound: true,
+            teamPairs: createMatches(dCount / 2, `decider-${r}`)
+        })
+
+        // Eliminated Bottom Left: (maxWins-2)-(maxLosses) -> e.g. 1-3
+        const eLeftW = maxWins - 2
+        const eLeftL = maxLosses
+        const eLeftCount = getBucketCount(eLeftW, eLeftL - 1) / 2
+
+        // Eliminated Bottom Right: (maxWins-1)-(maxLosses) -> e.g. 2-3
+        const eRightW = maxWins - 1
+        const eRightL = maxLosses
+        const eRightCount = getBucketCount(eRightW, eRightL - 1) / 2
+
+        if (eLeftW >= 0) {
+            roundsInCol.push({
+                type: 'topcut',
+                title: "",
+                topCut: {
+                    leftTitle: `${eLeftW}:${eLeftL}`,
+                    rightTitle: `${eRightW}:${eRightL}`,
+                    leftTeams: createTopCutTeams(eLeftCount, `e-left-${r}`),
+                    rightTeams: createTopCutTeams(eRightCount, `e-right-${r}`),
+                    backgroundColor: 'red'
+                }
+            })
+        } else {
+            roundsInCol.push({
+                type: 'topcut',
+                title: `${eRightW}:${eRightL}`,
+                topCut: {
+                    teams: createTopCutTeams(eRightCount, `e-single-${r}`),
+                    backgroundColor: 'red'
+                }
+            })
+        }
+
+      } else {
+        // Standard Round
+        const qualifiedBuckets = []
+        const matchBuckets = []
+        const eliminatedBuckets = []
+        
+        for (let w = roundIndex; w >= 0; w--) {
+            const l = roundIndex - w
+            if (w > maxWins || l > maxLosses) continue
+
+            if (w === maxWins && l < maxLosses) {
+                if (l <= roundIndex) { 
+                    const count = getBucketCount(w - 1, l) / 2
+                     qualifiedBuckets.push({ w, l, count })
+                }
+            } else if (l === maxLosses && w < maxWins) {
+                if (w <= roundIndex) {
+                    const count = getBucketCount(w, l - 1) / 2
+                    eliminatedBuckets.push({ w, l, count })
+                }
+            } else if (w < maxWins && l < maxLosses) {
+                const count = getBucketCount(w, l)
+                matchBuckets.push({ w, l, count })
+            }
+        }
+        
+        qualifiedBuckets.forEach(({w, l, count}) => {
+            roundsInCol.push({
+                type: 'topcut',
+                title: `${w}:${l}`,
+                topCut: {
+                    teams: createTopCutTeams(count, `q-${r}-${w}-${l}`),
+                    backgroundColor: 'green'
+                }
+            })
+        })
+
+        matchBuckets.forEach(({w, l, count}) => {
+            roundsInCol.push({
+                title: `${w}:${l}`,
+                teamPairs: createMatches(count / 2, `m-${r}-${w}-${l}`)
+            })
+        })
+
+        eliminatedBuckets.forEach(({w, l, count}) => {
+            roundsInCol.push({
+                type: 'topcut',
+                title: `${w}:${l}`,
+                topCut: {
+                    teams: createTopCutTeams(count, `e-${r}-${w}-${l}`),
+                    backgroundColor: 'red'
+                }
+            })
+        })
+      }
+      
+      columns.push({ rounds: roundsInCol })
+    }
+
+    const initialData: SwissFormatData = { columns }
+    
+    // Initial Pairing for Round 1 (0-0)
+    // We need to populate the first bucket 0:0
+    if (columns.length > 0 && columns[0].rounds.length > 0) {
+        const r1Matches = []
+        const shuffled = [...newTeams].sort(() => Math.random() - 0.5)
+        for (let i = 0; i < Math.floor(newTeams.length / 2); i++) {
+            r1Matches.push({
+                team1: shuffled[i * 2],
+                team2: shuffled[i * 2 + 1],
                 status: 'scheduled' as const,
                 winner: null
-              }))
-            }
-          ]
-        },
-        {
-          rounds: [
-            {
-              title: "1:0",
-              teamPairs: Array.from({ length: Math.floor(matchCount / 2) }, () => ({
-                team1: null, team2: null, status: 'scheduled' as const, winner: null
-              }))
-            },
-            {
-              title: "0:1",
-              teamPairs: Array.from({ length: Math.floor(matchCount / 2) }, () => ({
-                team1: null, team2: null, status: 'scheduled' as const, winner: null
-              }))
-            }
-          ]
-        },
-        {
-          rounds: [
-            {
-              title: "2:0",
-              teamPairs: Array.from({ length: Math.floor(matchCount / 4) }, () => ({
-                team1: null, team2: null, status: 'scheduled' as const, winner: null
-              }))
-            },
-            {
-              title: "1:1",
-              teamPairs: Array.from({ length: Math.floor(matchCount / 2) }, () => ({
-                team1: null, team2: null, status: 'scheduled' as const, winner: null
-              }))
-            },
-            {
-              title: "0:2",
-              teamPairs: Array.from({ length: Math.floor(matchCount / 4) }, () => ({
-                team1: null, team2: null, status: 'scheduled' as const, winner: null
-              }))
-            }
-          ]
-        },
-        {
-          rounds: [
-            {
-              type: 'topcut',
-              title: "3:0",
-              topCut: {
-                teams: Array.from({ length: Math.min(2, Math.floor(matchCount / 4)) }, (_, i) => ({
-                  id: `placeholder-3-0-${i + 1}`, 
-                  name: `TBD 3:0-${i + 1}`, 
-                  team_avatar: undefined
-                })),
-                backgroundColor: 'green'
-              }
-            },
-            {
-              title: "2:1",
-              teamPairs: Array.from({ length: Math.floor(matchCount / 2) }, () => ({
-                team1: null, team2: null, status: 'scheduled' as const, winner: null
-              }))
-            },
-            {
-              title: "1:2",
-              teamPairs: Array.from({ length: Math.floor(matchCount / 2) }, () => ({
-                team1: null, team2: null, status: 'scheduled' as const, winner: null
-              }))
-            },
-            {
-              type: 'topcut',
-              title: "0:3",
-              topCut: {
-                teams: Array.from({ length: Math.min(2, Math.floor(matchCount / 4)) }, (_, i) => ({
-                  id: `placeholder-0-3-${i + 1}`, 
-                  name: `TBD 0:3-${i + 1}`, 
-                  team_avatar: undefined
-                })),
-                backgroundColor: 'red'
-              }
-            }
-          ]
-        },
-        {
-          rounds: [
-            {
-              type: 'topcut',
-              title: "",
-              topCut: {
-                leftTeams: Array.from({ length: Math.min(3, Math.floor(matchCount / 2)) }, (_, i) => ({
-                  id: `placeholder-3-1-${i + 1}`, 
-                  name: `TBD 3:1-${i + 1}`, 
-                  team_avatar: undefined
-                })),
-                rightTeams: Array.from({ length: Math.min(3, Math.floor(matchCount / 2)) }, (_, i) => ({
-                  id: `placeholder-3-2-${i + 1}`, 
-                  name: `TBD 3:2-${i + 1}`, 
-                  team_avatar: undefined
-                })),
-                leftTitle: "3:1",
-                rightTitle: "3:2",
-                backgroundColor: 'green'
-              }
-            },
-            {
-              title: "2:2",
-              isLastRound: true,
-              teamPairs: Array.from({ length: Math.floor(matchCount / 2) }, () => ({
-                team1: null, team2: null, status: 'scheduled' as const, winner: null
-              }))
-            },
-            {
-              type: 'topcut',
-              title: "",
-              topCut: {
-                leftTeams: Array.from({ length: Math.min(3, Math.floor(matchCount / 2)) }, (_, i) => ({
-                  id: `placeholder-1-3-${i + 1}`, 
-                  name: `TBD 1:3-${i + 1}`, 
-                  team_avatar: undefined
-                })),
-                rightTeams: Array.from({ length: Math.min(3, Math.floor(matchCount / 2)) }, (_, i) => ({
-                  id: `placeholder-2-3-${i + 1}`, 
-                  name: `TBD 2:3-${i + 1}`, 
-                  team_avatar: undefined
-                })),
-                leftTitle: "1:3",
-                rightTitle: "2:3",
-                backgroundColor: 'red'
-              }
-            }
-          ]
+            })
         }
-      ]
+        // If odd number, one team sits out (not handled here for simplicity)
+        
+        columns[0].rounds[0].teamPairs = r1Matches
+        // Update title if needed? It's 0:0 generated by loop
     }
-    
+
     setTournamentData(initialData)
   }
 
-  // Simulate match result
-  const simulateMatch = (team1: SwissMatchCardTeam | null, team2: SwissMatchCardTeam | null): 'team1' | 'team2' | null => {
-    if (!team1 || !team2) return null
-    return Math.random() > 0.5 ? 'team1' : 'team2'
-  }
+  // Re-initialize when settings change
+  useEffect(() => {
+    initializeTournament()
+  }, [teamCount, maxWins, maxLosses]) // Dependency on settings
 
-  // Get all scheduled matches in order
-  const getAllMatches = () => {
+  const getScheduledMatches = () => {
     if (!tournamentData) return []
-    
-    const matches: Array<{
-      columnIndex: number
-      roundIndex: number
-      matchIndex: number
-      round: SwissRound
-      teamPair: any
-    }> = []
-    
-    tournamentData.columns.forEach((column, colIndex) => {
-      column.rounds.forEach((round, roundIndex) => {
-        if (round.teamPairs) {
-          round.teamPairs.forEach((teamPair, matchIndex) => {
-            if (teamPair.status === 'scheduled') {
-              matches.push({ columnIndex: colIndex, roundIndex, matchIndex, round, teamPair })
+    const matches: any[] = []
+    tournamentData.columns.forEach((col, cIdx) => {
+      col.rounds.forEach((round, rIdx) => {
+        round.teamPairs?.forEach((pair, mIdx) => {
+          if (pair.status === 'scheduled' && pair.team1 && pair.team2) {
+            // Check if both teams are real, not placeholders
+            const isRealTeam1 = !pair.team1.id.startsWith('ph-')
+            const isRealTeam2 = !pair.team2.id.startsWith('ph-')
+            if (isRealTeam1 && isRealTeam2) {
+              matches.push({ cIdx, rIdx, mIdx, pair })
             }
-          })
-        }
+          }
+        })
       })
     })
-    
+    console.log('Scheduled matches:', matches.length, matches.map(m => `${m.cIdx}-${m.rIdx}-${m.mIdx}`))
     return matches
   }
 
-  // Play next match
   const playNextMatch = () => {
-    if (!tournamentData) return
-    
-    const matches = getAllMatches()
-    if (matches.length === 0) {
-      return
-    }
-    
-    const nextMatch = matches[0]
-    const winner = simulateMatch(nextMatch.teamPair.team1, nextMatch.teamPair.team2)
-    
-    // Update match status
-    const newData = { ...tournamentData }
-    newData.columns[nextMatch.columnIndex].rounds[nextMatch.roundIndex].teamPairs![nextMatch.matchIndex] = {
-      ...nextMatch.teamPair,
-      status: 'done',
-      winner
-    }
-    
-    setTournamentData(newData)
-    
-    // Check if we need to progress to next round
-    setTimeout(() => {
-      checkAndProgressRounds(newData)
-    }, 100)
-  }
+    const matches = getScheduledMatches()
+    if (matches.length === 0) return
 
-  // Check and progress through all rounds as needed
-  const checkAndProgressRounds = (data: SwissFormatData) => {
-    let currentData = { ...data }
-    let hasProgressed = true
+    const match = matches[0]
+    const winner = Math.random() > 0.5 ? 'team1' : 'team2'
     
-    // Keep progressing while we can
-    while (hasProgressed) {
-      hasProgressed = false
-      
-      // Check if column 0 (0:0) is complete and progress to column 1
-      if (canProgressColumn(currentData, 0)) {
-        currentData = progressFromColumn0(currentData)
-        hasProgressed = true
-      }
-      
-      // Check if column 1 (1:0/0:1) is complete and progress to column 2
-      if (canProgressColumn(currentData, 1)) {
-        currentData = progressFromColumn1(currentData)
-        hasProgressed = true
-      }
-      
-      // Check if column 2 (2:0/1:1/0:2) is complete and progress to column 3
-      if (canProgressColumn(currentData, 2)) {
-        currentData = progressFromColumn2(currentData)
-        hasProgressed = true
-      }
+    // Deep clone to ensure React detects changes
+    const newData: SwissFormatData = JSON.parse(JSON.stringify(tournamentData!))
+    const pair = newData.columns[match.cIdx].rounds[match.rIdx].teamPairs![match.mIdx]
+    pair.status = 'done'
+    pair.winner = winner
+
+    const winnerId = winner === 'team1' ? pair.team1!.id : pair.team2!.id
+    const loserId = winner === 'team1' ? pair.team2!.id : pair.team1!.id
+    
+    const newRecords = new Map(teamRecords)
+    const winRec = newRecords.get(winnerId)
+    const loseRec = newRecords.get(loserId)
+    
+    // These should always exist since we filter placeholders in getScheduledMatches
+    if (winRec && loseRec) {
+      winRec.wins++
+      loseRec.losses++
     }
+    setTeamRecords(newRecords)
     
-    if (JSON.stringify(currentData) !== JSON.stringify(data)) {
-      setTournamentData(currentData)
+    // Check if we should progress (all matches in current bucket done)
+    const currentBucketPairs = newData.columns[match.cIdx].rounds[match.rIdx].teamPairs
+    const allDone = currentBucketPairs?.every(p => p.status === 'done')
+    
+    if (allDone) {
+      // Progress immediately with the current data
+      progressTournament(newData, newRecords)
+    } else {
+      setTournamentData(newData)
     }
   }
 
-  // Check if a column has all matches completed
-  const canProgressColumn = (data: SwissFormatData, columnIndex: number): boolean => {
-    const column = data.columns[columnIndex]
-    if (!column) return false
+  const progressTournament = (data: SwissFormatData, records: Map<string, TeamRecord>) => {
+    console.log('progressTournament called')
+    // Deep clone to ensure React detects changes
+    const newData: SwissFormatData = JSON.parse(JSON.stringify(data))
     
-    return column.rounds.every(round => {
-      if (!round.teamPairs) return true // Skip topcut rounds
-      return round.teamPairs.every(pair => pair.status === 'done')
+    // Helper to find coordinates of a bucket W-L
+    const findBucketCoords = (w: number, l: number) => {
+        for (let c = 0; c < newData.columns.length; c++) {
+            for (let r = 0; r < newData.columns[c].rounds.length; r++) {
+                const round = newData.columns[c].rounds[r]
+                // Check simple title match
+                if (round.title === `${w}:${l}`) return { c, r, isTopCut: round.type === 'topcut' }
+                
+                // Check complex titles (Last round)
+                if (round.topCut) {
+                    if (round.topCut.leftTitle === `${w}:${l}`) return { c, r, isLeft: true, isTopCut: true }
+                    if (round.topCut.rightTitle === `${w}:${l}`) return { c, r, isRight: true, isTopCut: true }
+                }
+            }
+        }
+        return null
+    }
+
+    // Check if a bucket is complete (all matches done)
+    // We iterate over all Match buckets
+    const matchBuckets: { c: number, r: number, title: string }[] = []
+    newData.columns.forEach((col, c) => {
+        col.rounds.forEach((round, r) => {
+            if (round.type !== 'topcut' && round.teamPairs) {
+                matchBuckets.push({ c, r, title: round.title })
+            }
+        })
     })
-  }
 
-  // Progress from column 0 (0:0) to column 1 (1:0/0:1)
-  const progressFromColumn0 = (data: SwissFormatData): SwissFormatData => {
-    const newData = { ...data }
-    const round0Matches = newData.columns[0].rounds[0].teamPairs
-    
-    if (!round0Matches || !round0Matches.every(m => m.status === 'done')) {
-      return data
-    }
-    
-    const winners = round0Matches.map(m => m.winner === 'team1' ? m.team1 : m.winner === 'team2' ? m.team2 : null).filter(Boolean)
-    const losers = round0Matches.map(m => m.winner === 'team1' ? m.team2 : m.winner === 'team2' ? m.team1 : null).filter(Boolean)
-    
-    // Pair winners for 1:0 bracket
-    const winnerPairs = []
-    for (let i = 0; i < winners.length; i += 2) {
-      winnerPairs.push({
-        team1: winners[i] || null,
-        team2: winners[i + 1] || null,
-        status: 'scheduled' as const,
-        winner: null
-      })
-    }
-    newData.columns[1].rounds[0].teamPairs = winnerPairs
-    
-    // Pair losers for 0:1 bracket
-    const loserPairs = []
-    for (let i = 0; i < losers.length; i += 2) {
-      loserPairs.push({
-        team1: losers[i] || null,
-        team2: losers[i + 1] || null,
-        status: 'scheduled' as const,
-        winner: null
-      })
-    }
-    newData.columns[1].rounds[1].teamPairs = loserPairs
-    
-    return newData
-  }
+    matchBuckets.forEach(bucket => {
+        const round = newData.columns[bucket.c].rounds[bucket.r]
+        const pairs = round.teamPairs
+        if (!pairs || pairs.length === 0) return // Skip empty
+        
+        // Skip if already processed (has a processed flag)
+        if ((round as any).processed) return
+        
+        // Check if this bucket matches are all done
+        const allDone = pairs.every(p => p.status === 'done')
+        if (allDone) {
+             // Mark as processed to avoid re-processing
+             (round as any).processed = true
+             
+             // Distribute teams to next stage
+             const [wStr, lStr] = bucket.title.split(':')
+             const w = parseInt(wStr)
+             const l = parseInt(lStr)
+             
+             // Winners go to (w+1):l
+             // Losers go to w:(l+1)
+             
+             // Populate Winner Bucket
+             const targetWin = findBucketCoords(w + 1, l)
+             console.log(`Bucket ${bucket.title} done. Winners target: ${w+1}:${l}`, targetWin)
+             
+             if (targetWin) {
+                 const winners = pairs.map(p => p.winner === 'team1' ? p.team1 : p.team2).filter(Boolean)
+                 console.log('Winners:', winners)
+                 
+                 if (targetWin.isTopCut) {
+                    const round = newData.columns[targetWin.c].rounds[targetWin.r]
+                    if (targetWin.isLeft) round.topCut!.leftTeams = winners as SwissMatchCardTeam[]
+                    else if (targetWin.isRight) round.topCut!.rightTeams = winners as SwissMatchCardTeam[]
+                    else round.topCut!.teams = winners as SwissMatchCardTeam[]
+                 } else {
+                     // Match bucket - populate scheduled matches
+                     const round = newData.columns[targetWin.c].rounds[targetWin.r]
+                     
+                     // Find empty slots (with placeholders) and fill them
+                     let winnerIdx = 0
+                     for (let i = 0; i < round.teamPairs!.length && winnerIdx < winners.length; i++) {
+                         const pair = round.teamPairs![i]
+                         // Check if this slot has placeholders
+                         const team1IsPlaceholder = !pair.team1 || pair.team1.id.startsWith('ph-')
+                         const team2IsPlaceholder = !pair.team2 || pair.team2.id.startsWith('ph-')
+                         
+                         if (team1IsPlaceholder && team2IsPlaceholder && winnerIdx + 1 <= winners.length) {
+                             // Both slots empty, fill with a pair
+                             pair.team1 = winners[winnerIdx++] || null
+                             pair.team2 = winners[winnerIdx++] || null
+                             pair.status = 'scheduled'
+                             console.log(`Placed winner match ${i}:`, pair)
+                         }
+                     }
+                 }
+             }
 
-  // Progress from column 1 (1:0/0:1) to column 2 (2:0/1:1/0:2)
-  const progressFromColumn1 = (data: SwissFormatData): SwissFormatData => {
-    const newData = { ...data }
-    const round1Winners = newData.columns[1].rounds[0].teamPairs
-    const round1Losers = newData.columns[1].rounds[1].teamPairs
-    
-    if (!round1Winners || !round1Losers || 
-        !round1Winners.every(m => m.status === 'done') || 
-        !round1Losers.every(m => m.status === 'done')) {
-      return data
-    }
-    
-    const winners = round1Winners.map(m => m.winner === 'team1' ? m.team1 : m.winner === 'team2' ? m.team2 : null).filter(Boolean)
-    const middle1 = round1Winners.map(m => m.winner === 'team1' ? m.team2 : m.winner === 'team2' ? m.team1 : null).filter(Boolean)
-    const middle2 = round1Losers.map(m => m.winner === 'team1' ? m.team1 : m.winner === 'team2' ? m.team2 : null).filter(Boolean)
-    const losers = round1Losers.map(m => m.winner === 'team1' ? m.team2 : m.winner === 'team2' ? m.team1 : null).filter(Boolean)
-    
-    // 2:0 bracket - winners vs winners
-    const twoZeroPairs = []
-    for (let i = 0; i < winners.length; i += 2) {
-      twoZeroPairs.push({
-        team1: winners[i] || null,
-        team2: winners[i + 1] || null,
-        status: 'scheduled' as const,
-        winner: null
-      })
-    }
-    newData.columns[2].rounds[0].teamPairs = twoZeroPairs
-    
-    // 1:1 bracket - middle teams
-    const oneOnePairs = []
-    const middleTeams = [...middle1, ...middle2]
-    for (let i = 0; i < middleTeams.length; i += 2) {
-      oneOnePairs.push({
-        team1: middleTeams[i] || null,
-        team2: middleTeams[i + 1] || null,
-        status: 'scheduled' as const,
-        winner: null
-      })
-    }
-    newData.columns[2].rounds[1].teamPairs = oneOnePairs
-    
-    // 0:2 bracket - losers vs losers
-    const zeroTwoPairs = []
-    for (let i = 0; i < losers.length; i += 2) {
-      zeroTwoPairs.push({
-        team1: losers[i] || null,
-        team2: losers[i + 1] || null,
-        status: 'scheduled' as const,
-        winner: null
-      })
-    }
-    newData.columns[2].rounds[2].teamPairs = zeroTwoPairs
-    
-    return newData
-  }
+             // Populate Loser Bucket
+             const targetLose = findBucketCoords(w, l + 1)
+             console.log(`Losers target: ${w}:${l+1}`, targetLose)
+             
+             if (targetLose) {
+                 const losers = pairs.map(p => p.winner === 'team1' ? p.team2 : p.team1).filter(Boolean)
+                 console.log('Losers:', losers)
+                 
+                 if (targetLose.isTopCut) {
+                    const round = newData.columns[targetLose.c].rounds[targetLose.r]
+                    if (targetLose.isLeft) round.topCut!.leftTeams = losers as SwissMatchCardTeam[]
+                    else if (targetLose.isRight) round.topCut!.rightTeams = losers as SwissMatchCardTeam[]
+                    else round.topCut!.teams = losers as SwissMatchCardTeam[]
+                 } else {
+                     const round = newData.columns[targetLose.c].rounds[targetLose.r]
+                     
+                     // Find empty slots (with placeholders) and fill them
+                     let loserIdx = 0
+                     for (let i = 0; i < round.teamPairs!.length && loserIdx < losers.length; i++) {
+                         const pair = round.teamPairs![i]
+                         // Check if this slot has placeholders
+                         const team1IsPlaceholder = !pair.team1 || pair.team1.id.startsWith('ph-')
+                         const team2IsPlaceholder = !pair.team2 || pair.team2.id.startsWith('ph-')
+                         
+                         if (team1IsPlaceholder && team2IsPlaceholder && loserIdx + 1 <= losers.length) {
+                             // Both slots empty, fill with a pair
+                             pair.team1 = losers[loserIdx++] || null
+                             pair.team2 = losers[loserIdx++] || null
+                             pair.status = 'scheduled'
+                             console.log(`Placed loser match ${i}:`, pair)
+                         }
+                     }
+                 }
+             }
+        }
+    })
 
-  // Progress from column 2 to column 3 (topcuts)
-  const progressFromColumn2 = (data: SwissFormatData): SwissFormatData => {
-    const newData = { ...data }
-    
-    // Check if all matches in column 2 are done
-    const column2Rounds = newData.columns[2].rounds.filter(r => r.teamPairs)
-    if (!column2Rounds.every(round => round.teamPairs!.every(pair => pair.status === 'done'))) {
-      return data
-    }
-    
-    // For now, just update topcuts with placeholder logic
-    // In a real tournament, you'd track team records and place them accordingly
-    const teams = generateTeams(teamCount)
-    
-    // Update 3:0 topcut with some teams
-    newData.columns[3].rounds[0].topCut!.teams = [
-      teams[0] || { id: 'tbd-1', name: 'TBD 1', team_avatar: undefined },
-      teams[1] || { id: 'tbd-2', name: 'TBD 2', team_avatar: undefined }
-    ]
-    
-    // Update 0:3 topcut with some teams
-    newData.columns[3].rounds[3].topCut!.teams = [
-      teams[6] || { id: 'tbd-7', name: 'TBD 7', team_avatar: undefined },
-      teams[7] || { id: 'tbd-8', name: 'TBD 8', team_avatar: undefined }
-    ]
-    
-    return newData
+    console.log('Setting tournament data after progression:', newData.columns[1]?.rounds)
+    setTournamentData(newData)
   }
-
-  // Initialize on mount
-  useEffect(() => {
-    initializeTournament()
-  }, [])
 
   const exportJSON = () => {
     if (!tournamentData) return
-    
     const blob = new Blob([JSON.stringify(tournamentData, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -476,7 +510,7 @@ export default function TournamentSimulator() {
         <h1 className="text-3xl font-bold">Swiss Tournament Simulator</h1>
         <div className="flex items-center gap-4">
           <Badge variant="outline">
-            {getAllMatches().length} matches remaining
+            {getScheduledMatches().length} matches remaining
           </Badge>
           <Button onClick={exportJSON} variant="outline">
             Export JSON
@@ -489,43 +523,67 @@ export default function TournamentSimulator() {
           <CardTitle>Tournament Setup</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium">Teams:</label>
               <select 
                 value={teamCount} 
-                onChange={(e) => setTeamCount(Number(e.target.value))}
-                className="px-3 py-2 border rounded"
+                onChange={(e) => {
+                  const count = Number(e.target.value)
+                  setTeamCount(count)
+                  if (count <= 8) {
+                    setMaxWins(2)
+                    setMaxLosses(2)
+                  } else {
+                    setMaxWins(3)
+                    setMaxLosses(3)
+                  }
+                }}
+                className="px-3 py-2 border rounded w-24"
               >
                 {Array.from({ length: 31 }, (_, i) => i + 2).map(num => (
-                  <option key={num} value={num}>{num} Teams</option>
+                  <option key={num} value={num}>{num}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Advance (Wins):</label>
+              <select 
+                value={maxWins} 
+                onChange={(e) => setMaxWins(Number(e.target.value))}
+                className="px-3 py-2 border rounded w-24"
+              >
+                {[1, 2, 3, 4, 5].map(num => (
+                  <option key={num} value={num}>{num}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Eliminate (Losses):</label>
+              <select 
+                value={maxLosses} 
+                onChange={(e) => setMaxLosses(Number(e.target.value))}
+                className="px-3 py-2 border rounded w-24"
+              >
+                {[1, 2, 3, 4, 5].map(num => (
+                  <option key={num} value={num}>{num}</option>
                 ))}
               </select>
             </div>
             
-            <Button onClick={initializeTournament} variant="outline">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Generate Tournament
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Simulation Controls</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <Button onClick={playNextMatch} variant="outline">
-              <FastForward className="w-4 h-4 mr-2" />
-              Next Match
-            </Button>
-            
-            <Button onClick={initializeTournament} variant="outline">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset Tournament
-            </Button>
+            <div className="flex gap-2">
+                <Button onClick={initializeTournament} variant="outline">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Generate
+                </Button>
+                
+                <Button onClick={playNextMatch} variant="outline" disabled={getScheduledMatches().length === 0}>
+                <FastForward className="w-4 h-4 mr-2" />
+                Next
+                </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -542,15 +600,21 @@ export default function TournamentSimulator() {
           </div>
         </CardContent>
       </Card>
-
+      
       <Card>
-        <CardHeader>
-          <CardTitle>Current JSON Data</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Team Records</CardTitle></CardHeader>
         <CardContent>
-          <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-            {tournamentData ? JSON.stringify(tournamentData, null, 2) : 'Loading...'}
-          </pre>
+            <div className="grid grid-cols-4 gap-2">
+                {Array.from(teamRecords.values()).map(r => {
+                    const t = teams.find(team => team.id === r.id)
+                    return (
+                        <div key={r.id} className="text-xs border p-2 rounded">
+                            <div className="font-bold">{t?.name}</div>
+                            <div>{r.wins}W - {r.losses}L</div>
+                        </div>
+                    )
+                })}
+            </div>
         </CardContent>
       </Card>
     </div>

@@ -5,7 +5,7 @@ import { SwissMatchCardTeam } from './swiss-match-card'
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { SwissMatchCard } from './swiss-match-card'
-import { TopCutCard, TopCutCardTeam } from './top-cut-card'
+import { TopCutTeamGrid, TopCutTeamGridTeam } from './top-cut-team-grid'
 
 interface SwissRound {
   title: string
@@ -26,9 +26,9 @@ interface SwissRound {
   }>
   topCut?: {
     title?: string
-    teams?: TopCutCardTeam[]
-    leftTeams?: TopCutCardTeam[]
-    rightTeams?: TopCutCardTeam[]
+    teams?: TopCutTeamGridTeam[]
+    leftTeams?: TopCutTeamGridTeam[]
+    rightTeams?: TopCutTeamGridTeam[]
     leftTitle?: string
     rightTitle?: string
     backgroundColor?: 'green' | 'red' | 'default'
@@ -72,8 +72,7 @@ export function SwissMatchColumn({
             title={round.title}
             arrowStyle="none"
           >
-            <TopCutCard 
-              layout={round.topCut?.leftTeams || round.topCut?.rightTeams ? 'versus' : 'single'}
+            <TopCutTeamGrid 
               {...round.topCut}
             />
           </SwissMatchCardWrapper>

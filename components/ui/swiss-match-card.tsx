@@ -78,8 +78,8 @@ export function SwissMatchCard({
     )}>
       {/* Team 1 */}
       <div className={cn(
-        "flex justify-center",
-        isTeam1Winner && "opacity-100",
+        "flex justify-center rounded-sm border-2 border-transparent",
+        isTeam1Winner && "opacity-100 border-green-500 shadow-[0_0_2px_rgba(34,197,94,0.5)]",
         !isTeam1Winner && status === 'done' && winner && "opacity-60"
       )}>
         <div 
@@ -109,8 +109,8 @@ export function SwissMatchCard({
 
       {/* Team 2 */}
       <div className={cn(
-        "flex justify-center",
-        isTeam2Winner && "opacity-100",
+        "flex justify-center rounded-sm border-2 border-transparent",
+        isTeam2Winner && "opacity-100 border-green-500 shadow-[0_0_2px_rgba(34,197,94,0.5)]",
         !isTeam2Winner && status === 'done' && winner && "opacity-60"
       )}>
         <div 
