@@ -24,7 +24,6 @@ import {
 interface Team {
   id: string
   name: string
-  description: string
   captain_id: string
   tier: string
   region: string
@@ -208,8 +207,7 @@ export default function TeamsTable() {
   }
 
   const filteredTeams = teams.filter(team => {
-    const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         team.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesTier = tierFilter === 'all' || team.tier === tierFilter
     const matchesStatus = statusFilter === 'all' || team.recruiting_status === statusFilter
     
@@ -333,7 +331,7 @@ export default function TeamsTable() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search by team name or description..."
+              placeholder="Search by team name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -391,9 +389,6 @@ export default function TeamsTable() {
                   <TableCell>
                     <div>
                       <div className="font-medium">{team.name}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-1">
-                        {team.description}
-                      </div>
                     </div>
                   </TableCell>
                   <TableCell>

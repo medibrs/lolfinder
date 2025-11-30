@@ -225,7 +225,6 @@ export default function ViewTeamPage() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-xl font-semibold">{team.name}</h3>
-                    <p className="text-muted-foreground">{team.description || 'No description'}</p>
                   </div>
                   
                   <div>

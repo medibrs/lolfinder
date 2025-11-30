@@ -23,7 +23,6 @@ export default function CreateTeamPage() {
   const [blockReason, setBlockReason] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
     captain_id: '',
     team_size: '5' as '5' | '6', // 5 players (main) or 6 players (5 + sub)
     open_positions: [] as string[],
@@ -334,20 +333,6 @@ export default function CreateTeamPage() {
                 placeholder="Your team name"
                 required
                 className="bg-input border-border"
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Tell us about your team..."
-                rows={4}
-                className="bg-input border-border resize-none"
               />
             </div>
 

@@ -462,13 +462,6 @@ export default function TeamsPage() {
                     </div>
                   </div>
                   
-                  {/* Team Description */}
-                  {team.description && (
-                    <p className="text-muted-foreground mb-4 text-sm line-clamp-2">
-                      {team.description}
-                    </p>
-                  )}
-                  
                   {/* Team Members Display */}
                   {team.members && team.members.length > 0 && (
                     <div className="mb-4">

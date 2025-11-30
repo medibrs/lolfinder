@@ -429,10 +429,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                 </div>
 
-                <p className="text-foreground mb-6 leading-relaxed text-lg">
-                  {team.description || 'No description provided.'}
-                </p>
-
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <div className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-primary" />

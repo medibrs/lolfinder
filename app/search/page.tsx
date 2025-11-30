@@ -606,9 +606,6 @@ export default function SearchPage() {
                   <div key={team.id} onClick={() => router.push(`/teams/${team.id}`)}>
                     <Card className="bg-card border-border p-6 hover:border-primary transition cursor-pointer group">
                       <h3 className="text-2xl font-bold mb-2 group-hover:text-primary transition">{team.name}</h3>
-                      {team.description && (
-                        <p className="text-muted-foreground mb-4">{team.description}</p>
-                      )}
                       <div className="mb-4 space-y-1">
                         <p className="text-sm">
                           <span className="text-muted-foreground">Members: </span>

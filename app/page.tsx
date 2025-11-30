@@ -419,9 +419,6 @@ export default function Home() {
                   {userTeam.name}
                   {isCaptain && <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Captain</span>}
                 </CardTitle>
-                <CardDescription>
-                  {userTeam.description || 'No description provided'}
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

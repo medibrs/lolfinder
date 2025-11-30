@@ -22,11 +22,11 @@ interface TeamAvatarProps {
 }
 
 const sizeClasses = {
-  xxs: 'w-3 h-3',
-  xs: 'w-4 h-4',
-  sm: 'w-5 h-5',
-  md: 'w-7 h-7',
-  lg: 'w-9 h-9'
+  xxs: 'w-4 h-4',
+  xs: 'w-5 h-5',
+  sm: 'w-6 h-6',
+  md: 'w-8 h-8',
+  lg: 'w-10 h-10'
 }
 
 const iconSizes = {
@@ -52,8 +52,10 @@ export function TeamAvatar({
   const isMobile = useIsMobile()
   const [imageError, setImageError] = useState(false)
   
-  // Use smaller sizes on mobile
-  const actualSize = isMobile ? 'xxs' : size
+  // Use proportionally smaller sizes on mobile
+  const actualSize = isMobile 
+    ? (size === 'lg' ? 'sm' : size === 'md' ? 'xs' : 'xxs')
+    : size
   
   const sizeClass = sizeClasses[actualSize]
   const iconSize = iconSizes[actualSize]
@@ -88,7 +90,7 @@ export function TeamAvatar({
         "rounded-full overflow-hidden shadow-lg transition-all duration-200 shrink-0",
         sizeClass,
         isWinner 
-          ? "border-[1px] border-green-500 shadow-green-500/5" 
+          ? "border-[1px] border-green-700 shadow-green-700/5" 
           : "border-[1px] border-transparent hover:border-zinc-600",
         className
       )}>

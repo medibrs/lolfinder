@@ -45,7 +45,6 @@ export default function ManageTeamPage() {
   const [editing, setEditing] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
     open_positions: [] as string[],
     recruiting_status: 'Open' as 'Open' | 'Closed' | 'Full',
     team_size: 6,
@@ -104,7 +103,6 @@ export default function ManageTeamPage() {
       
       setFormData({
         name: teamData.name,
-        description: teamData.description || '',
         open_positions: teamData.open_positions || [],
         recruiting_status: teamData.recruiting_status,
         team_size: teamData.team_size || 6,
@@ -162,7 +160,6 @@ export default function ManageTeamPage() {
         .from('teams')
         .update({
           name: formData.name,
-          description: formData.description,
           open_positions: formData.open_positions,
           recruiting_status: formData.recruiting_status,
           team_size: formData.team_size
@@ -557,16 +554,6 @@ export default function ManageTeamPage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium mb-2">Description</label>
-                      <Textarea
-                        value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Describe your team"
-                        rows={3}
-                      />
-                    </div>
-
-                    <div>
                       <label className="block text-sm font-medium mb-2">Team Avatar</label>
                       <div className="flex items-center gap-4">
                         <AvatarPreview 
@@ -671,7 +658,6 @@ export default function ManageTeamPage() {
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-xl font-semibold">{team.name}</h3>
-                      <p className="text-muted-foreground">{team.description || 'No description'}</p>
                     </div>
                     
                     <div>

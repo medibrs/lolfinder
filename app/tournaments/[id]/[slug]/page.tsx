@@ -215,9 +215,9 @@ export default async function TournamentEventPage({ params }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             {/* Swiss Bracket */}
             <div className="w-full">
               <SwissBracketPreview teams={registeredTeams.map((r: any) => r.teams).filter(Boolean)} />
@@ -331,16 +331,16 @@ export default async function TournamentEventPage({ params }: Props) {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Tournament Format */}
             <Card className="border-zinc-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-primary" />
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-primary" />
                   Format
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2 px-3 pb-3">
                 {/* Format Type */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-400">Type</span>
@@ -404,10 +404,10 @@ export default async function TournamentEventPage({ params }: Props) {
 
             {/* Quick Stats */}
             <Card className="border-zinc-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Quick Stats</CardTitle>
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-sm">Quick Stats</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 px-3 pb-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-zinc-400">Total Teams</span>
                   <span className="text-sm font-medium">{registeredTeams.length}</span>

@@ -53,11 +53,9 @@ export function SwissMatchCard({
 
   return (
     <div className={cn(
-      "relative border-1 transition-all duration-200 bg-zinc-900 grid items-center",
-      isMobile ? "grid-cols-[1fr_8px_1fr] gap-[1px] px-[2px] py-[1px]" : "grid-cols-[1fr_12px_1fr] gap-[2px] px-2 py-1",
-      status === 'live' 
-        ? "border-red-500 shadow-red-500/20 shadow-lg animate-pulse" 
-        : statusColors[status],
+      "relative transition-all duration-200 bg-zinc-900 grid items-center rounded-md",
+      isMobile ? "grid-cols-2 gap-[4px] px-[4px] py-[4px]" : "grid-cols-[1fr_12px_1fr] gap-[2px] px-2 py-2",
+      status === 'live' && "border border-red-500/70 shadow-[0_0_10px_rgba(239,68,68,0.4)] animate-pulse",
       className
     )}>
       {/* Team 1 */}
@@ -75,7 +73,7 @@ export function SwissMatchCard({
         >
           <TeamAvatar 
             team={team1} 
-            size="md"
+            size="lg"
             showTooltip={true}
             isWinner={isTeam1Winner}
           />
@@ -83,14 +81,13 @@ export function SwissMatchCard({
       </div>
 
       {/* VS Divider */}
-      <div className="flex justify-center">
-        <div className={cn(
-          "font-bold text-zinc-400 uppercase tracking-wider",
-          isMobile ? "text-[4px] tracking-tight" : "text-xs"
-        )}>
-          VS
+      {!isMobile && (
+        <div className="flex justify-center">
+          <div className="font-light text-zinc-500 uppercase tracking-wider text-[10px]">
+            vs
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Team 2 */}
       <div className={cn(
@@ -107,7 +104,7 @@ export function SwissMatchCard({
         >
           <TeamAvatar 
             team={team2} 
-            size="md"
+            size="lg"
             showTooltip={true}
             isWinner={isTeam2Winner}
           />

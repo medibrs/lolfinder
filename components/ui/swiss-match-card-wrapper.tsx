@@ -30,7 +30,7 @@ export function SwissMatchCardWrapper({
       <div className={cn("mb-1", isMobile ? "mb-0" : "")}>
         <h2 className={cn(
           "text-left text-white uppercase",
-          isMobile ? "text-[8px] font-[600]" : "text-[12px] font-[700]"
+          isMobile ? "text-[10px] font-[600]" : "text-[12px] font-[700]"
         )}>{title}</h2>
       </div>
 
@@ -40,7 +40,7 @@ export function SwissMatchCardWrapper({
       ) : (
         <div className={cn(
           "flex flex-col",
-          isMobile ? "gap-[1px]" : "gap-2"
+          isMobile ? "gap-[4px]" : "gap-3"
         )}>
           {teamPairs?.map((pair, index) => (
             <div key={index}>
