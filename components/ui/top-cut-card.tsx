@@ -87,14 +87,14 @@ export function TopCutCard({
     return (
       <div className={cn(
         "relative transition-all duration-200 rounded-md",
-        isMobile ? "px-[2px] py-[1px]" : "px-2 py-1",
+        isMobile ? "px-[1px] py-[1px]" : "px-1 py-1",
         getBackgroundClass(),
         className
       )}>
         {title && <TitleCard title={title} />}
         <div className={cn(
           "flex flex-col",
-          isMobile ? "gap-[4px]" : "gap-3"
+          isMobile ? "gap-[2px]" : "gap-1"
         )}>
           {teamPairs.map((pair, index) => (
             <SwissMatchCard
@@ -153,21 +153,21 @@ export function TopCutCard({
 
   return (
     <div className={cn(
-      "relative transition-all duration-200 rounded-md",
-      isMobile ? "px-[2px] py-[1px]" : "px-2 py-1",
+      "relative transition-all duration-200 rounded-md w-full",
+      isMobile ? "px-[1px] py-[1px]" : "px-1 py-1",
       getBackgroundClass(),
       className
     )}>
       <div className={cn(
-        isMobile ? "flex flex-col" : "grid grid-cols-2",
-        isMobile ? "gap-1" : "gap-2"
+        isMobile ? "flex flex-col" : "flex flex-row justify-center",
+        isMobile ? "gap-[1px]" : "gap-1"
       )}>
         {/* Left Column */}
         <div className="flex flex-col">
           {leftTitle && <TitleCard title={leftTitle} />}
           <div className={cn(
             "flex flex-col",
-            isMobile ? "gap-[4px]" : "gap-3"
+            isMobile ? "gap-[2px]" : "gap-1"
           )}>
             {leftPairs.map((pair, index) => (
               <SwissMatchCard
@@ -188,7 +188,7 @@ export function TopCutCard({
           {rightTitle && <TitleCard title={rightTitle} />}
           <div className={cn(
             "flex flex-col",
-            isMobile ? "gap-[4px]" : "gap-3"
+            isMobile ? "gap-[2px]" : "gap-1"
           )}>
             {rightPairs.map((pair, index) => (
               <SwissMatchCard
