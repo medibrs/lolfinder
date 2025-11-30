@@ -30,9 +30,39 @@ export async function proxy(request: NextRequest) {
   // IMPORTANT: Avoid writing any logic between createServerClient and
   // the line above, as it could accidentally interfere with the refresh process
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
+  
+  try {
+    const { data, error } = await supabase.auth.getUser()
+    
+    // If there's an auth error (like invalid refresh token), clear the cookies
+    if (error) {
+      console.error('Auth error in proxy:', error.message)
+      
+      // Clear all Supabase auth cookies to force fresh login
+      const cookiesToClear = request.cookies.getAll()
+        .filter(cookie => cookie.name.includes('supabase') || cookie.name.includes('sb-'))
+      
+      cookiesToClear.forEach(cookie => {
+        supabaseResponse.cookies.set(cookie.name, '', { maxAge: 0 })
+      })
+      
+      // Sign out to clear server-side session
+      await supabase.auth.signOut()
+    } else {
+      user = data?.user
+    }
+  } catch (error: any) {
+    console.error('Auth exception in proxy:', error?.message || error)
+    
+    // Clear cookies on any auth exception
+    const cookiesToClear = request.cookies.getAll()
+      .filter(cookie => cookie.name.includes('supabase') || cookie.name.includes('sb-'))
+    
+    cookiesToClear.forEach(cookie => {
+      supabaseResponse.cookies.set(cookie.name, '', { maxAge: 0 })
+    })
+  }
 
   // Protected routes that require authentication
   const protectedRoutes = ['/setup-profile', '/admin']
