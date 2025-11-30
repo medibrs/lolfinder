@@ -57,15 +57,6 @@ export function TopCutTeamGrid({
     }
   }
 
-  // Split teams into two vertical columns
-  const splitIntoColumns = (teamList: SwissMatchCardTeam[]) => {
-    const midpoint = Math.ceil(teamList.length / 2)
-    return {
-      col1: teamList.slice(0, midpoint),
-      col2: teamList.slice(midpoint)
-    }
-  }
-
   const renderTeamAvatar = (team: SwissMatchCardTeam, index: number) => (
     <div 
       key={`${team.id}-${index}`}
@@ -83,32 +74,39 @@ export function TopCutTeamGrid({
     </div>
   )
 
-  const renderTeamColumn = (teamList: SwissMatchCardTeam[], columnTitle?: string) => {
-    const { col1, col2 } = splitIntoColumns(teamList)
+  const renderTeamColumn = (teamList: SwissMatchCardTeam[], columnTitle?: string, forceHorizontal?: boolean) => {
+    // Use horizontal layout for small team counts (2 or less) or when forced
+    const useHorizontal = forceHorizontal || teamList.length <= 2
     
     return (
       <div className="flex flex-col">
         {columnTitle && <TitleCard title={columnTitle} />}
         <div className={cn(
-          "flex flex-row justify-center",
-          isMobile ? "gap-1 p-1" : "gap-2 p-2"
+          "relative transition-all duration-200 rounded-md border",
+          getBackgroundClass(),
+          isMobile ? "px-[2px] py-[2px]" : "px-2 py-2"
         )}>
-          {/* Left vertical column */}
           <div className={cn(
-            "flex flex-col items-center",
-            isMobile ? "gap-1" : "gap-2"
+            "flex items-center",
+            useHorizontal ? "flex-row justify-around" : "flex-col justify-center",
+            isMobile ? "gap-[2px]" : "gap-2"
           )}>
-            {col1.map((team, idx) => renderTeamAvatar(team, idx))}
+            {teamList.map((team, idx) => (
+              <div key={`${team.id}-${idx}`} className={cn(
+                "flex justify-center rounded-sm border-2 border-transparent",
+                "cursor-pointer transition-transform hover:scale-105",
+                team.id.startsWith('ph-') && "cursor-default"
+              )}>
+                <div onClick={() => handleTeamClick(team)}>
+                  <TeamAvatar 
+                    team={team} 
+                    size={isMobile ? "sm" : "lg"}
+                    showTooltip={true}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-          {/* Right vertical column */}
-          {col2.length > 0 && (
-            <div className={cn(
-              "flex flex-col items-center",
-              isMobile ? "gap-1" : "gap-2"
-            )}>
-              {col2.map((team, idx) => renderTeamAvatar(team, idx + col1.length))}
-            </div>
-          )}
         </div>
       </div>
     )
@@ -117,13 +115,8 @@ export function TopCutTeamGrid({
   // Single section layout
   if (teams && !leftTeams && !rightTeams) {
     return (
-      <div className={cn(
-        "relative transition-all duration-200 rounded-md border",
-        getBackgroundClass(),
-        className
-      )}>
-        {title && <TitleCard title={title} />}
-        {renderTeamColumn(teams).props.children[1]}
+      <div className={cn(className)}>
+        {renderTeamColumn(teams, title)}
       </div>
     )
   }
@@ -134,8 +127,7 @@ export function TopCutTeamGrid({
 
   return (
     <div className={cn(
-      "relative transition-all duration-200 rounded-md border w-full",
-      getBackgroundClass(),
+      "w-full",
       className
     )}>
       <div className={cn(
