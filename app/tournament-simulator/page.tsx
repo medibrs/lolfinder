@@ -353,11 +353,156 @@ export default function TournamentSimulator() {
     const allDone = currentBucketPairs?.every(p => p.status === 'done')
     
     if (allDone) {
-      // Progress immediately with the current data
-      progressTournament(newData, newRecords)
+      // Progress only the completed bucket
+      progressSpecificBucket(newData, newRecords, match.cIdx, match.rIdx)
     } else {
       setTournamentData(newData)
     }
+  }
+
+  const progressSpecificBucket = (data: SwissFormatData, records: Map<string, TeamRecord>, cIdx: number, rIdx: number) => {
+    console.log(`progressSpecificBucket called for bucket ${cIdx}:${rIdx}`)
+    // Deep clone to ensure React detects changes
+    const newData: SwissFormatData = JSON.parse(JSON.stringify(data))
+    
+    // Helper to find coordinates of a bucket W-L
+    const findBucketCoords = (w: number, l: number) => {
+        for (let c = 0; c < newData.columns.length; c++) {
+            for (let r = 0; r < newData.columns[c].rounds.length; r++) {
+                const round = newData.columns[c].rounds[r]
+                // Check simple title match
+                if (round.title === `${w}:${l}`) return { c, r, isTopCut: round.type === 'topcut' }
+                
+                // Check complex titles (Last round)
+                if (round.topCut) {
+                    if (round.topCut.leftTitle === `${w}:${l}`) return { c, r, isLeft: true, isTopCut: true }
+                    if (round.topCut.rightTitle === `${w}:${l}`) return { c, r, isRight: true, isTopCut: true }
+                }
+            }
+        }
+        return null
+    }
+    
+    // Helper to check if a source bucket is complete
+    const isBucketComplete = (w: number, l: number) => {
+        const coords = findBucketCoords(w, l)
+        if (!coords || coords.isTopCut) return true // TopCut or non-existent = complete
+        const round = newData.columns[coords.c].rounds[coords.r]
+        if (!round.teamPairs || round.teamPairs.length === 0) return true
+        return round.teamPairs.every(p => p.status === 'done')
+    }
+    
+    // Helper to get teams from a completed bucket
+    const getTeamsFromBucket = (w: number, l: number, type: 'winners' | 'losers') => {
+        const coords = findBucketCoords(w, l)
+        if (!coords || coords.isTopCut) return []
+        const round = newData.columns[coords.c].rounds[coords.r]
+        if (!round.teamPairs) return []
+        
+        if (type === 'winners') {
+            return round.teamPairs.map(p => p.winner === 'team1' ? p.team1 : p.team2).filter(Boolean)
+        } else {
+            return round.teamPairs.map(p => p.winner === 'team1' ? p.team2 : p.team1).filter(Boolean)
+        }
+    }
+
+    const round = newData.columns[cIdx].rounds[rIdx]
+    const pairs = round.teamPairs
+    if (!pairs || pairs.length === 0) return // Skip empty
+    
+    // Skip if already processed (has a processed flag)
+    if ((round as any).processed) return
+    
+    // Mark as processed to avoid re-processing
+    ;(round as any).processed = true
+    
+    // Distribute teams to next stage
+    const [wStr, lStr] = round.title.split(':')
+    const w = parseInt(wStr)
+    const l = parseInt(lStr)
+    
+    // Winners go to (w+1):l - this bucket receives from (w):l winners only
+    // Losers go to w:(l+1) - this bucket receives from (w):(l) losers AND (w-1):(l+1) winners
+    
+    // Populate Winner Bucket (w+1):l
+    const targetWin = findBucketCoords(w + 1, l)
+    console.log(`Bucket ${round.title} done. Winners target: ${w+1}:${l}`, targetWin)
+    
+    if (targetWin && !targetWin.isTopCut) {
+        // For match buckets, check if all source buckets are complete
+        // Target (w+1):l receives winners from (w):l only
+        // So we just need current bucket to be done (which it is)
+        const targetRound = newData.columns[targetWin.c].rounds[targetWin.r]
+        const winners = pairs.map(p => p.winner === 'team1' ? p.team1 : p.team2).filter(Boolean)
+        
+        // Store winners in pending pool
+        if (!(targetRound as any).pendingTeams) {
+            (targetRound as any).pendingTeams = []
+        }
+        (targetRound as any).pendingTeams.push(...winners)
+        console.log(`Added ${winners.length} winners to pending pool for ${w+1}:${l}. Total pending: ${(targetRound as any).pendingTeams.length}`)
+        
+        // Check if we have enough teams to fill all matches
+        const expectedTeams = targetRound.teamPairs!.length * 2
+        if ((targetRound as any).pendingTeams.length >= expectedTeams) {
+            // Shuffle and create matchups
+            const allTeams = [...(targetRound as any).pendingTeams].sort(() => Math.random() - 0.5)
+            console.log(`Creating matchups for ${w+1}:${l} with ${allTeams.length} teams`)
+            
+            for (let i = 0; i < targetRound.teamPairs!.length && i * 2 + 1 < allTeams.length; i++) {
+                targetRound.teamPairs![i].team1 = allTeams[i * 2] || null
+                targetRound.teamPairs![i].team2 = allTeams[i * 2 + 1] || null
+                targetRound.teamPairs![i].status = 'scheduled'
+            }
+            delete (targetRound as any).pendingTeams
+        }
+    } else if (targetWin && targetWin.isTopCut) {
+        const winners = pairs.map(p => p.winner === 'team1' ? p.team1 : p.team2).filter(Boolean)
+        const targetRound = newData.columns[targetWin.c].rounds[targetWin.r]
+        if (targetWin.isLeft) targetRound.topCut!.leftTeams = winners as SwissMatchCardTeam[]
+        else if (targetWin.isRight) targetRound.topCut!.rightTeams = winners as SwissMatchCardTeam[]
+        else targetRound.topCut!.teams = winners as SwissMatchCardTeam[]
+    }
+
+    // Populate Loser Bucket w:(l+1)
+    const targetLose = findBucketCoords(w, l + 1)
+    console.log(`Losers target: ${w}:${l+1}`, targetLose)
+    
+    if (targetLose && !targetLose.isTopCut) {
+        const targetRound = newData.columns[targetLose.c].rounds[targetLose.r]
+        const losers = pairs.map(p => p.winner === 'team1' ? p.team2 : p.team1).filter(Boolean)
+        
+        // Store losers in pending pool
+        if (!(targetRound as any).pendingTeams) {
+            (targetRound as any).pendingTeams = []
+        }
+        (targetRound as any).pendingTeams.push(...losers)
+        console.log(`Added ${losers.length} losers to pending pool for ${w}:${l+1}. Total pending: ${(targetRound as any).pendingTeams.length}`)
+        
+        // Check if we have enough teams to fill all matches
+        const expectedTeams = targetRound.teamPairs!.length * 2
+        if ((targetRound as any).pendingTeams.length >= expectedTeams) {
+            // Shuffle and create matchups
+            const allTeams = [...(targetRound as any).pendingTeams].sort(() => Math.random() - 0.5)
+            console.log(`Creating matchups for ${w}:${l+1} with ${allTeams.length} teams`)
+            
+            for (let i = 0; i < targetRound.teamPairs!.length && i * 2 + 1 < allTeams.length; i++) {
+                targetRound.teamPairs![i].team1 = allTeams[i * 2] || null
+                targetRound.teamPairs![i].team2 = allTeams[i * 2 + 1] || null
+                targetRound.teamPairs![i].status = 'scheduled'
+            }
+            delete (targetRound as any).pendingTeams
+        }
+    } else if (targetLose && targetLose.isTopCut) {
+        const losers = pairs.map(p => p.winner === 'team1' ? p.team2 : p.team1).filter(Boolean)
+        const targetRound = newData.columns[targetLose.c].rounds[targetLose.r]
+        if (targetLose.isLeft) targetRound.topCut!.leftTeams = losers as SwissMatchCardTeam[]
+        else if (targetLose.isRight) targetRound.topCut!.rightTeams = losers as SwissMatchCardTeam[]
+        else targetRound.topCut!.teams = losers as SwissMatchCardTeam[]
+    }
+
+    console.log('Setting tournament data after specific bucket progression')
+    setTournamentData(newData)
   }
 
   const progressTournament = (data: SwissFormatData, records: Map<string, TeamRecord>) => {
@@ -422,13 +567,17 @@ export default function TournamentSimulator() {
              
              if (targetWin) {
                  const winners = pairs.map(p => p.winner === 'team1' ? p.team1 : p.team2).filter(Boolean)
-                 console.log('Winners:', winners)
+                 console.log('Winners before shuffle:', winners)
+                 
+                 // Shuffle winners for random matchups
+                 const shuffledWinners = [...winners].sort(() => Math.random() - 0.5)
+                 console.log('Winners after shuffle:', shuffledWinners)
                  
                  if (targetWin.isTopCut) {
                     const round = newData.columns[targetWin.c].rounds[targetWin.r]
-                    if (targetWin.isLeft) round.topCut!.leftTeams = winners as SwissMatchCardTeam[]
-                    else if (targetWin.isRight) round.topCut!.rightTeams = winners as SwissMatchCardTeam[]
-                    else round.topCut!.teams = winners as SwissMatchCardTeam[]
+                    if (targetWin.isLeft) round.topCut!.leftTeams = shuffledWinners as SwissMatchCardTeam[]
+                    else if (targetWin.isRight) round.topCut!.rightTeams = shuffledWinners as SwissMatchCardTeam[]
+                    else round.topCut!.teams = shuffledWinners as SwissMatchCardTeam[]
                  } else {
                      // Match bucket - populate scheduled matches
                      const round = newData.columns[targetWin.c].rounds[targetWin.r]
@@ -441,10 +590,10 @@ export default function TournamentSimulator() {
                          const team1IsPlaceholder = !pair.team1 || pair.team1.id.startsWith('ph-')
                          const team2IsPlaceholder = !pair.team2 || pair.team2.id.startsWith('ph-')
                          
-                         if (team1IsPlaceholder && team2IsPlaceholder && winnerIdx + 1 <= winners.length) {
+                         if (team1IsPlaceholder && team2IsPlaceholder && winnerIdx + 1 <= shuffledWinners.length) {
                              // Both slots empty, fill with a pair
-                             pair.team1 = winners[winnerIdx++] || null
-                             pair.team2 = winners[winnerIdx++] || null
+                             pair.team1 = shuffledWinners[winnerIdx++] || null
+                             pair.team2 = shuffledWinners[winnerIdx++] || null
                              pair.status = 'scheduled'
                              console.log(`Placed winner match ${i}:`, pair)
                          }
@@ -458,13 +607,17 @@ export default function TournamentSimulator() {
              
              if (targetLose) {
                  const losers = pairs.map(p => p.winner === 'team1' ? p.team2 : p.team1).filter(Boolean)
-                 console.log('Losers:', losers)
+                 console.log('Losers before shuffle:', losers)
+                 
+                 // Shuffle losers for random matchups
+                 const shuffledLosers = [...losers].sort(() => Math.random() - 0.5)
+                 console.log('Losers after shuffle:', shuffledLosers)
                  
                  if (targetLose.isTopCut) {
                     const round = newData.columns[targetLose.c].rounds[targetLose.r]
-                    if (targetLose.isLeft) round.topCut!.leftTeams = losers as SwissMatchCardTeam[]
-                    else if (targetLose.isRight) round.topCut!.rightTeams = losers as SwissMatchCardTeam[]
-                    else round.topCut!.teams = losers as SwissMatchCardTeam[]
+                    if (targetLose.isLeft) round.topCut!.leftTeams = shuffledLosers as SwissMatchCardTeam[]
+                    else if (targetLose.isRight) round.topCut!.rightTeams = shuffledLosers as SwissMatchCardTeam[]
+                    else round.topCut!.teams = shuffledLosers as SwissMatchCardTeam[]
                  } else {
                      const round = newData.columns[targetLose.c].rounds[targetLose.r]
                      
@@ -476,10 +629,10 @@ export default function TournamentSimulator() {
                          const team1IsPlaceholder = !pair.team1 || pair.team1.id.startsWith('ph-')
                          const team2IsPlaceholder = !pair.team2 || pair.team2.id.startsWith('ph-')
                          
-                         if (team1IsPlaceholder && team2IsPlaceholder && loserIdx + 1 <= losers.length) {
+                         if (team1IsPlaceholder && team2IsPlaceholder && loserIdx + 1 <= shuffledLosers.length) {
                              // Both slots empty, fill with a pair
-                             pair.team1 = losers[loserIdx++] || null
-                             pair.team2 = losers[loserIdx++] || null
+                             pair.team1 = shuffledLosers[loserIdx++] || null
+                             pair.team2 = shuffledLosers[loserIdx++] || null
                              pair.status = 'scheduled'
                              console.log(`Placed loser match ${i}:`, pair)
                          }
