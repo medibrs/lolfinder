@@ -46,6 +46,7 @@ interface SwissBracketPreviewProps {
   teams: Team[]
   maxWins?: number
   maxLosses?: number
+  teamCount?: number
 }
 
 // Helper functions
@@ -233,15 +234,15 @@ function generateSwissBracket(teams: Team[], maxWins: number, maxLosses: number)
   return { columns }
 }
 
-export function SwissBracketPreview({ teams, maxWins = 2, maxLosses = 2 }: SwissBracketPreviewProps) {
+export function SwissBracketPreview({ teams, maxWins = 2, maxLosses = 2, teamCount: forcedTeamCount }: SwissBracketPreviewProps) {
   const [bracketData, setBracketData] = useState<SwissFormatData | null>(null)
 
   useEffect(() => {
-    // Ensure we have enough teams (pad with placeholders if needed)
-    const minTeams = Math.pow(2, Math.ceil(Math.log2(Math.max(8, teams.length))))
-    const paddedTeams = teams.length >= minTeams ? teams : [
+    // Use forced team count or calculate from teams
+    const targetTeamCount = forcedTeamCount || Math.pow(2, Math.ceil(Math.log2(Math.max(8, teams.length))))
+    const paddedTeams = teams.length >= targetTeamCount ? teams.slice(0, targetTeamCount) : [
       ...teams,
-      ...Array(minTeams - teams.length).fill(null).map((_, i) => ({
+      ...Array(targetTeamCount - teams.length).fill(null).map((_, i) => ({
         id: `placeholder-${i}`,
         name: `TBD`,
         team_avatar: undefined
@@ -250,7 +251,7 @@ export function SwissBracketPreview({ teams, maxWins = 2, maxLosses = 2 }: Swiss
     
     const data = generateSwissBracket(paddedTeams, maxWins, maxLosses)
     setBracketData(data)
-  }, [teams, maxWins, maxLosses])
+  }, [teams, maxWins, maxLosses, forcedTeamCount])
 
   if (!bracketData) {
     return <div className="text-zinc-500">Loading bracket...</div>
