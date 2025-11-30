@@ -220,7 +220,11 @@ export default async function TournamentEventPage({ params }: Props) {
           <div className="lg:col-span-3 space-y-6">
             {/* Swiss Bracket */}
             <div className="w-full">
-              <SwissBracketPreview teams={registeredTeams.map((r: any) => r.teams).filter(Boolean)} />
+              <SwissBracketPreview 
+                teams={registeredTeams.map((r: any) => r.teams).filter(Boolean)} 
+                maxWins={Math.ceil((tournament.swiss_rounds || 4) / 2)}
+                maxLosses={Math.ceil((tournament.swiss_rounds || 4) / 2)}
+              />
             </div>
 
             {/* Teams Attending */}
