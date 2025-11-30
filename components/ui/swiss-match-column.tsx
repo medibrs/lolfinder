@@ -10,6 +10,8 @@ import { TopCutCard, TopCutCardTeam } from './top-cut-card'
 interface SwissRound {
   title: string
   type?: 'matches' | 'topcut'
+  /** Flag from data indicating this is the last round before topcut */
+  isLastRound?: boolean
   teamPairs?: Array<{
     team1: SwissMatchCardTeam | null
     team2: SwissMatchCardTeam | null
@@ -35,11 +37,13 @@ interface SwissRound {
 
 interface SwissMatchColumnProps {
   rounds: SwissRound[]
+  isLastColumn?: boolean
   className?: string
 }
 
 export function SwissMatchColumn({ 
   rounds,
+  isLastColumn = false,
   className 
 }: SwissMatchColumnProps) {
   const isMobile = useIsMobile()
@@ -50,11 +54,23 @@ export function SwissMatchColumn({
       isMobile ? "gap-[16px]" : "gap-[32px]",
       className
     )}>
-      {rounds.map((round, index) => (
-        round.type === 'topcut' ? (
+      {rounds.map((round, index) => {
+        // Determine arrow style based on round data
+        let arrowStyle: 'curved' | 'straight' | 'none' = 'none'
+        
+        if (round.type !== 'topcut') {
+          if (round.isLastRound) {
+            arrowStyle = 'straight'
+          } else if (!isLastColumn) {
+            arrowStyle = 'curved'
+          }
+        }
+        
+        return round.type === 'topcut' ? (
           <SwissMatchCardWrapper
             key={index}
             title={round.title}
+            arrowStyle="none"
           >
             <TopCutCard 
               layout={round.topCut?.leftTeams || round.topCut?.rightTeams ? 'versus' : 'single'}
@@ -66,9 +82,10 @@ export function SwissMatchColumn({
             key={index}
             title={round.title}
             teamPairs={round.teamPairs || round.matches || []}
+            arrowStyle={arrowStyle}
           />
         )
-      ))}
+      })}
       
       {/* Empty State */}
       {rounds.length === 0 && (

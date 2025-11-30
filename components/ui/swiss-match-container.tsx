@@ -2,13 +2,13 @@
 
 import { SwissMatchColumn } from './swiss-match-column'
 import { SwissMatchCardTeam } from './swiss-match-card'
-import { TopCutCardTeam } from './top-cut-card'
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 interface SwissRound {
   title: string
   type?: 'matches' | 'topcut'
+  isLastRound?: boolean
   teamPairs?: Array<{
     team1: SwissMatchCardTeam | null
     team2: SwissMatchCardTeam | null
@@ -23,9 +23,9 @@ interface SwissRound {
   }>
   topCut?: {
     title?: string
-    teams?: TopCutCardTeam[]
-    leftTeams?: TopCutCardTeam[]
-    rightTeams?: TopCutCardTeam[]
+    teams?: SwissMatchCardTeam[]
+    leftTeams?: SwissMatchCardTeam[]
+    rightTeams?: SwissMatchCardTeam[]
     leftTitle?: string
     rightTitle?: string
     backgroundColor?: 'green' | 'red' | 'default'
@@ -51,13 +51,14 @@ export function SwissMatchContainer({
       className
     )}>
       <div className={cn(
-        "flex",
-        isMobile ? "gap-4 p-1" : "gap-[48px] p-4"
+        "flex items-stretch",
+        isMobile ? "gap-0.5 p-1" : "gap-1 p-4"
       )}>
         {columns.map((column, index) => (
           <SwissMatchColumn
             key={index}
             rounds={column.rounds}
+            isLastColumn={index === columns.length - 1}
           />
         ))}
         

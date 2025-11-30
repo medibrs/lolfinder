@@ -18,6 +18,10 @@ interface SwissMatchCardProps {
   team2: SwissMatchCardTeam | null
   status: MatchStatus
   winner?: 'team1' | 'team2' | null
+  /** Hide the VS divider text */
+  hideVs?: boolean
+  /** Background color variant */
+  backgroundColor?: 'green' | 'red' | 'default'
   className?: string
 }
 
@@ -38,6 +42,8 @@ export function SwissMatchCard({
   team2, 
   status, 
   winner = null,
+  hideVs = false,
+  backgroundColor = 'default',
   className 
 }: SwissMatchCardProps) {
   const router = useRouter()
@@ -51,10 +57,22 @@ export function SwissMatchCard({
     }
   }
 
+  const getBackgroundClass = () => {
+    switch (backgroundColor) {
+      case 'green':
+        return 'bg-green-900/30'
+      case 'red':
+        return 'bg-red-900/30'
+      default:
+        return 'bg-zinc-900'
+    }
+  }
+
   return (
     <div className={cn(
-      "relative transition-all duration-200 bg-zinc-900 grid items-center rounded-md",
-      isMobile ? "grid-cols-2 gap-[4px] px-[4px] py-[4px]" : "grid-cols-[1fr_12px_1fr] gap-[2px] px-2 py-2",
+      "relative transition-all duration-200 grid items-center rounded-md",
+      getBackgroundClass(),
+      isMobile || hideVs ? "grid-cols-2 gap-[4px] px-[4px] py-[4px]" : "grid-cols-[1fr_12px_1fr] gap-[2px] px-2 py-2",
       status === 'live' && "border border-red-500/70 shadow-[0_0_10px_rgba(239,68,68,0.4)] animate-pulse",
       className
     )}>
@@ -81,7 +99,7 @@ export function SwissMatchCard({
       </div>
 
       {/* VS Divider */}
-      {!isMobile && (
+      {!isMobile && !hideVs && (
         <div className="flex justify-center">
           <div className="font-light text-zinc-500 uppercase tracking-wider text-[10px]">
             vs

@@ -522,7 +522,7 @@ export default function UITestPage() {
                             type: 'topcut',
                             title: "0:3",
                             topCut: {
-                              teams: [realTeams[12], realTeams[14], realTeams[13], realTeams[15]],
+                              teams: [realTeams[12], realTeams[14]],
                               backgroundColor: 'red'
                             }
                           }
@@ -543,6 +543,7 @@ export default function UITestPage() {
                           },
                           {
                             title: "2:2",
+                            isLastRound: true,
                             teamPairs: [
                               { team1: realTeams[0], team2: realTeams[6], status: 'live' },
                               { team1: realTeams[2], team2: realTeams[1], status: 'scheduled' },
