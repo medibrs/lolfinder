@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
 import Navigation from '@/components/navigation'
 import NotificationPermission from '@/components/NotificationPermission'
 import './globals.css'
@@ -71,7 +70,6 @@ export default function RootLayout({
         </Suspense>
         {children}
         <NotificationPermission />
-        <Analytics />
         <script
           dangerouslySetInnerHTML={{
             __html: `
