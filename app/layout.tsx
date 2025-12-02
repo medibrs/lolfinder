@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
 import Navigation from '@/components/navigation'
 import NotificationPermission from '@/components/NotificationPermission'
 import './globals.css'
@@ -206,7 +207,8 @@ export default function RootLayout({
         </Suspense>
         {children}
         <NotificationPermission />
-                <script
+        <Analytics />
+        <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
