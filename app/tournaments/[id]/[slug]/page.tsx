@@ -133,10 +133,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: 'The requested tournament could not be found.',
     };
   }
+
+  const description = tournament.description 
+    ? tournament.description.slice(0, 160) 
+    : `Join ${tournament.name} - A competitive League of Legends tournament. ${tournament.max_teams} teams, ${tournament.prize_pool || 'prizes'} up for grabs!`;
   
   return {
-    title: `${tournament.name} | Tournament`,
-    description: tournament.description || 'Tournament event page',
+    title: tournament.name,
+    description,
+    openGraph: {
+      title: `${tournament.name} | LoL Tournament`,
+      description,
+      type: 'website',
+      images: ['/og-image.png'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${tournament.name} | LoL Tournament`,
+      description,
+    },
   };
 }
 
