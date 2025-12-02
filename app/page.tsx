@@ -116,10 +116,10 @@ export default function Home() {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-black mb-6 text-balance">
-            Find Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Perfect Team</span>
+            League of Legends <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Team Finder</span>
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-10 text-balance max-w-3xl mx-auto">
-            Join the ultimate League of Legends community. Create teams, compete in tournaments, and climb the ranks together.
+            Find your LoL team, recruit competitive players and join tournaments for Clash, Flex and ranked. The #1 platform to find teammates.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
@@ -293,12 +293,33 @@ export default function Home() {
         </div>
       </section>
 
+      {/* SEO Content Section */}
+      <section className="py-16 px-4 bg-background">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold mb-6 text-center">Why Use Our League of Legends Team Finder?</h2>
+          <div className="prose prose-lg dark:prose-invert max-w-none text-muted-foreground">
+            <p className="mb-4">
+              Looking to <strong>find LoL team</strong> without endless Discord scrolling? Our <strong>League of Legends team finder</strong> connects you with players who match your rank, role and schedule—so you spend less time searching and more time winning.
+            </p>
+            <p className="mb-4">
+              Create or join a <strong>LoL tournament team</strong>, filter by rank and role, and get ready for Clash, Flex or community tournaments in just a few clicks. Whether you're a jungler, mid, ADC, top or support, you can <strong>find teammates for ranked, Clash, Flex</strong> who are serious about improvement.
+            </p>
+            <p className="mb-4">
+              We focus on <strong>competitive LoL players</strong> who want structured games, scrims and tournaments instead of random solo queue chaos. Use advanced filters to discover teams that fit your playstyle, language and time zone, or list your own team and start recruiting instantly.
+            </p>
+            <p>
+              From casual Clash stacks to long-term competitive rosters, our tools make it simple to build a stable LoL team, track your progress and stay connected with your teammates.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-b from-background to-card">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Compete?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Find Your LoL Team?</h2>
           <p className="text-xl text-muted-foreground mb-8">
-            Join thousands of players building teams and competing in tournaments
+            Join thousands of players using our League of Legends team finder to build teams and compete in tournaments
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-6">
