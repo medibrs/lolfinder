@@ -14,8 +14,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://teamfinder.gg'
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'TeamFinder - League of Legends Tournament Platform',
-    template: '%s | TeamFinder',
+    default: 'lolfinder - League of Legends Tournament Platform',
+    template: '%s | lolfinder',
   },
   description: 'Find your perfect team or teammates for competitive League of Legends tournaments. Create teams, join tournaments, and climb the ranks together.',
   keywords: [
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: siteUrl,
     siteName: 'TeamFinder',
-    title: 'TeamFinder - League of Legends Tournament Platform',
+    title: 'Lolfinder - League of Legends Tournament Platform',
     description: 'Find your perfect team or teammates for competitive League of Legends tournaments. Create teams, join tournaments, and climb the ranks together.',
     images: [
       {
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TeamFinder - League of Legends Tournament Platform',
+    title: 'lolfinder - League of Legends Tournament Platform',
     description: 'Find your perfect team or teammates for competitive League of Legends tournaments.',
     images: ['/og-image.png'],
     creator: '@teamfinder',
