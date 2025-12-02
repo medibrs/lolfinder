@@ -206,8 +206,7 @@ export default function RootLayout({
         </Suspense>
         {children}
         <NotificationPermission />
-        <Analytics />
-        <script
+                <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
