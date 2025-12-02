@@ -340,8 +340,18 @@ export default function Home() {
     <>
       <main className="pt-16 min-h-screen bg-black text-gray-100">
       {/* Hero Welcome Section */}
-      <section className="bg-gradient-to-br from-purple-950 via-black to-black px-4 py-16 text-white">
-        <div className="max-w-6xl mx-auto text-center">
+      <section className="relative bg-gradient-to-br from-purple-950 via-black to-black px-4 py-16 text-white overflow-hidden">
+        {/* Background Banner Image */}
+        <div className="absolute inset-0">
+          <img 
+            src="/home-page-banner.jpg" 
+            alt="League of Legends Banner" 
+            className="w-full h-full object-cover opacity-30"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-950 via-black to-black opacity-70"></div>
+        </div>
+        
+        <div className="relative z-10 max-w-6xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             Welcome back, {playerProfile?.riot_games_name || 'Summoner'}!
           </h1>
