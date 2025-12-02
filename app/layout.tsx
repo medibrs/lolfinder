@@ -14,10 +14,10 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://teamfinder.gg'
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'lolfinder - League of Legends Tournament Platform',
+    default: 'League of Legends Team Finder | LoL Team Finder',
     template: '%s | lolfinder',
   },
-  description: 'Find your perfect team or teammates for competitive League of Legends tournaments. Create teams, join tournaments, and climb the ranks together.',
+  description: 'Find LoL team fast. Join LoL tournaments, find teammates for ranked and Clash. The #1 League of Legends team finder platform.',
   keywords: [
     'League of Legends',
     'LoL',
@@ -99,9 +99,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: siteUrl,
-    siteName: 'TeamFinder',
-    title: 'Lolfinder - League of Legends Tournament Platform',
-    description: 'Find your perfect team or teammates for competitive League of Legends tournaments. Create teams, join tournaments, and climb the ranks together.',
+    siteName: 'lolfinder',
+    title: 'League of Legends Team Finder | Build Your LoL Team',
+    description: 'Use our League of Legends team finder to find LoL team, recruit competitive players and join tournaments for Clash, Flex and ranked.',
     images: [
       {
         url: '/og-image.png',
@@ -113,8 +113,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'lolfinder - League of Legends Tournament Platform',
-    description: 'Find your perfect team or teammates for competitive League of Legends tournaments.',
+    title: 'League of Legends Team Finder | LoL Team Finder',
+    description: 'Find LoL team fast. Join tournaments, find teammates for ranked and Clash on our LoL team finder.',
     images: ['/og-image.png'],
     creator: '@teamfinder',
   },
@@ -190,8 +190,9 @@ const jsonLd = {
       '@type': 'WebSite',
       '@id': `${siteUrl}/#website`,
       url: siteUrl,
-      name: 'TeamFinder',
-      description: 'Find your perfect team or teammates for competitive League of Legends tournaments.',
+      name: 'lolfinder',
+      description: 'League of Legends team finder helping you find LoL teams, tournament teams and competitive teammates for ranked, Clash and Flex.',
+      inLanguage: 'en',
       publisher: {
         '@id': `${siteUrl}/#organization`,
       },
@@ -205,11 +206,23 @@ const jsonLd = {
           'query-input': 'required name=search_term_string',
         },
       ],
+      keywords: [
+        'league of legends team finder',
+        'lol team finder',
+        'find lol team',
+        'lol tournament team',
+        'find teammates for ranked, clash, flex',
+        'competitive lol players',
+        'join lol tournaments',
+        'lol clash team finder',
+        'league of legends tournament team finder',
+        'lol esports amateur tournaments',
+      ],
     },
     {
       '@type': 'Organization',
       '@id': `${siteUrl}/#organization`,
-      name: 'TeamFinder',
+      name: 'lolfinder',
       url: siteUrl,
       logo: {
         '@type': 'ImageObject',
@@ -219,14 +232,15 @@ const jsonLd = {
       },
       sameAs: [
         // Add your social media URLs here
-        // 'https://twitter.com/teamfinder',
-        // 'https://discord.gg/teamfinder',
+        // 'https://twitter.com/lolfinder',
+        // 'https://discord.gg/lolfinder',
       ],
     },
     {
       '@type': 'WebApplication',
       '@id': `${siteUrl}/#webapp`,
-      name: 'TeamFinder',
+      name: 'lolfinder',
+      description: 'Find LoL team, join tournaments, and recruit competitive players for ranked, Clash and Flex.',
       url: siteUrl,
       applicationCategory: 'GameApplication',
       operatingSystem: 'Any',
