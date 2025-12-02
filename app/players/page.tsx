@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { Fragment } from 'react'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -48,6 +49,9 @@ export default function PlayersPage() {
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
@@ -64,23 +68,18 @@ export default function PlayersPage() {
     // Refetch invitations when page becomes visible (to catch rejected/accepted invites)
     const handleVisibilityChange = async () => {
       if (!document.hidden) {
-        // Invalidate cache to force fresh data when page becomes visible
-        await cache.invalidate('all_players', 'players')
-        fetchPlayers()
+        // Reset pagination and fetch fresh data
+        setCurrentPage(1)
+        setPlayers([])
+        setHasMore(true)
+        fetchPlayers(1, true)
       }
     }
     
     document.addEventListener('visibilitychange', handleVisibilityChange)
     
-    // Also refetch every 30 seconds to keep data fresh, but invalidate cache first
-    const interval = setInterval(async () => {
-      await cache.invalidate('all_players', 'players')
-      fetchPlayers()
-    }, 30000)
-    
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      clearInterval(interval)
     }
   }, [])
 
@@ -92,7 +91,7 @@ export default function PlayersPage() {
       return
     }
     
-    fetchPlayers()
+    fetchPlayers(1)
   }
 
   const fetchProfileIconUrls = async (players: Player[]) => {
@@ -112,7 +111,7 @@ export default function PlayersPage() {
   setProfileIconUrls(urls);
 };
 
-const fetchPlayers = async () => {
+const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
     try {
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -167,62 +166,86 @@ const fetchPlayers = async () => {
         setProfileChecked(true)
       }
 
-      // Use cache for players data
-      const cacheKey = 'all_players'
-      const cacheOptions = {
-        ttl: 3 * 60 * 1000, // 3 minutes cache for player data
-        namespace: 'players'
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '50'
+      })
+
+      if (selectedRole) {
+        params.append('role', selectedRole)
+      }
+      if (showLFTOnly) {
+        params.append('lookingForTeam', 'true')
       }
 
-      // Try to get from cache first
-      const cachedPlayers = await cache.get<Player[]>(cacheKey, cacheOptions)
-      if (cachedPlayers) {
-        console.log('🎯 Cache HIT - Loading players from cache')
-        setPlayers(cachedPlayers)
-        setLoading(false) // Hide loading immediately when cache is available
-        
-        // Fetch profile icon URLs for cached players
-        if (cachedPlayers.length > 0) {
-          await fetchProfileIconUrls(cachedPlayers)
-        }
-      } else {
-        console.log('❌ Cache MISS - Loading players from database')
-      }
+      // Fetch paginated data
+      const response = await fetch(`/api/players?${params}`)
+      const result = await response.json()
 
-      // Always fetch fresh data in background
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching players:', error)
-        if (!cachedPlayers) {
-          // If no cached data and error occurred, set empty array
-          setPlayers([])
-        }
+      if (!response.ok) {
+        console.error('Error fetching players:', result.error)
         return
       }
 
-      const freshPlayers = data || []
-      
-      // Update cache with fresh data
-      await cache.set(cacheKey, freshPlayers, cacheOptions)
-      console.log('💾 Cache SET - Stored fresh player data in cache')
-      
-      // Update state with fresh data
-      setPlayers(freshPlayers)
-      
-      // Fetch profile icon URLs for fresh players
-      if (freshPlayers.length > 0) {
-        await fetchProfileIconUrls(freshPlayers)
+      const newPlayers = result.data || []
+      const pagination = result.pagination || {}
+
+      // Update state
+      if (reset || page === 1) {
+        setPlayers(newPlayers)
+      } else {
+        setPlayers(prev => [...prev, ...newPlayers])
+      }
+
+      setHasMore(pagination.hasMore || false)
+      setCurrentPage(page)
+
+      // Fetch profile icon URLs for new players
+      if (newPlayers.length > 0) {
+        await fetchProfileIconUrls(newPlayers)
       }
     } catch (error) {
       console.error('Error:', error)
     } finally {
-      setInitialLoad(false) // Mark initial load as complete
+      setLoading(false)
+      setLoadingMore(false)
+      setInitialLoad(false)
     }
   }
+
+  // Add infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingMore || !hasMore) return
+
+      const scrollHeight = document.documentElement.scrollHeight
+      const scrollTop = document.documentElement.scrollTop
+      const clientHeight = document.documentElement.clientHeight
+
+      // Load more when user is within 500px of bottom
+      if (scrollTop + clientHeight >= scrollHeight - 500) {
+        loadMorePlayers()
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [loadingMore, hasMore, currentPage, selectedRole, showLFTOnly])
+
+  const loadMorePlayers = () => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    fetchPlayers(currentPage + 1, false)
+  }
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+    setPlayers([])
+    setHasMore(true)
+    fetchPlayers(1, true)
+  }, [selectedRole, showLFTOnly])
 
   const handleInvitePlayer = async (playerId: string) => {
     if (!userTeam || sendingInvite) return
@@ -250,8 +273,8 @@ const fetchPlayers = async () => {
         // Add to sent invites immediately
         setSentInvites(prev => ({ ...prev, [playerId]: data.id }))
         
-        // Invalidate players cache to refresh data
-        await cache.invalidate('all_players', 'players')
+        // Refresh players data after invite
+        fetchPlayers(1, true)
       } else {
         const error = await response.json()
         console.error('Error sending invitation:', error.error)
@@ -290,8 +313,8 @@ const fetchPlayers = async () => {
           return updated
         })
         
-        // Invalidate players cache to refresh data
-        await cache.invalidate('all_players', 'players')
+        // Refresh players data after invite
+        fetchPlayers(1, true)
       } else {
         const error = await response.json()
         console.error('Error cancelling invite:', error.error)

@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
 import Navigation from '@/components/navigation'
 import NotificationPermission from '@/components/NotificationPermission'
 import './globals.css'

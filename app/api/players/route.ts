@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role');
     const tier = searchParams.get('tier');
     const lookingForTeam = searchParams.get('lookingForTeam');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
 
     let query = supabase.from('players').select('*');
 
@@ -35,13 +37,42 @@ export async function GET(request: NextRequest) {
 
     query = query.order('created_at', { ascending: false });
 
+    // Get total count for pagination info
+    let countQuery = supabase.from('players').select('*', { count: 'exact', head: true });
+    
+    // Apply same filters to count query
+    if (role) {
+      countQuery = countQuery.or(`main_role.eq.${role},secondary_role.eq.${role}`);
+    }
+    if (tier) {
+      countQuery = countQuery.eq('tier', tier);
+    }
+    if (lookingForTeam === 'true') {
+      countQuery = countQuery.eq('looking_for_team', true);
+    }
+
+    const { count: totalCount, error: countError } = await countQuery;
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    query = query.range(offset, offset + limit - 1);
+
     const { data, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      data,
+      pagination: {
+        page,
+        limit,
+        totalCount: totalCount || 0,
+        totalPages: Math.ceil((totalCount || 0) / limit),
+        hasMore: page < Math.ceil((totalCount || 0) / limit)
+      }
+    });
   } catch (error) {
     return NextResponse.json(
       { error: 'Internal server error' },
