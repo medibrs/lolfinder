@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -35,6 +35,9 @@ export default function TeamsPage() {
   const [teams, setTeams] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
   const [user, setUser] = useState<any>(null)
   const [userTeam, setUserTeam] = useState<any>(null)
   const [pendingRequests, setPendingRequests] = useState<Record<string, string>>({})
@@ -47,23 +50,17 @@ export default function TeamsPage() {
   useEffect(() => {
     checkAuthAndFetchTeams()
     
-    // Refetch data when page becomes visible
+    // Refetch join request status when page becomes visible (no flash)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        fetchTeams()
+        refreshJoinRequests()
       }
     }
     
     document.addEventListener('visibilitychange', handleVisibilityChange)
     
-    // Also refetch every 30 seconds to keep data fresh
-    const interval = setInterval(() => {
-      fetchTeams()
-    }, 30000)
-    
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      clearInterval(interval)
     }
   }, [])
 
@@ -75,11 +72,37 @@ export default function TeamsPage() {
       return
     }
     
-    fetchTeams()
+    fetchTeams(1)
   }
 
-  const fetchTeams = async () => {
+  // Silently refresh join request status without clearing teams
+  const refreshJoinRequests = async () => {
     try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) return
+
+      const { data: requests } = await supabase
+        .from('team_join_requests')
+        .select('id, team_id')
+        .eq('player_id', authUser.id)
+        .eq('status', 'pending')
+      
+      const pendingMap: Record<string, string> = {}
+      requests?.forEach(r => {
+        pendingMap[r.team_id] = r.id
+      })
+      setPendingRequests(pendingMap)
+    } catch (error) {
+      console.error('Error refreshing join requests:', error)
+    }
+  }
+
+  const fetchTeams = async (page: number = 1, reset: boolean = false) => {
+    try {
+      if (page > 1) {
+        setLoadingMore(true)
+      }
+
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser()
       setUser(authUser)
@@ -130,20 +153,31 @@ export default function TeamsPage() {
         setProfileChecked(true)
       }
 
-      // Fetch teams data
-      const { data, error } = await supabase
-        .from('teams')
-        .select('*, captain:players!captain_id(summoner_name)')
-        .order('created_at', { ascending: false })
+      // Build query parameters for paginated API
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '50'
+      })
 
-      if (error) {
-        console.error('Error fetching teams:', error)
+      if (selectedRole) {
+        params.append('role', selectedRole)
+      }
+
+      // Fetch teams data from API
+      const response = await fetch(`/api/teams?${params}`)
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error('Error fetching teams:', result.error)
         return
       }
 
+      const newTeams = result.data || []
+      const pagination = result.pagination || {}
+
       // Fetch member details for each team
       const teamsWithMembers = await Promise.all(
-        (data || []).map(async (team) => {
+        newTeams.map(async (team: any) => {
           const { data: members } = await supabase
             .from('players')
             .select('summoner_name, main_role, tier')
@@ -170,13 +204,60 @@ export default function TeamsPage() {
         })
       )
 
-      setTeams(teamsWithMembers)
+      // Update state
+      if (reset || page === 1) {
+        setTeams(teamsWithMembers)
+      } else {
+        setTeams(prev => [...prev, ...teamsWithMembers])
+      }
+
+      setHasMore(pagination.hasMore || false)
+      setCurrentPage(page)
     } catch (error) {
       console.error('Error:', error)
     } finally {
-      setInitialLoad(false) // Mark initial load as complete
+      setInitialLoad(false)
+      setLoadingMore(false)
     }
   }
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingMore || !hasMore) return
+
+      const scrollHeight = document.documentElement.scrollHeight
+      const scrollTop = document.documentElement.scrollTop
+      const clientHeight = document.documentElement.clientHeight
+
+      // Load more when user is within 500px of bottom
+      if (scrollTop + clientHeight >= scrollHeight - 500) {
+        loadMoreTeams()
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [loadingMore, hasMore, currentPage, selectedRole])
+
+  const loadMoreTeams = () => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    fetchTeams(currentPage + 1, false)
+  }
+
+  // Reset pagination when filters change (skip initial mount)
+  const isInitialMount = useRef(true)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+    setCurrentPage(1)
+    setTeams([])
+    setHasMore(true)
+    fetchTeams(1, true)
+  }, [selectedRole])
 
   const sortedTeams = [...teams].sort((a, b) => {
     // Put user's team first
@@ -379,10 +460,6 @@ export default function TeamsPage() {
                         size="lg"
                         showTooltip={true}
                       />
-                      {/* Team Size Badge */}
-                      <div className="absolute -bottom-1 -right-1 bg-background border border-border rounded-full w-6 h-6 flex items-center justify-center">
-                        <span className="text-xs font-bold">{team.current_members}</span>
-                      </div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
@@ -524,6 +601,21 @@ export default function TeamsPage() {
                 <p className="text-muted-foreground">No teams found looking for players.</p>
               </div>
             )}
+          </div>
+        )}
+        
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="flex justify-center items-center py-8 gap-3">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-muted-foreground">Loading more teams...</span>
+          </div>
+        )}
+        
+        {/* End of list indicator */}
+        {!initialLoad && !hasMore && filteredTeams.length > 0 && !loadingMore && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">You've reached the end • {filteredTeams.length} teams shown</p>
           </div>
         )}
       </div>

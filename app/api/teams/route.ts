@@ -12,11 +12,14 @@ const createTeamSchema = z.object({
   team_avatar: z.number().min(3905).max(4016).optional(),
 });
 
-// GET /api/teams - List all teams with optional filtering
+// GET /api/teams - List all teams with optional filtering and pagination
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const recruiting = searchParams.get('recruiting');
+    const role = searchParams.get('role');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
 
     let query = supabase.from('teams').select('*, captain:players!captain_id(*)');
 
@@ -24,8 +27,25 @@ export async function GET(request: NextRequest) {
     if (recruiting) {
       query = query.eq('recruiting_status', recruiting);
     }
+    if (role) {
+      query = query.contains('open_positions', [role]);
+    }
 
     query = query.order('created_at', { ascending: false });
+
+    // Get total count for pagination
+    let countQuery = supabase.from('teams').select('*', { count: 'exact', head: true });
+    if (recruiting) {
+      countQuery = countQuery.eq('recruiting_status', recruiting);
+    }
+    if (role) {
+      countQuery = countQuery.contains('open_positions', [role]);
+    }
+    const { count: totalCount } = await countQuery;
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
 
@@ -48,7 +68,16 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    return NextResponse.json(teamsWithCounts);
+    return NextResponse.json({
+      data: teamsWithCounts,
+      pagination: {
+        page,
+        limit,
+        totalCount: totalCount || 0,
+        totalPages: Math.ceil((totalCount || 0) / limit),
+        hasMore: page < Math.ceil((totalCount || 0) / limit)
+      }
+    });
   } catch (error) {
     return NextResponse.json(
       { error: 'Internal server error' },
