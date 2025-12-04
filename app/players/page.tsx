@@ -66,11 +66,8 @@ export default function PlayersPage() {
     // Refetch invitations when page becomes visible (to catch rejected/accepted invites)
     const handleVisibilityChange = async () => {
       if (!document.hidden) {
-        // Reset pagination and fetch fresh data
-        setCurrentPage(1)
-        setPlayers([])
-        setHasMore(true)
-        fetchPlayers(1, true)
+        // Only refresh invitation status, don't clear players (prevents flash)
+        refreshInvitations()
       }
     }
     
@@ -109,6 +106,36 @@ export default function PlayersPage() {
   // Merge with existing URLs instead of replacing
   setProfileIconUrls(prev => ({ ...prev, ...newUrls }));
 };
+
+  // Silently refresh invitation status without clearing players
+  const refreshInvitations = async () => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) return
+
+      const { data: teamData } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('captain_id', authUser.id)
+        .single()
+
+      if (teamData) {
+        const { data: invitations } = await supabase
+          .from('team_invitations')
+          .select('id, invited_player_id')
+          .eq('team_id', teamData.id)
+          .eq('status', 'pending')
+        
+        const inviteMap: Record<string, string> = {}
+        invitations?.forEach(inv => {
+          inviteMap[inv.invited_player_id] = inv.id
+        })
+        setSentInvites(inviteMap)
+      }
+    } catch (error) {
+      console.error('Error refreshing invitations:', error)
+    }
+  }
 
 const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
     try {
@@ -631,6 +658,21 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                 <p className="text-muted-foreground">No players found matching your criteria.</p>
               </div>
             )}
+          </div>
+        )}
+        
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="flex justify-center items-center py-8 gap-3">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-muted-foreground">Loading more players...</span>
+          </div>
+        )}
+        
+        {/* End of list indicator */}
+        {!initialLoad && !hasMore && filteredPlayers.length > 0 && !loadingMore && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">You've reached the end • {filteredPlayers.length} players shown</p>
           </div>
         )}
       </div>
