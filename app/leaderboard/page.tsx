@@ -139,27 +139,27 @@ export default function LeaderboardPage() {
   const getRankBadge = (index: number) => {
     if (index === 0) {
       return (
-        <div className="absolute -top-2 -left-2 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
+        <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
           <Trophy className="w-5 h-5 text-white" />
         </div>
       )
     }
     if (index === 1) {
       return (
-        <div className="absolute -top-2 -left-2 w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center shadow-lg">
+        <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center shadow-lg">
           <Medal className="w-5 h-5 text-white" />
         </div>
       )
     }
     if (index === 2) {
       return (
-        <div className="absolute -top-2 -left-2 w-8 h-8 bg-amber-700 rounded-full flex items-center justify-center shadow-lg">
+        <div className="w-8 h-8 bg-amber-700 rounded-full flex items-center justify-center shadow-lg">
           <Award className="w-5 h-5 text-white" />
         </div>
       )
     }
     return (
-      <div className="absolute -top-2 -left-2 w-7 h-7 bg-muted rounded-full flex items-center justify-center text-xs font-bold">
+      <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-sm font-bold">
         {index + 1}
       </div>
     )
@@ -207,7 +207,7 @@ export default function LeaderboardPage() {
                 >
                   <div className="flex items-center gap-4">
                     {/* Position Badge */}
-                    <div className="relative w-10 flex-shrink-0">
+                    <div className="w-8 flex-shrink-0 flex items-center justify-center">
                       {getRankBadge(index)}
                     </div>
                     
