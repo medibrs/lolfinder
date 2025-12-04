@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/popover'
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
-import { Menu, HelpCircle, MessageSquare, Lightbulb } from 'lucide-react'
+import { Menu, HelpCircle, MessageSquare, Lightbulb, Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import FeatureRequestDialog from '@/components/FeatureRequestDialog'
 
@@ -90,8 +90,7 @@ export default function Navigation() {
   const checkAdminStatus = (user: any) => {
     // Check if user has admin role in metadata
     const isUserAdmin = user?.app_metadata?.role === 'admin' || 
-                        user?.raw_app_meta_data?.role === 'admin' ||
-                        user?.email === 'tiznit.sos@gmail.com' // Temporary bypass
+                        user?.raw_app_meta_data?.role === 'admin'
     setIsAdmin(isUserAdmin)
   }
 
@@ -114,7 +113,12 @@ export default function Navigation() {
 
         if (teamData) {
           setUserTeam(teamData)
-          setIsCaptain(teamData.captain_id === userId)
+          const isUserCaptain = teamData.captain_id === userId
+          console.log('Team data:', teamData)
+          console.log('User ID:', userId)
+          console.log('Team captain ID:', teamData.captain_id)
+          console.log('Is captain:', isUserCaptain)
+          setIsCaptain(isUserCaptain)
         }
       }
     } catch (error) {
@@ -225,8 +229,13 @@ export default function Navigation() {
                     <AvatarImage src={getTeamAvatarUrl(userTeam.team_avatar) ?? undefined} alt="Team Avatar" />
                     <AvatarFallback>Team</AvatarFallback>
                   </Avatar>
+                  {isCaptain && (
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-yellow-500 scale-50">
+                      <Crown className="h-2 w-2" />
+                    </span>
+                  )}
                   {unreadTeamMessages > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                    <span className="absolute -top-1 -left-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                       {unreadTeamMessages > 9 ? '9+' : unreadTeamMessages}
                     </span>
                   )}
@@ -734,8 +743,13 @@ export default function Navigation() {
                     <AvatarImage src={getTeamAvatarUrl(userTeam.team_avatar) ?? undefined} alt="Team Avatar" />
                     <AvatarFallback>Team</AvatarFallback>
                   </Avatar>
+                  {isCaptain && (
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-yellow-500 scale-50">
+                      <Crown className="h-2 w-2" />
+                    </span>
+                  )}
                   {unreadTeamMessages > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                    <span className="absolute -top-1 -left-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                       {unreadTeamMessages > 9 ? '9+' : unreadTeamMessages}
                     </span>
                   )}
