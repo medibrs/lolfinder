@@ -360,7 +360,7 @@ export default function Home() {
           </p>
           
           {/* Navigation Buttons */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button asChild variant="secondary" size="lg" className="bg-gray-900/80 hover:bg-gray-800 text-gray-100 border border-gray-800 backdrop-blur-sm">
               <Link href="/teams" className="flex flex-col items-center gap-2 h-auto py-4">
                 <Users className="w-6 h-6" />

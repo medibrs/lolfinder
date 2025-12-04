@@ -141,11 +141,13 @@ export function AvatarPreview({ avatarId, onEdit, showEditButton = false, size =
       <div className={`${sizeClasses[size]} rounded-xl overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 to-accent/10`}>
         {avatarId ? (
           <Image 
-            src={getTeamAvatarUrl(avatarId)} 
+            src={getTeamAvatarUrl(avatarId) ?? ''} 
             alt="Team Avatar"
             width={80}
             height={80}
             className="w-full h-full object-cover"
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

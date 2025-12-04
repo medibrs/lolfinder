@@ -113,12 +113,7 @@ export default function Navigation() {
 
         if (teamData) {
           setUserTeam(teamData)
-          const isUserCaptain = teamData.captain_id === userId
-          console.log('Team data:', teamData)
-          console.log('User ID:', userId)
-          console.log('Team captain ID:', teamData.captain_id)
-          console.log('Is captain:', isUserCaptain)
-          setIsCaptain(isUserCaptain)
+          setIsCaptain(teamData.captain_id === userId)
         }
       }
     } catch (error) {
