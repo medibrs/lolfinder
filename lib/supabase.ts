@@ -41,6 +41,7 @@ export interface Team {
   tier: Tier;
   region: Region;
   recruiting_status: RecruitingStatus;
+  team_avatar?: number;
   created_at: string;
   updated_at: string;
 }

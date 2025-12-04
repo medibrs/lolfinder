@@ -8,6 +8,7 @@ import { CurrentUserAvatar } from '@/components/current-user-avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { TeamAvatar } from '@/components/ui/team-avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -250,259 +251,340 @@ export default function Navigation() {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] flex flex-col">
+              <SheetContent side="right" className="w-[280px] flex flex-col bg-gradient-to-b from-background to-secondary/20">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <nav className="flex flex-col gap-2 mt-6 overflow-y-auto flex-1">
+                
+                {/* Header with logo and user info */}
+                <div className="px-4 py-6 border-b bg-background/50 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
+                    <Image 
+                      src="/logo.png" 
+                      alt="lolfinder" 
+                      width={32} 
+                      height={32}
+                      className="rounded-lg"
+                    />
+                    <span className="font-bold text-lg">lolfinder</span>
+                  </div>
+                </div>
+                
+                <nav className="flex flex-col gap-2 p-4 overflow-y-auto flex-1">
                   {user ? (
                     // Authenticated user links
                     <>
-                      <Link 
-                        href="/players" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={cn(
-                          "text-base font-medium px-3 py-2 rounded-md transition",
-                          pathname === "/players" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                        )}
-                      >
-                        Players
-                      </Link>
-                      <Link 
-                        href="/teams" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={cn(
-                          "text-base font-medium px-3 py-2 rounded-md transition",
-                          pathname === "/teams" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                        )}
-                      >
-                        Teams
-                      </Link>
-                      <Link 
-                        href="/tournaments" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={cn(
-                          "text-base font-medium px-3 py-2 rounded-md transition",
-                          pathname === "/tournaments" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                        )}
-                      >
-                        Tournaments
-                      </Link>
+                      <div className="mb-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1">
+                          Browse
+                        </p>
+                        <div className="space-y-1">
+                          <Link 
+                            href="/players" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={cn(
+                              "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
+                              pathname === "/players" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                            )}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            Players
+                          </Link>
+                          <Link 
+                            href="/teams" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={cn(
+                              "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
+                              pathname === "/teams" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                            )}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Teams
+                          </Link>
+                          <Link 
+                            href="/tournaments" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={cn(
+                              "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
+                              pathname === "/tournaments" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                            )}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                            Tournaments
+                          </Link>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1">
+                          My Account
+                        </p>
+                        <div className="space-y-1">
+                          <Link 
+                            href="/setup-profile" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Profile
+                          </Link>
+                          <Link 
+                            href="/settings" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Settings
+                          </Link>
+                          {userTeam && (
+                            <Link 
+                              href={isCaptain ? "/manage-team" : "/view-team"}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                              </svg>
+                              {isCaptain ? "Manage Team" : "View Team"}
+                            </Link>
+                          )}
+                          <Link 
+                            href="/notifications" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center justify-between"
+                          >
+                            <span className="flex items-center gap-3">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                              </svg>
+                              Notifications
+                            </span>
+                            {unreadCount > 0 && (
+                              <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5">
+                                {unreadCount}
+                              </span>
+                            )}
+                          </Link>
+                        </div>
+                      </div>
+                      
+                      {isAdmin && (
+                        <div className="mb-2">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1 text-yellow-600">
+                            Admin
+                          </p>
+                          <div className="space-y-1">
+                            <Link 
+                              href="/admin" 
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition text-yellow-600 flex items-center gap-3"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Admin Dashboard
+                            </Link>
+                            {pathname?.startsWith('/admin') && (
+                              <div className="pl-4 space-y-1 border-l-2 border-yellow-600/30 ml-3">
+                                <Link 
+                                  href="/admin?tab=overview" 
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={cn(
+                                    "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                    activeAdminTab === 'overview' && "text-primary font-medium bg-accent"
+                                  )}
+                                >
+                                  Overview
+                                </Link>
+                                <Link 
+                                  href="/admin?tab=players" 
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={cn(
+                                    "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                    activeAdminTab === 'players' && "text-primary font-medium bg-accent"
+                                  )}
+                                >
+                                  Players
+                                </Link>
+                                <Link 
+                                  href="/admin?tab=teams" 
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={cn(
+                                    "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                    activeAdminTab === 'teams' && "text-primary font-medium bg-accent"
+                                  )}
+                                >
+                                  Teams
+                                </Link>
+                                <Link 
+                                  href="/admin?tab=tournaments" 
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={cn(
+                                    "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                    activeAdminTab === 'tournaments' && "text-primary font-medium bg-accent"
+                                  )}
+                                >
+                                  Tournaments
+                                </Link>
+                                <Link 
+                                  href="/admin?tab=registrations" 
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={cn(
+                                    "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                    activeAdminTab === 'registrations' && "text-primary font-medium bg-accent"
+                                  )}
+                                >
+                                  Registrations
+                                </Link>
+                                <Link 
+                                  href="/admin?tab=users" 
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={cn(
+                                    "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                    activeAdminTab === 'users' && "text-primary font-medium bg-accent"
+                                  )}
+                                >
+                                  Users
+                                </Link>
+                                <Link 
+                                  href="/admin?tab=feature-requests" 
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={cn(
+                                    "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                    activeAdminTab === 'feature-requests' && "text-primary font-medium bg-accent"
+                                  )}
+                                >
+                                  Feature Requests
+                                </Link>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="mb-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1">
+                          Support
+                        </p>
+                        <div className="space-y-1">
+                          <a 
+                            href="mailto:support@teamfinder.gg"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                            Contact Support
+                          </a>
+                          <Button 
+                            variant="ghost" 
+                            onClick={() => {
+                              setMobileMenuOpen(false)
+                              setTimeout(() => setFeatureDialogOpen(true), 100)
+                            }}
+                            className="text-base font-medium px-3 py-2 h-auto rounded-md hover:bg-accent transition flex items-center gap-2 w-full justify-start"
+                          >
+                            <Lightbulb className="h-4 w-4" />
+                            Request Feature
+                          </Button>
+                          <a 
+                            href="#"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
+                          >
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.5152.0699.0699 0 00-.0321.0277C.5334 9.0463-.319 13.5809.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189zm7.975 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/>
+                            </svg>
+                            Discord Community
+                          </a>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-2">
+                        <Button 
+                          onClick={() => {
+                            handleSignOut()
+                            setMobileMenuOpen(false)
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-muted-foreground hover:text-foreground"
+                        >
+                          Sign Out
+                        </Button>
+                      </div>
                     </>
                   ) : (
                     // Public links
                     <>
-                      <Link 
-                        href="/tournaments" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={cn(
-                          "text-base font-medium px-3 py-2 rounded-md transition",
-                          pathname === "/tournaments" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                        )}
-                      >
-                        Tournaments
-                      </Link>
-                      <Link 
-                        href="/#about" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
-                      >
-                        About
-                      </Link>
-                      <Link 
-                        href="/#how-it-works" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
-                      >
-                        How It Works
-                      </Link>
-                      <Link 
-                        href="/#features" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
-                      >
-                        Features
-                      </Link>
-                    </>
-                  )}
-                  
-                  {user && (
-                    <>
-                      <div className="border-t my-1"></div>
-                      <Link 
-                        href="/setup-profile" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
-                      >
-                        Profile
-                      </Link>
-                      <Link 
-                        href="/settings" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
-                      >
-                        Settings
-                      </Link>
-                      {userTeam && (
-                        <Link 
-                          href={isCaptain ? "/manage-team" : "/view-team"}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition"
-                        >
-                          {isCaptain ? "Manage Team" : "View Team"}
-                        </Link>
-                      )}
-                      {isAdmin && (
-                        <>
+                      <div className="mb-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1">
+                          Browse
+                        </p>
+                        <div className="space-y-1">
                           <Link 
-                            href="/admin" 
+                            href="/tournaments" 
                             onClick={() => setMobileMenuOpen(false)}
-                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition text-yellow-600"
+                            className={cn(
+                              "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
+                              pathname === "/tournaments" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                            )}
                           >
-                            Admin Dashboard
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                            Tournaments
                           </Link>
-                          {pathname?.startsWith('/admin') && (
-                            <div className="pl-4 space-y-1 border-l-2 border-yellow-600/30 ml-3">
-                              <Link 
-                                href="/admin?tab=overview" 
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={cn(
-                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
-                                  activeAdminTab === 'overview' && "text-primary font-medium bg-accent"
-                                )}
-                              >
-                                Overview
-                              </Link>
-                              <Link 
-                                href="/admin?tab=players" 
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={cn(
-                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
-                                  activeAdminTab === 'players' && "text-primary font-medium bg-accent"
-                                )}
-                              >
-                                Players
-                              </Link>
-                              <Link 
-                                href="/admin?tab=teams" 
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={cn(
-                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
-                                  activeAdminTab === 'teams' && "text-primary font-medium bg-accent"
-                                )}
-                              >
-                                Teams
-                              </Link>
-                              <Link 
-                                href="/admin?tab=tournaments" 
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={cn(
-                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
-                                  activeAdminTab === 'tournaments' && "text-primary font-medium bg-accent"
-                                )}
-                              >
-                                Tournaments
-                              </Link>
-                              <Link 
-                                href="/admin?tab=registrations" 
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={cn(
-                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
-                                  activeAdminTab === 'registrations' && "text-primary font-medium bg-accent"
-                                )}
-                              >
-                                Registrations
-                              </Link>
-                              <Link 
-                                href="/admin?tab=users" 
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={cn(
-                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
-                                  activeAdminTab === 'users' && "text-primary font-medium bg-accent"
-                                )}
-                              >
-                                Users
-                              </Link>
-                              <Link 
-                                href="/admin?tab=feature-requests" 
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={cn(
-                                  "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
-                                  activeAdminTab === 'feature-requests' && "text-primary font-medium bg-accent"
-                                )}
-                              >
-                                Feature Requests
-                              </Link>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      <Link 
-                        href="/notifications" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center justify-between"
-                      >
-                        <span>Notifications</span>
-                        {unreadCount > 0 && (
-                          <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5">
-                            {unreadCount}
-                          </span>
+                          <Link 
+                            href="/#about" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            About
+                          </Link>
+                          <Link 
+                            href="/#how-it-works" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                            How It Works
+                          </Link>
+                          <Link 
+                            href="/#features" 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                            </svg>
+                            Features
+                          </Link>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-2">
+                        {pathname !== '/auth' && (
+                          <Button asChild size="sm" className="w-full">
+                            <Link href="/auth" onClick={() => setMobileMenuOpen(false)}>
+                              Sign In
+                            </Link>
+                          </Button>
                         )}
-                      </Link>
-                      <div className="border-t my-1"></div>
-                      <p className="text-xs text-muted-foreground px-3 py-1">Help & Support</p>
-                      <a 
-                        href="mailto:support@teamfinder.gg"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-2"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Contact Support
-                      </a>
-                      <Button 
-                        variant="ghost" 
-                        onClick={() => {
-                          setMobileMenuOpen(false)
-                          setTimeout(() => setFeatureDialogOpen(true), 100)
-                        }}
-                        className="text-base font-medium px-3 py-2 h-auto rounded-md hover:bg-accent transition flex items-center gap-2 w-full justify-start"
-                      >
-                        <Lightbulb className="h-4 w-4" />
-                        Request Feature
-                      </Button>
-                      <a 
-                        href="#"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-2"
-                      >
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.5152.0699.0699 0 00-.0321.0277C.5334 9.0463-.319 13.5809.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189zm7.975 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/>
-                        </svg>
-                        Discord Community
-                      </a>
-                      <div className="border-t my-1"></div>
-                      <Button 
-                        onClick={() => {
-                          handleSignOut()
-                          setMobileMenuOpen(false)
-                        }}
-                        variant="destructive"
-                        size="sm"
-                        className="w-full"
-                      >
-                        Sign Out
-                      </Button>
-                    </>
-                  )}
-                  
-                  {!user && (
-                    <>
-                      <div className="border-t my-1"></div>
-                      {pathname !== '/auth' && (
-                        <Button asChild size="sm" className="w-full">
-                          <Link href="/auth" onClick={() => setMobileMenuOpen(false)}>
-                            Sign In
-                          </Link>
-                        </Button>
-                      )}
+                      </div>
                     </>
                   )}
                 </nav>

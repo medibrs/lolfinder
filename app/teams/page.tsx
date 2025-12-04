@@ -22,6 +22,7 @@ interface Team {
   open_positions: string[]
   team_size: string
   recruiting_status: string
+  team_avatar?: number
   created_at: string
   captain?: {
     summoner_name: string
