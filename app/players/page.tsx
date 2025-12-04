@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 import { getProfileIconUrl } from '@/lib/ddragon'
-import { cache, CacheConfig } from '@/lib/cache'
 import RoleIcon from '@/components/RoleIcon'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -18,7 +17,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Fragment } from 'react'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -95,20 +93,21 @@ export default function PlayersPage() {
   }
 
   const fetchProfileIconUrls = async (players: Player[]) => {
-  const urls: Record<string, string> = {};
+  const newUrls: Record<string, string> = {};
   
   for (const player of players) {
     if (player.profile_icon_id) {
       try {
         const url = await getProfileIconUrl(player.profile_icon_id);
-        urls[player.id] = url;
+        newUrls[player.id] = url;
       } catch (error) {
         console.error(`Failed to fetch profile icon for ${player.summoner_name}:`, error);
       }
     }
   }
   
-  setProfileIconUrls(urls);
+  // Merge with existing URLs instead of replacing
+  setProfileIconUrls(prev => ({ ...prev, ...newUrls }));
 };
 
 const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
@@ -239,10 +238,16 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
     fetchPlayers(currentPage + 1, false)
   }
 
-  // Reset pagination when filters change
+  // Reset pagination when filters change (skip initial mount)
+  const isInitialMount = useRef(true)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
     setCurrentPage(1)
     setPlayers([])
+    setProfileIconUrls({}) // Clear icon URLs when filters change
     setHasMore(true)
     fetchPlayers(1, true)
   }, [selectedRole, showLFTOnly])

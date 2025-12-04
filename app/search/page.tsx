@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
-import { cache, CacheConfig } from '@/lib/cache'
 import { getRankImage } from '@/lib/rank-utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import RoleIcon from '@/components/RoleIcon'
@@ -83,11 +82,8 @@ export default function SearchPage() {
     checkAuthAndFetchData()
     
     // Refetch data when page becomes visible
-    const handleVisibilityChange = async () => {
+    const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Invalidate cache to force fresh data when page becomes visible
-        await cache.invalidate('search_teams', 'search')
-        await cache.invalidate('search_players', 'search')
         fetchData()
       }
     }
@@ -95,9 +91,7 @@ export default function SearchPage() {
     document.addEventListener('visibilitychange', handleVisibilityChange)
     
     // Also refetch every 30 seconds to keep data fresh
-    const interval = setInterval(async () => {
-      await cache.invalidate('search_teams', 'search')
-      await cache.invalidate('search_players', 'search')
+    const interval = setInterval(() => {
       fetchData()
     }, 30000)
     
@@ -198,30 +192,7 @@ export default function SearchPage() {
       }
     }
 
-      // Use cache for search data
-      const teamsCacheKey = 'search_teams'
-      const playersCacheKey = 'search_players'
-      const cacheOptions = {
-        ttl: 3 * 60 * 1000, // 3 minutes cache for search data
-        namespace: 'search'
-      }
-
-      // Try to get from cache first
-      const [cachedTeams, cachedPlayers] = await Promise.all([
-        cache.get<any[]>(teamsCacheKey, cacheOptions),
-        cache.get<any[]>(playersCacheKey, cacheOptions)
-      ])
-
-      if (cachedTeams || cachedPlayers) {
-        console.log('🎯 Search Cache HIT - Loading from cache')
-        if (cachedTeams) setTeams(cachedTeams)
-        if (cachedPlayers) setPlayers(cachedPlayers)
-        setLoading(false) // Hide loading immediately when cache is available
-      } else {
-        console.log('❌ Search Cache MISS - Loading from database')
-      }
-
-      // Always fetch fresh data in background
+      // Fetch data
       const [teamsResult, playersResult] = await Promise.all([
         supabase
           .from('teams')
@@ -268,13 +239,6 @@ export default function SearchPage() {
 
       setTeams(teamsWithMembers)
       setPlayers(playersResult.data || [])
-      
-      // Update cache with fresh data
-      await Promise.all([
-        cache.set(teamsCacheKey, teamsWithMembers, cacheOptions),
-        cache.set(playersCacheKey, playersResult.data || [], cacheOptions)
-      ])
-      console.log('💾 Search Cache SET - Stored fresh search data in cache')
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -306,10 +270,6 @@ export default function SearchPage() {
         const data = await response.json()
         // Add to pending requests to update UI
         setPendingRequests(prev => ({ ...prev, [teamId]: data.id }))
-        
-        // Invalidate search cache to refresh data
-        await cache.invalidate('search_teams', 'search')
-        await cache.invalidate('search_players', 'search')
       } else {
         const error = await response.json()
         console.error('Error sending join request:', error.error)
@@ -343,10 +303,6 @@ export default function SearchPage() {
           delete updated[teamId]
           return updated
         })
-        
-        // Invalidate search cache to refresh data
-        await cache.invalidate('search_teams', 'search')
-        await cache.invalidate('search_players', 'search')
       } else {
         const error = await response.json()
         console.error('Error cancelling request:', error.error)
@@ -382,10 +338,6 @@ export default function SearchPage() {
       if (response.ok) {
         const data = await response.json()
         setSentInvites(prev => ({ ...prev, [playerId]: data.id }))
-        
-        // Invalidate search cache to refresh data
-        await cache.invalidate('search_teams', 'search')
-        await cache.invalidate('search_players', 'search')
       } else {
         const error = await response.json()
         console.error('Error sending invitation:', error.error)
@@ -423,10 +375,6 @@ export default function SearchPage() {
           delete updated[playerId]
           return updated
         })
-        
-        // Invalidate search cache to refresh data
-        await cache.invalidate('search_teams', 'search')
-        await cache.invalidate('search_players', 'search')
       } else {
         const error = await response.json()
         console.error('Error cancelling invite:', error.error)

@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
-import { cache, CacheConfig } from '@/lib/cache'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Shield, Users, Trophy, Search } from 'lucide-react'
@@ -49,19 +48,16 @@ export default function TeamsPage() {
     checkAuthAndFetchTeams()
     
     // Refetch data when page becomes visible
-    const handleVisibilityChange = async () => {
+    const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Invalidate cache to force fresh data when page becomes visible
-        await cache.invalidate('all_teams', 'teams')
         fetchTeams()
       }
     }
     
     document.addEventListener('visibilitychange', handleVisibilityChange)
     
-    // Also refetch every 30 seconds to keep data fresh, but invalidate cache first
-    const interval = setInterval(async () => {
-      await cache.invalidate('all_teams', 'teams')
+    // Also refetch every 30 seconds to keep data fresh
+    const interval = setInterval(() => {
       fetchTeams()
     }, 30000)
     
@@ -134,22 +130,7 @@ export default function TeamsPage() {
         setProfileChecked(true)
       }
 
-      // Use cache for teams data
-      const cacheKey = 'all_teams'
-      const cacheOptions = {
-        ttl: 3 * 60 * 1000, // 3 minutes cache for team data
-        namespace: 'teams'
-      }
-
-      // Try to get from cache first
-      const cachedTeams = await cache.get<any[]>(cacheKey, cacheOptions)
-      if (cachedTeams) {
-        setTeams(cachedTeams)
-        setLoading(false) // Hide loading immediately when cache is available
-      } else {
-      }
-
-      // Always fetch fresh data in background
+      // Fetch teams data
       const { data, error } = await supabase
         .from('teams')
         .select('*, captain:players!captain_id(summoner_name)')
@@ -190,9 +171,6 @@ export default function TeamsPage() {
       )
 
       setTeams(teamsWithMembers)
-      
-      // Update cache with fresh data
-      await cache.set(cacheKey, teamsWithMembers, cacheOptions)
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -232,8 +210,6 @@ export default function TeamsPage() {
         // Add to pending requests to update UI
         setPendingRequests(prev => ({ ...prev, [teamId]: data.id }))
         
-        // Invalidate teams cache to refresh data
-        await cache.invalidate('all_teams', 'teams')
       } else {
         const error = await response.json()
         console.error('Error sending join request:', error.error)
@@ -268,9 +244,6 @@ export default function TeamsPage() {
           delete updated[teamId]
           return updated
         })
-        
-        // Invalidate teams cache to refresh data
-        await cache.invalidate('all_teams', 'teams')
       } else {
         const error = await response.json()
         console.error('Error cancelling request:', error.error)

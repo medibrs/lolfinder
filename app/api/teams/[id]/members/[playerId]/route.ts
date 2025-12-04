@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { cache } from '@/lib/cache';
 
 // DELETE /api/teams/[id]/members/[playerId] - Remove a player from a team
 export async function DELETE(
@@ -39,10 +38,6 @@ export async function DELETE(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-
-    // Invalidate teams cache to trigger recalculation of average rank
-    await cache.invalidate('all_teams', 'teams');
-    await cache.invalidate('search_teams', 'search');
 
     return NextResponse.json({ message: 'Player removed from team', player: data });
   } catch (error) {

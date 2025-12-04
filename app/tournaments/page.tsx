@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import { cache, CacheConfig } from '@/lib/cache'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CheckCircle, XCircle } from 'lucide-react'
@@ -60,19 +59,16 @@ export default function TournamentsPage() {
     fetchData()
     
     // Refetch data when page becomes visible
-    const handleVisibilityChange = async () => {
+    const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Invalidate cache to force fresh data when page becomes visible
-        await cache.invalidate('all_tournaments', 'tournaments')
         fetchData()
       }
     }
     
     document.addEventListener('visibilitychange', handleVisibilityChange)
     
-    // Also refetch every 60 seconds to keep data fresh (tournaments change less frequently)
-    const interval = setInterval(async () => {
-      await cache.invalidate('all_tournaments', 'tournaments')
+    // Also refetch every 60 seconds to keep data fresh
+    const interval = setInterval(() => {
       fetchData()
     }, 60000)
     
@@ -139,24 +135,7 @@ export default function TournamentsPage() {
         setProfileChecked(true)
       }
 
-      // Use cache for tournaments data
-      const cacheKey = 'all_tournaments'
-      const cacheOptions = {
-        ttl: 5 * 60 * 1000, // 5 minutes cache for tournament data (less frequent changes)
-        namespace: 'tournaments'
-      }
-
-      // Try to get from cache first
-      const cachedTournaments = await cache.get<Tournament[]>(cacheKey, cacheOptions)
-      if (cachedTournaments) {
-        console.log('🎯 Tournaments Cache HIT - Loading tournaments from cache')
-        setTournaments(cachedTournaments)
-        setLoading(false) // Hide loading immediately when cache is available
-      } else {
-        console.log('❌ Tournaments Cache MISS - Loading tournaments from database')
-      }
-
-      // Always fetch fresh data in background
+      // Fetch tournaments data
       const { data, error } = await supabase
         .from('tournaments')
         .select('*')
@@ -168,10 +147,6 @@ export default function TournamentsPage() {
       }
 
       setTournaments(data || [])
-      
-      // Update cache with fresh data
-      await cache.set(cacheKey, data || [], cacheOptions)
-      console.log('💾 Tournaments Cache SET - Stored fresh tournament data in cache')
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -208,9 +183,6 @@ export default function TournamentsPage() {
         // Add to registration statuses as pending
         setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
         setSuccessMessage('Registration submitted! Your team registration is pending admin approval.')
-        
-        // Invalidate tournaments cache to refresh data
-        await cache.invalidate('all_tournaments', 'tournaments')
         
         // Clear success message after 5 seconds
         setTimeout(() => setSuccessMessage(''), 5000)

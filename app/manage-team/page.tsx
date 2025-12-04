@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/dialog'
 import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle, Edit, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { cache } from '@/lib/cache'
 import { getRankImage } from '@/lib/rank-utils'
 import { AvatarPicker, AvatarPreview } from '@/components/AvatarPicker'
 
@@ -315,10 +314,6 @@ export default function ManageTeamPage() {
       } else {
       }
 
-      // Invalidate teams cache to trigger recalculation of average rank
-      await cache.invalidate('all_teams', 'teams')
-      await cache.invalidate('search_teams', 'search')
-
       loadTeamData() // Refresh data
     } catch (error) {
       console.error('Error removing member:', error)
@@ -419,10 +414,6 @@ export default function ManageTeamPage() {
         console.error('Error deleting team:', teamError)
         return
       }
-
-      // Invalidate teams cache to trigger recalculation of average rank
-      await cache.invalidate('all_teams', 'teams')
-      await cache.invalidate('search_teams', 'search')
 
       // Redirect to home after successful deletion
       router.push('/')
