@@ -8,7 +8,7 @@ import { CurrentUserAvatar } from '@/components/current-user-avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { TeamAvatar } from '@/components/ui/team-avatar'
+import { TeamAvatar, getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,11 +42,6 @@ export default function Navigation() {
   const [unreadTeamMessages, setUnreadTeamMessages] = useState(0)
   const supabase = createClient()
 
-  // Helper function to get team avatar URL
-  const getTeamAvatarUrl = (avatarId: number) => {
-    if (!avatarId) return '/default-avatar.svg'
-    return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
-  }
 
   // Global notifications hook
   const { notifications, unreadCount } = useRealtimeNotifications(user?.id || null)
@@ -227,7 +222,7 @@ export default function Navigation() {
               >
                 <Link href={isCaptain ? "/manage-team" : "/view-team"}>
                   <Avatar>
-                    <AvatarImage src={getTeamAvatarUrl(userTeam.team_avatar)} alt="Team Avatar" />
+                    <AvatarImage src={getTeamAvatarUrl(userTeam.team_avatar) ?? undefined} alt="Team Avatar" />
                     <AvatarFallback>Team</AvatarFallback>
                   </Avatar>
                   {unreadTeamMessages > 0 && (
@@ -736,7 +731,7 @@ export default function Navigation() {
               >
                 <Link href={isCaptain ? "/manage-team" : "/view-team"}>
                   <Avatar>
-                    <AvatarImage src={getTeamAvatarUrl(userTeam.team_avatar)} alt="Team Avatar" />
+                    <AvatarImage src={getTeamAvatarUrl(userTeam.team_avatar) ?? undefined} alt="Team Avatar" />
                     <AvatarFallback>Team</AvatarFallback>
                   </Avatar>
                   {unreadTeamMessages > 0 && (

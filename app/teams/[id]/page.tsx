@@ -23,6 +23,7 @@ import { getProfileIconUrl } from '@/lib/ddragon'
 import RoleIcon from '@/components/RoleIcon'
 import { Shield, Trophy, Users, Calendar, UserPlus, Edit, Gamepad2, Crown } from 'lucide-react'
 import { AvatarPicker, AvatarPreview } from '@/components/AvatarPicker'
+import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
@@ -138,11 +139,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
     } catch (error) {
       console.error('Error fetching taken avatars:', error)
     }
-  }
-
-  const getTeamAvatarUrl = (avatarId: number) => {
-    if (!avatarId) return null
-    return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
   }
 
   const handleRequestToJoin = async () => {

@@ -13,6 +13,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
 import { getRankImage } from '@/lib/rank-utils'
+import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -297,11 +298,6 @@ export default function BracketManager({
     }
     
     setDraggedItem(null)
-  }
-
-  const getTeamAvatarUrl = (avatarId?: number) => {
-    if (!avatarId) return null
-    return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
   }
 
   if (loading) {

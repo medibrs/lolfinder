@@ -3,9 +3,11 @@
 import Image from 'next/image'
 import { Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getProfileIconUrl } from '@/lib/ddragon'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useIsMobile } from '@/hooks/use-mobile'
+
+// Use a stable DDragon version - this rarely changes and avoids async fetch delays
+const DDRAGON_VERSION = '15.23.1'
 
 export interface TeamAvatarTeam {
   id: string
@@ -37,9 +39,10 @@ const iconSizes = {
   lg: 'h-5 w-5'
 }
 
-export async function getTeamAvatarUrl(avatarId?: number) {
+// Synchronous URL generation - no async delay
+export function getTeamAvatarUrl(avatarId?: number): string | null {
   if (!avatarId) return null
-  return await getProfileIconUrl(avatarId)
+  return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${avatarId}.png`
 }
 
 export function TeamAvatar({ 
@@ -60,13 +63,8 @@ export function TeamAvatar({
   const sizeClass = sizeClasses[actualSize]
   const iconSize = iconSizes[actualSize]
   
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (team?.team_avatar) {
-      getTeamAvatarUrl(team.team_avatar).then(setAvatarUrl)
-    }
-  }, [team?.team_avatar])
+  // Generate URL synchronously - no async delay
+  const avatarUrl = getTeamAvatarUrl(team?.team_avatar)
 
   const handleImageError = () => {
     setImageError(true)
@@ -94,7 +92,7 @@ export function TeamAvatar({
           : "border-[1px] border-transparent hover:border-zinc-600",
         className
       )}>
-        {team.team_avatar && avatarUrl && !imageError ? (
+        {avatarUrl && !imageError ? (
           <Image
             src={avatarUrl}
             alt={team.name}

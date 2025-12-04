@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog'
 import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle, Edit, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import { getRankImage } from '@/lib/rank-utils'
 import { AvatarPicker, AvatarPreview } from '@/components/AvatarPicker'
 
@@ -250,11 +251,6 @@ export default function ManageTeamPage() {
     } catch (error) {
       console.error('Error fetching taken avatars:', error)
     }
-  }
-
-  const getTeamAvatarUrl = (avatarId: number) => {
-    if (!avatarId) return ''
-    return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
   }
 
   const handleRemoveMember = async (memberId: string) => {

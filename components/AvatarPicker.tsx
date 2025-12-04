@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Shield } from 'lucide-react'
+import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 
 interface AvatarPickerProps {
   open: boolean
@@ -120,11 +121,6 @@ interface AvatarPreviewProps {
 }
 
 export function AvatarPreview({ avatarId, onEdit, showEditButton = false, size = 'md' }: AvatarPreviewProps) {
-  const getTeamAvatarUrl = (avatarId: number) => {
-    if (!avatarId) return ''
-    return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
-  }
-
   const sizeClasses = {
     sm: 'w-12 h-12',
     md: 'w-16 h-16',
