@@ -286,16 +286,6 @@ export default function Navigation() {
                       >
                         Tournaments
                       </Link>
-                      <Link 
-                        href="/search" 
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={cn(
-                          "text-base font-medium px-3 py-2 rounded-md transition",
-                          pathname === "/search" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                        )}
-                      >
-                        Join/Invite
-                      </Link>
                     </>
                   ) : (
                     // Public links
@@ -618,15 +608,6 @@ export default function Navigation() {
                   )}
                 >
                   Tournaments
-                </Link>
-                <Link 
-                  href="/search" 
-                  className={cn(
-                    "text-foreground hover:text-primary transition",
-                    pathname === "/search" && "text-primary font-medium"
-                  )}
-                >
-                  Join/Invite
                 </Link>
               </>
             ) : (

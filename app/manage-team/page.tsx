@@ -805,7 +805,7 @@ export default function ManageTeamPage() {
                 </Button>
                 
                 <Button asChild variant="outline" className="w-full">
-                  <Link href="/search">
+                  <Link href="/teams">
                     <Users className="w-4 h-4 mr-2" />
                     Browse Teams
                   </Link>

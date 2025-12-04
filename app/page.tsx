@@ -376,16 +376,9 @@ export default function Home() {
             </Button>
 
             <Button asChild variant="secondary" size="lg" className="bg-gray-900/80 hover:bg-gray-800 text-gray-100 border border-gray-800 backdrop-blur-sm">
-              <Link href="/search" className="flex flex-col items-center gap-2 h-auto py-4">
-                <Search className="w-6 h-6" />
-                <span>Search Players</span>
-              </Link>
-            </Button>
-
-            <Button asChild variant="secondary" size="lg" className="bg-gray-900/80 hover:bg-gray-800 text-gray-100 border border-gray-800 backdrop-blur-sm">
               <Link href="/players" className="flex flex-col items-center gap-2 h-auto py-4">
                 <User className="w-6 h-6" />
-                <span>Player Directory</span>
+                <span>Find Players</span>
               </Link>
             </Button>
           </div>

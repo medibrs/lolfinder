@@ -81,12 +81,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const supabase = createClient()
 
   const handleSearchPlayers = () => {
-    const searchParams = new URLSearchParams()
-    searchParams.set('type', 'players')
-    if (newMemberRole) {
-      searchParams.set('role', newMemberRole)
-    }
-    router.push(`/search?${searchParams.toString()}`)
+    router.push('/players')
   }
 
   const handleEditTeam = () => {
