@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trophy, Users, Target, Zap, Shield, Crown, Bell, Settings, Plus, Search, Calendar, User } from 'lucide-react'
+import { Trophy, Users, Target, Zap, Shield, Crown, Bell, Settings, Plus, Search, Calendar, User, Medal } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Footer from '@/components/footer'
 
@@ -360,7 +360,7 @@ export default function Home() {
           </p>
           
           {/* Navigation Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-4 justify-center items-center max-w-md mx-auto sm:max-w-none">
             <Button asChild variant="secondary" size="lg" className="bg-gray-900/80 hover:bg-gray-800 text-gray-100 border border-gray-800 backdrop-blur-sm">
               <Link href="/teams" className="flex flex-col items-center gap-2 h-auto py-4">
                 <Users className="w-6 h-6" />
@@ -379,6 +379,13 @@ export default function Home() {
               <Link href="/players" className="flex flex-col items-center gap-2 h-auto py-4">
                 <User className="w-6 h-6" />
                 <span>Find Players</span>
+              </Link>
+            </Button>
+
+            <Button asChild variant="secondary" size="lg" className="bg-gray-900/80 hover:bg-gray-800 text-gray-100 border border-gray-800 backdrop-blur-sm">
+              <Link href="/leaderboard" className="flex flex-col items-center gap-2 h-auto py-4">
+                <Medal className="w-6 h-6" />
+                <span>Leaderboard</span>
               </Link>
             </Button>
           </div>
