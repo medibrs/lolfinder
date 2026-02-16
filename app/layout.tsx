@@ -81,9 +81,9 @@ export const metadata: Metadata = {
     'équipe pour tournoi lol',
     'trouver joueurs league of legends',
   ],
-  authors: [{ name: 'TeamFinder' }],
-  creator: 'TeamFinder',
-  publisher: 'TeamFinder',
+  authors: [{ name: 'shams' }, { name: 'mbouras' }],
+  creator: 'shams',
+  publisher: 'mbouras',
   robots: {
     index: true,
     follow: true,
@@ -116,7 +116,7 @@ export const metadata: Metadata = {
     title: 'League of Legends Team Finder | LoL Team Finder',
     description: 'Find LoL team fast. Join tournaments, find teammates for ranked and Clash on our LoL team finder.',
     images: ['/og-image.png'],
-    creator: '@teamfinder',
+    creator: '@lolfinder',
   },
   verification: {
     // Add your verification codes here when you have them
