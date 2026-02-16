@@ -43,7 +43,7 @@ export default function CreateTeamPage() {
           const { user } = await response.json()
           setUserId(user.id)
           setFormData(prev => ({ ...prev, captain_id: user.id }))
-          
+
           // Check if user already has a team or is in a team
           await checkTeamEligibility(user.id)
         }
@@ -59,41 +59,41 @@ export default function CreateTeamPage() {
   const checkTeamEligibility = async (userId: string) => {
     try {
       const supabase = createClient()
-      
+
       // Check if user has a complete profile
       const { data: playerData, error: playerError } = await supabase
         .from('players')
-        .select('team_id, summoner_name, main_role, tier')
+        .select('team_id, summoner_name, main_role, secondary_role')
         .eq('id', userId)
         .single()
-      
+
       if (playerError || !playerData) {
         setCanCreateTeam(false)
         setBlockReason('no_profile')
         return
       }
-      
-      // Check if profile is complete
-      if (!playerData.summoner_name || !playerData.main_role || !playerData.tier) {
+
+      // Check if profile is complete (Riot ID, Main Role, Secondary Role)
+      if (!playerData.summoner_name || !playerData.main_role || !playerData.secondary_role) {
         setCanCreateTeam(false)
         setBlockReason('incomplete_profile')
         return
       }
-      
+
       // Check if user is already in a team
       if (playerData?.team_id) {
         setCanCreateTeam(false)
         setBlockReason('already_in_team')
         return
       }
-      
+
       // Check if user already owns a team
       const { data: teamData } = await supabase
         .from('teams')
         .select('id')
         .eq('captain_id', userId)
         .single()
-      
+
       if (teamData) {
         setCanCreateTeam(false)
         setBlockReason('already_created_team')
@@ -142,7 +142,7 @@ export default function CreateTeamPage() {
       } else {
         const errorData = await response.json()
         console.error('Error creating team:', errorData)
-        
+
         // Handle specific error messages
         if (errorData.error?.includes('duplicate key') || errorData.error?.includes('teams_name_key')) {
           setError('This team name is already taken. Please choose a different name for your team.')
@@ -340,7 +340,7 @@ export default function CreateTeamPage() {
             <div>
               <Label>Team Avatar</Label>
               <div className="flex items-center gap-4 mt-2">
-                <AvatarPreview 
+                <AvatarPreview
                   avatarId={formData.team_avatar}
                   showEditButton={true}
                   onEdit={() => setShowAvatarPicker(true)}
@@ -427,7 +427,7 @@ export default function CreateTeamPage() {
               </Button>
             </div>
           </form>
-          
+
           {/* Avatar Picker Dialog */}
           <AvatarPicker
             open={showAvatarPicker}
