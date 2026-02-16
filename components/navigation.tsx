@@ -50,29 +50,29 @@ export default function Navigation() {
     const fetchUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       setUser(authUser)
-      
+
       if (authUser) {
         fetchUserTeam(authUser.id)
-        
+
         // Check if user is admin
         const isUserAdmin = authUser.app_metadata?.role === 'admin'
         setIsAdmin(isUserAdmin)
       }
-      
+
       setLoading(false)
     }
-    
+
     fetchUser()
   }, [])
 
-  
+
   useEffect(() => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setUser(session?.user ?? null)
         setLoading(false)
-        
+
         if (session?.user) {
           fetchUserTeam(session.user.id)
           checkAdminStatus(session.user)
@@ -89,8 +89,8 @@ export default function Navigation() {
 
   const checkAdminStatus = (user: any) => {
     // Check if user has admin role in metadata
-    const isUserAdmin = user?.app_metadata?.role === 'admin' || 
-                        user?.raw_app_meta_data?.role === 'admin'
+    const isUserAdmin = user?.app_metadata?.role === 'admin' ||
+      user?.raw_app_meta_data?.role === 'admin'
     setIsAdmin(isUserAdmin)
   }
 
@@ -121,12 +121,12 @@ export default function Navigation() {
     }
   }
 
-  
+
   const handleSignOut = async () => {
     try {
       const response = await fetch('/auth/signout', { method: 'POST' })
       const data = await response.json()
-      
+
       if (data.success) {
         // Clear any local state and redirect
         window.location.href = '/auth'
@@ -178,11 +178,11 @@ export default function Navigation() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
-              <Image 
-                src="/logo.png" 
-                alt="TeamFinder" 
-                width={180} 
-                height={48} 
+              <Image
+                src="/logo.png"
+                alt="TeamFinder"
+                width={180}
+                height={48}
                 className="h-12 w-auto object-contain"
                 style={{ width: 'auto', height: '48px' }}
                 priority
@@ -200,22 +200,22 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center gap-2">
-            <Image 
-              src="/logo.png" 
-              alt="TeamFinder" 
-              width={180} 
-              height={48} 
+            <Image
+              src="/logo.png"
+              alt="TeamFinder"
+              width={180}
+              height={48}
               className="h-12 w-auto object-contain"
               style={{ width: 'auto', height: '48px' }}
               priority
             />
           </Link>
-          
+
           {/* Mobile Menu */}
           <div className="flex md:hidden items-center gap-2">
             {userTeam && (
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="relative h-10 w-10 rounded-full"
                 asChild
               >
@@ -252,21 +252,21 @@ export default function Navigation() {
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px] flex flex-col bg-gradient-to-b from-background to-secondary/20">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                
+
                 {/* Header with logo and user info */}
                 <div className="px-4 py-6 border-b bg-background/50 backdrop-blur-sm">
                   <div className="flex items-center gap-3">
-                    <Image 
-                      src="/logo.png" 
-                      alt="lolfinder" 
-                      width={32} 
+                    <Image
+                      src="/logo.png"
+                      alt="lolfinder"
+                      width={32}
                       height={32}
                       className="rounded-lg"
                     />
                     <span className="font-bold text-lg">lolfinder</span>
                   </div>
                 </div>
-                
+
                 <nav className="flex flex-col gap-2 p-4 overflow-y-auto flex-1">
                   {user ? (
                     // Authenticated user links
@@ -276,8 +276,8 @@ export default function Navigation() {
                           Browse
                         </p>
                         <div className="space-y-1">
-                          <Link 
-                            href="/players" 
+                          <Link
+                            href="/players"
                             onClick={() => setMobileMenuOpen(false)}
                             className={cn(
                               "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
@@ -289,8 +289,8 @@ export default function Navigation() {
                             </svg>
                             Players
                           </Link>
-                          <Link 
-                            href="/teams" 
+                          <Link
+                            href="/teams"
                             onClick={() => setMobileMenuOpen(false)}
                             className={cn(
                               "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
@@ -302,8 +302,8 @@ export default function Navigation() {
                             </svg>
                             Teams
                           </Link>
-                          <Link 
-                            href="/tournaments" 
+                          <Link
+                            href="/tournaments"
                             onClick={() => setMobileMenuOpen(false)}
                             className={cn(
                               "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
@@ -315,8 +315,8 @@ export default function Navigation() {
                             </svg>
                             Tournaments
                           </Link>
-                          <Link 
-                            href="/leaderboard" 
+                          <Link
+                            href="/leaderboard"
                             onClick={() => setMobileMenuOpen(false)}
                             className={cn(
                               "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
@@ -328,14 +328,14 @@ export default function Navigation() {
                           </Link>
                         </div>
                       </div>
-                      
+
                       <div className="mb-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1">
                           My Account
                         </p>
                         <div className="space-y-1">
-                          <Link 
-                            href="/setup-profile" 
+                          <Link
+                            href="/setup-profile"
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
                           >
@@ -344,8 +344,8 @@ export default function Navigation() {
                             </svg>
                             Profile
                           </Link>
-                          <Link 
-                            href="/settings" 
+                          <Link
+                            href="/settings"
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
                           >
@@ -356,7 +356,7 @@ export default function Navigation() {
                             Settings
                           </Link>
                           {userTeam && (
-                            <Link 
+                            <Link
                               href={isCaptain ? "/manage-team" : "/view-team"}
                               onClick={() => setMobileMenuOpen(false)}
                               className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
@@ -367,8 +367,8 @@ export default function Navigation() {
                               {isCaptain ? "Manage Team" : "View Team"}
                             </Link>
                           )}
-                          <Link 
-                            href="/notifications" 
+                          <Link
+                            href="/notifications"
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center justify-between"
                           >
@@ -386,15 +386,15 @@ export default function Navigation() {
                           </Link>
                         </div>
                       </div>
-                      
+
                       {isAdmin && (
                         <div className="mb-2">
                           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1 text-yellow-600">
                             Admin
                           </p>
                           <div className="space-y-1">
-                            <Link 
-                              href="/admin" 
+                            <Link
+                              href="/admin"
                               onClick={() => setMobileMenuOpen(false)}
                               className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition text-yellow-600 flex items-center gap-3"
                             >
@@ -405,8 +405,8 @@ export default function Navigation() {
                             </Link>
                             {pathname?.startsWith('/admin') && (
                               <div className="pl-4 space-y-1 border-l-2 border-yellow-600/30 ml-3">
-                                <Link 
-                                  href="/admin?tab=overview" 
+                                <Link
+                                  href="/admin?tab=overview"
                                   onClick={() => setMobileMenuOpen(false)}
                                   className={cn(
                                     "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
@@ -415,8 +415,8 @@ export default function Navigation() {
                                 >
                                   Overview
                                 </Link>
-                                <Link 
-                                  href="/admin?tab=players" 
+                                <Link
+                                  href="/admin?tab=players"
                                   onClick={() => setMobileMenuOpen(false)}
                                   className={cn(
                                     "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
@@ -425,8 +425,8 @@ export default function Navigation() {
                                 >
                                   Players
                                 </Link>
-                                <Link 
-                                  href="/admin?tab=teams" 
+                                <Link
+                                  href="/admin?tab=teams"
                                   onClick={() => setMobileMenuOpen(false)}
                                   className={cn(
                                     "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
@@ -435,8 +435,8 @@ export default function Navigation() {
                                 >
                                   Teams
                                 </Link>
-                                <Link 
-                                  href="/admin?tab=tournaments" 
+                                <Link
+                                  href="/admin?tab=tournaments"
                                   onClick={() => setMobileMenuOpen(false)}
                                   className={cn(
                                     "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
@@ -445,8 +445,8 @@ export default function Navigation() {
                                 >
                                   Tournaments
                                 </Link>
-                                <Link 
-                                  href="/admin?tab=registrations" 
+                                <Link
+                                  href="/admin?tab=registrations"
                                   onClick={() => setMobileMenuOpen(false)}
                                   className={cn(
                                     "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
@@ -455,8 +455,8 @@ export default function Navigation() {
                                 >
                                   Registrations
                                 </Link>
-                                <Link 
-                                  href="/admin?tab=users" 
+                                <Link
+                                  href="/admin?tab=users"
                                   onClick={() => setMobileMenuOpen(false)}
                                   className={cn(
                                     "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
@@ -465,8 +465,8 @@ export default function Navigation() {
                                 >
                                   Users
                                 </Link>
-                                <Link 
-                                  href="/admin?tab=feature-requests" 
+                                <Link
+                                  href="/admin?tab=feature-requests"
                                   onClick={() => setMobileMenuOpen(false)}
                                   className={cn(
                                     "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
@@ -480,22 +480,22 @@ export default function Navigation() {
                           </div>
                         </div>
                       )}
-                      
+
                       <div className="mb-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1">
                           Support
                         </p>
                         <div className="space-y-1">
-                          <a 
-                            href="mailto:support@teamfinder.gg"
+                          <a
+                            href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`}
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
                           >
                             <MessageSquare className="h-4 w-4" />
                             Contact Support
                           </a>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             onClick={() => {
                               setMobileMenuOpen(false)
                               setTimeout(() => setFeatureDialogOpen(true), 100)
@@ -505,21 +505,21 @@ export default function Navigation() {
                             <Lightbulb className="h-4 w-4" />
                             Request Feature
                           </Button>
-                          <a 
+                          <a
                             href="#"
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
                           >
                             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.5152.0699.0699 0 00-.0321.0277C.5334 9.0463-.319 13.5809.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189zm7.975 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/>
+                              <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.5152.0699.0699 0 00-.0321.0277C.5334 9.0463-.319 13.5809.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189zm7.975 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z" />
                             </svg>
                             Discord Community
                           </a>
                         </div>
                       </div>
-                      
+
                       <div className="pt-2">
-                        <Button 
+                        <Button
                           onClick={() => {
                             handleSignOut()
                             setMobileMenuOpen(false)
@@ -540,8 +540,8 @@ export default function Navigation() {
                           Browse
                         </p>
                         <div className="space-y-1">
-                          <Link 
-                            href="/tournaments" 
+                          <Link
+                            href="/tournaments"
                             onClick={() => setMobileMenuOpen(false)}
                             className={cn(
                               "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
@@ -553,8 +553,8 @@ export default function Navigation() {
                             </svg>
                             Tournaments
                           </Link>
-                          <Link 
-                            href="/#about" 
+                          <Link
+                            href="/#about"
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
                           >
@@ -563,8 +563,8 @@ export default function Navigation() {
                             </svg>
                             About
                           </Link>
-                          <Link 
-                            href="/#how-it-works" 
+                          <Link
+                            href="/#how-it-works"
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
                           >
@@ -573,8 +573,8 @@ export default function Navigation() {
                             </svg>
                             How It Works
                           </Link>
-                          <Link 
-                            href="/#features" 
+                          <Link
+                            href="/#features"
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-base font-medium px-3 py-2 rounded-md hover:bg-accent transition flex items-center gap-3"
                           >
@@ -585,7 +585,7 @@ export default function Navigation() {
                           </Link>
                         </div>
                       </div>
-                      
+
                       <div className="pt-2">
                         {pathname !== '/auth' && (
                           <Button asChild size="sm" className="w-full">
@@ -607,8 +607,8 @@ export default function Navigation() {
             {pathname === '/admin' ? (
               // Admin tabs when on admin page
               <>
-                <Link 
-                  href="/admin?tab=overview" 
+                <Link
+                  href="/admin?tab=overview"
                   className={cn(
                     "text-foreground hover:text-primary transition text-sm",
                     activeAdminTab === 'overview' && "text-primary font-medium"
@@ -616,8 +616,8 @@ export default function Navigation() {
                 >
                   Overview
                 </Link>
-                <Link 
-                  href="/admin?tab=players" 
+                <Link
+                  href="/admin?tab=players"
                   className={cn(
                     "text-foreground hover:text-primary transition text-sm",
                     activeAdminTab === 'players' && "text-primary font-medium"
@@ -625,8 +625,8 @@ export default function Navigation() {
                 >
                   Players
                 </Link>
-                <Link 
-                  href="/admin?tab=teams" 
+                <Link
+                  href="/admin?tab=teams"
                   className={cn(
                     "text-foreground hover:text-primary transition text-sm",
                     activeAdminTab === 'teams' && "text-primary font-medium"
@@ -634,8 +634,8 @@ export default function Navigation() {
                 >
                   Teams
                 </Link>
-                <Link 
-                  href="/admin?tab=tournaments" 
+                <Link
+                  href="/admin?tab=tournaments"
                   className={cn(
                     "text-foreground hover:text-primary transition text-sm",
                     activeAdminTab === 'tournaments' && "text-primary font-medium"
@@ -643,8 +643,8 @@ export default function Navigation() {
                 >
                   Tournaments
                 </Link>
-                <Link 
-                  href="/admin?tab=registrations" 
+                <Link
+                  href="/admin?tab=registrations"
                   className={cn(
                     "text-foreground hover:text-primary transition text-sm",
                     activeAdminTab === 'registrations' && "text-primary font-medium"
@@ -652,8 +652,8 @@ export default function Navigation() {
                 >
                   Registrations
                 </Link>
-                <Link 
-                  href="/admin?tab=users" 
+                <Link
+                  href="/admin?tab=users"
                   className={cn(
                     "text-sm font-medium px-3 py-2 rounded-md transition",
                     activeAdminTab === 'users' && "text-primary font-medium"
@@ -661,8 +661,8 @@ export default function Navigation() {
                 >
                   Users
                 </Link>
-                <Link 
-                  href="/admin?tab=feature-requests" 
+                <Link
+                  href="/admin?tab=feature-requests"
                   className={cn(
                     "text-sm font-medium px-3 py-2 rounded-md transition",
                     activeAdminTab === 'feature-requests' && "text-primary font-medium"
@@ -674,8 +674,8 @@ export default function Navigation() {
             ) : user ? (
               // Authenticated user navigation
               <>
-                <Link 
-                  href="/players" 
+                <Link
+                  href="/players"
                   className={cn(
                     "text-foreground hover:text-primary transition",
                     pathname === "/players" && "text-primary font-medium"
@@ -683,8 +683,8 @@ export default function Navigation() {
                 >
                   Players
                 </Link>
-                <Link 
-                  href="/teams" 
+                <Link
+                  href="/teams"
                   className={cn(
                     "text-foreground hover:text-primary transition",
                     pathname === "/teams" && "text-primary font-medium"
@@ -692,8 +692,8 @@ export default function Navigation() {
                 >
                   Teams
                 </Link>
-                <Link 
-                  href="/tournaments" 
+                <Link
+                  href="/tournaments"
                   className={cn(
                     "text-foreground hover:text-primary transition",
                     pathname === "/tournaments" && "text-primary font-medium"
@@ -701,8 +701,8 @@ export default function Navigation() {
                 >
                   Tournaments
                 </Link>
-                <Link 
-                  href="/leaderboard" 
+                <Link
+                  href="/leaderboard"
                   className={cn(
                     "text-foreground hover:text-primary transition",
                     pathname === "/leaderboard" && "text-primary font-medium"
@@ -714,8 +714,8 @@ export default function Navigation() {
             ) : (
               // Public navigation (unauthenticated)
               <>
-                <Link 
-                  href="/tournaments" 
+                <Link
+                  href="/tournaments"
                   className={cn(
                     "text-foreground hover:text-primary transition",
                     pathname === "/tournaments" && "text-primary font-medium"
@@ -723,20 +723,20 @@ export default function Navigation() {
                 >
                   Tournaments
                 </Link>
-                <Link 
-                  href="/#about" 
+                <Link
+                  href="/#about"
                   className="text-foreground hover:text-primary transition"
                 >
                   About
                 </Link>
-                <Link 
-                  href="/#how-it-works" 
+                <Link
+                  href="/#how-it-works"
                   className="text-foreground hover:text-primary transition"
                 >
                   How It Works
                 </Link>
-                <Link 
-                  href="/#features" 
+                <Link
+                  href="/#features"
                   className="text-foreground hover:text-primary transition"
                 >
                   Features
@@ -748,8 +748,8 @@ export default function Navigation() {
           {/* Desktop Avatar/Auth */}
           <div className="hidden md:flex items-center gap-2">
             {userTeam && (
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="relative h-10 w-10 rounded-full"
                 asChild
               >
@@ -776,7 +776,7 @@ export default function Navigation() {
                 <Link href="/admin">Admin</Link>
               </Button>
             )}
-            
+
             {/* Help/Support Popover */}
             <Popover>
               <PopoverTrigger asChild>
@@ -787,8 +787,8 @@ export default function Navigation() {
               <PopoverContent className="w-80 p-0" align="end">
                 <div className="relative">
                   {/* Discord Background Image */}
-                  <div className="relative h-48 bg-cover bg-center rounded-t-lg" 
-                       style={{ backgroundImage: 'url(/discord-bg-small.webp)' }}>
+                  <div className="relative h-48 bg-cover bg-center rounded-t-lg"
+                    style={{ backgroundImage: 'url(/discord-bg-small.webp)' }}>
                     <div className="absolute inset-0 bg-black/40 rounded-t-lg">
                       <div className="flex flex-col items-center justify-center h-full text-white p-4">
                         <h4 className="font-bold text-lg mb-2">Need help?</h4>
@@ -798,11 +798,11 @@ export default function Navigation() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Links Section */}
                   <div className="bg-background p-4 space-y-3 rounded-b-lg">
-                    <a 
-                      href="mailto:support@teamfinder.gg" 
+                    <a
+                      href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`}
                       className="flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors border border-border"
                     >
                       <MessageSquare className="h-5 w-5 text-muted-foreground" />
@@ -811,10 +811,10 @@ export default function Navigation() {
                         <p className="text-xs text-muted-foreground">Get help with your account</p>
                       </div>
                     </a>
-                    
+
                     <FeatureRequestDialog>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         className="flex items-center gap-3 p-3 h-auto justify-start w-full rounded-md hover:bg-accent transition-colors border border-border"
                       >
                         <Lightbulb className="h-5 w-5 text-muted-foreground" />
@@ -824,13 +824,13 @@ export default function Navigation() {
                         </div>
                       </Button>
                     </FeatureRequestDialog>
-                    
-                    <a 
-                      href="#" 
+
+                    <a
+                      href="#"
                       className="flex items-center justify-center gap-2 w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-md py-3 px-4 text-sm font-medium transition-colors"
                     >
                       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.5152.0699.0699 0 00-.0321.0277C.5334 9.0463-.319 13.5809.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189zm7.975 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/>
+                        <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.5152.0699.0699 0 00-.0321.0277C.5334 9.0463-.319 13.5809.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189zm7.975 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z" />
                       </svg>
                       <span className="font-medium">Join us on Discord</span>
                     </a>
@@ -840,67 +840,67 @@ export default function Navigation() {
             </Popover>
 
             {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <CurrentUserAvatar unreadCount={unreadCount} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user.email}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      Account Settings
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/setup-profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings">Settings</Link>
-                </DropdownMenuItem>
-                {userTeam && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <CurrentUserAvatar unreadCount={unreadCount} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {user.email}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        Account Settings
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    {isCaptain ? (
-                      <Link href="/manage-team">Manage Team</Link>
-                    ) : (
-                      <Link href="/view-team">View Team</Link>
-                    )}
+                    <Link href="/setup-profile">Profile</Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/notifications" className="flex items-center justify-between">
-                    <span>Notifications</span>
-                    {unreadCount > 0 && (
-                      <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-1">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            pathname !== '/auth' && (
-              <Button asChild className="bg-primary hover:bg-primary/90">
-                <Link href="/auth">Sign In</Link>
-              </Button>
-            )
-          )}
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">Settings</Link>
+                  </DropdownMenuItem>
+                  {userTeam && (
+                    <DropdownMenuItem asChild>
+                      {isCaptain ? (
+                        <Link href="/manage-team">Manage Team</Link>
+                      ) : (
+                        <Link href="/view-team">View Team</Link>
+                      )}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/notifications" className="flex items-center justify-between">
+                      <span>Notifications</span>
+                      {unreadCount > 0 && (
+                        <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-1">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              pathname !== '/auth' && (
+                <Button asChild className="bg-primary hover:bg-primary/90">
+                  <Link href="/auth">Sign In</Link>
+                </Button>
+              )
+            )}
           </div>
         </div>
       </div>
-      
+
       {/* Standalone Feature Request Dialog */}
       <FeatureRequestDialog open={featureDialogOpen} onOpenChange={setFeatureDialogOpen}>
         <div />
