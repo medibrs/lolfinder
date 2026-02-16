@@ -27,7 +27,11 @@ export async function GET(request: Request) {
     )
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    
+
+    if (error) {
+      console.error('Auth callback error:', error.message, error.status, error)
+    }
+
     if (!error) {
       // Let middleware handle the smart routing based on profile existence
       // This ensures consistency between client-side and server-side routing
