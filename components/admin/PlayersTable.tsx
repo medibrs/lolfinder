@@ -47,13 +47,13 @@ export default function PlayersTable() {
   const [tierFilter, setTierFilter] = useState('all')
   const [roleFilter, setRoleFilter] = useState('all')
   const [lftFilter, setLftFilter] = useState('all')
-  
+
   // Message Dialog State
   const [messageOpen, setMessageOpen] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
   const [messageText, setMessageText] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
-  
+
   const supabase = createClient()
 
   useEffect(() => {
@@ -63,8 +63,8 @@ export default function PlayersTable() {
   const fetchPlayers = async () => {
     try {
       const response = await fetch('/api/players')
-      const data = await response.json()
-      setPlayers(data)
+      const result = await response.json()
+      setPlayers(Array.isArray(result) ? result : (result.data || []))
     } catch (error) {
       console.error('Error fetching players:', error)
     } finally {
@@ -76,10 +76,10 @@ export default function PlayersTable() {
     const matchesSearch = player.summoner_name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesTier = tierFilter === 'all' || player.tier === tierFilter
     const matchesRole = roleFilter === 'all' || player.main_role === roleFilter || player.secondary_role === roleFilter
-    const matchesLft = lftFilter === 'all' || 
-                      (lftFilter === 'looking' && player.looking_for_team) ||
-                      (lftFilter === 'not-looking' && !player.looking_for_team)
-    
+    const matchesLft = lftFilter === 'all' ||
+      (lftFilter === 'looking' && player.looking_for_team) ||
+      (lftFilter === 'not-looking' && !player.looking_for_team)
+
     return matchesSearch && matchesTier && matchesRole && matchesLft
   })
 
@@ -199,7 +199,7 @@ export default function PlayersTable() {
               className="pl-10"
             />
           </div>
-          
+
           <Select value={tierFilter} onValueChange={setTierFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by tier" />
@@ -216,7 +216,7 @@ export default function PlayersTable() {
               <SelectItem value="Grandmaster">Grandmaster</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select value={roleFilter} onValueChange={setRoleFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by role" />
@@ -230,7 +230,7 @@ export default function PlayersTable() {
               <SelectItem value="Support">Support</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select value={lftFilter} onValueChange={setLftFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="LFT status" />
@@ -285,17 +285,17 @@ export default function PlayersTable() {
                   <TableCell>{player.region}</TableCell>
                   <TableCell>
                     {player.looking_for_team ? (
-                      <Badge 
-                        variant="default" 
-                        className="bg-green-500 cursor-help" 
+                      <Badge
+                        variant="default"
+                        className="bg-green-500 cursor-help"
                         title="Looking for team"
                       >
                         Yes
                       </Badge>
                     ) : (
-                      <Badge 
-                        variant="secondary" 
-                        className="cursor-help" 
+                      <Badge
+                        variant="secondary"
+                        className="cursor-help"
                         title="Not looking for team"
                       >
                         No
@@ -327,7 +327,7 @@ export default function PlayersTable() {
                           <MessageSquare className="mr-2 h-4 w-4" />
                           Message Player
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => deletePlayer(player.id)}
                         >

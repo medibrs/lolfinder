@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
           .from('players')
           .select('*', { count: 'exact', head: true })
           .eq('team_id', team.id);
-        
+
         return {
           ...team,
           member_count: count || 0,
@@ -90,14 +90,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validate input
     const validatedData = createTeamSchema.parse(body);
 
     // Check if captain exists and has a complete profile
     const { data: existingCaptain, error: existingCaptainError } = await supabase
       .from('players')
-      .select('id, team_id, summoner_name, discord, main_role, tier')
+      .select('id, team_id, summoner_name, main_role, secondary_role')
       .eq('id', validatedData.captain_id)
       .single();
 
@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if player profile is complete
-    if (!existingCaptain.summoner_name || !existingCaptain.discord || !existingCaptain.main_role || !existingCaptain.tier) {
+    // Check if player profile is complete (Riot ID, Main Role, Secondary Role)
+    if (!existingCaptain.summoner_name || !existingCaptain.main_role || !existingCaptain.secondary_role) {
       return NextResponse.json(
         { error: 'Please complete your player profile before creating a team.' },
         { status: 400 }
@@ -152,9 +152,9 @@ export async function POST(request: NextRequest) {
       }
 
       if (existingAvatarTeam) {
-        return NextResponse.json({ 
-          error: 'Avatar already taken', 
-          message: `This avatar is already being used by ${existingAvatarTeam.name}` 
+        return NextResponse.json({
+          error: 'Avatar already taken',
+          message: `This avatar is already being used by ${existingAvatarTeam.name}`
         }, { status: 409 });
       }
     }
@@ -173,9 +173,9 @@ export async function POST(request: NextRequest) {
     // Update the captain's player record to link them to the team
     const { error: updateError } = await supabase
       .from('players')
-      .update({ 
+      .update({
         team_id: data.id,
-        looking_for_team: false 
+        looking_for_team: false
       })
       .eq('id', validatedData.captain_id);
 
