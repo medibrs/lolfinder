@@ -233,14 +233,26 @@ export default async function TournamentEventPage({ params }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Swiss Bracket */}
+            {/* Tournament Bracket Preview */}
             <div className="w-full">
-              <SwissBracketPreview
-                teams={registeredTeams.map((r: any) => r.teams).filter(Boolean)}
-                maxWins={3}
-                maxLosses={3}
-                teamCount={16}
-              />
+              {tournament.format === 'Swiss' ? (
+                <SwissBracketPreview
+                  teams={registeredTeams.map((r: any) => r.teams).filter(Boolean)}
+                  maxWins={tournament.max_wins || 3}
+                  maxLosses={tournament.max_losses || 3}
+                  teamCount={tournament.max_teams || 16}
+                />
+              ) : (
+                <Card className="border-zinc-800 bg-zinc-900/50">
+                  <CardContent className="flex flex-col items-center justify-center py-12 text-center min-h-[300px]">
+                    <Trophy className="h-12 w-12 text-zinc-600 mb-4" />
+                    <h3 className="text-xl font-medium text-white mb-2">{tournament.format?.replace(/_/g, ' ') || 'Single Elimination'} Bracket</h3>
+                    <p className="text-sm text-zinc-400 max-w-sm">
+                      The bracket preview will be available once the tournament begins or seeding is completed.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Teams Attending */}
