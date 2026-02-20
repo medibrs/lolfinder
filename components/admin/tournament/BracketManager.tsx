@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
 import { getRankImage } from '@/lib/rank-utils'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
+import MatchDirector from './MatchDirector'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { SingleEliminationBracketPreview } from '@/components/tournament/single-elimination-bracket-preview'
+import { SwissBracketPreview } from '@/components/tournament/swiss-bracket-preview'
 
 interface Team {
   id: string
@@ -57,6 +60,7 @@ export default function BracketManager({
 }: BracketManagerProps) {
   const { toast } = useToast()
   const [participants, setParticipants] = useState<Participant[]>([])
+  const [tournament, setTournament] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [bracketGenerated, setBracketGenerated] = useState(false)
@@ -64,6 +68,7 @@ export default function BracketManager({
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
   const [approvedCount, setApprovedCount] = useState(0)
+  const [matchData, setMatchData] = useState<any[]>([])
 
   useEffect(() => {
     fetchSeeding()
@@ -77,15 +82,39 @@ export default function BracketManager({
 
       if (response.ok) {
         setParticipants(data.participants || [])
+        setTournament(data.tournament)
         setBracketGenerated(data.bracket_generated)
         setCanEditSeeding(data.can_edit_seeding)
         setApprovedCount(data.approved_count || 0)
+
+        // If bracket is generated, also fetch match data for the live preview
+        if (data.bracket_generated) {
+          await fetchMatchData()
+        }
       }
     } catch (error) {
       console.error('Error fetching seeding:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchMatchData = async () => {
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/matches`)
+      const data = await res.json()
+      if (res.ok) {
+        setMatchData(data.matches || [])
+      }
+    } catch (error) {
+      console.error('Error fetching match data:', error)
+    }
+  }
+
+  const handleStateChanged = async () => {
+    // Re-fetch both seeding state and match data
+    await fetchMatchData()
+    await fetchSeeding()
   }
 
   const handleGenerateSeeding = async (method: 'random' | 'rank') => {
@@ -275,20 +304,34 @@ export default function BracketManager({
     }
   }
 
-  // Drag and drop handlers
-  const handleDragStart = (index: number) => {
-    if (!canEditSeeding) return
+  // Drag and drop handlers — use team_id instead of index so it works with filtered lists
+  const [draggedTeamId, setDraggedTeamId] = useState<string | null>(null)
+
+  const handleDragStart = (index: number, teamId?: string) => {
+    if (teamId) {
+      setDraggedTeamId(teamId)
+    }
     setDraggedItem(index)
   }
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault()
-    if (!canEditSeeding || draggedItem === null || draggedItem === index) return
   }
 
-  const handleDrop = async (e: React.DragEvent, targetIndex: number) => {
+  const handleDrop = async (e: React.DragEvent, targetIndex: number, targetTeamId?: string) => {
     e.preventDefault()
-    if (!canEditSeeding || draggedItem === null || draggedItem === targetIndex) return
+
+    // New team-id-based swap (works with filtered lists)
+    if (draggedTeamId && targetTeamId && draggedTeamId !== targetTeamId) {
+      await handleSwapSeeds(draggedTeamId, targetTeamId)
+      setDraggedTeamId(null)
+      setDraggedItem(null)
+      return
+    }
+
+    // Legacy index-based swap (for pre-bracket seeding list)
+    if (draggedItem === null || draggedItem === targetIndex) return
+    if (!canEditSeeding) return
 
     const draggedParticipant = participants[draggedItem]
     const targetParticipant = participants[targetIndex]
@@ -298,6 +341,7 @@ export default function BracketManager({
     }
 
     setDraggedItem(null)
+    setDraggedTeamId(null)
   }
 
   if (loading) {
@@ -456,118 +500,264 @@ export default function BracketManager({
         </CardContent>
       </Card>
 
-      {/* Seeding List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Current Seeding
-          </CardTitle>
-          <CardDescription>
-            {canEditSeeding
-              ? 'Drag teams to reorder or use arrows to adjust seeding'
-              : 'Seeding is locked. Reset bracket to make changes.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {participants.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No teams seeded yet</p>
-              <p className="text-sm">Generate seeding from approved registrations</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {participants.map((participant, index) => (
-                <div
-                  key={participant.id}
-                  draggable={canEditSeeding}
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDrop={(e) => handleDrop(e, index)}
-                  className={`
-                    flex items-center gap-3 p-3 rounded-lg border transition-all
-                    ${canEditSeeding ? 'cursor-grab hover:border-primary/50 hover:bg-muted/50' : 'cursor-default'}
-                    ${draggedItem === index ? 'opacity-50 border-primary' : 'border-border'}
-                  `}
-                >
-                  {/* Drag Handle */}
-                  {canEditSeeding && (
-                    <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  )}
+      {/* Render Match Director + Seeding + Bracket Preview when generated, otherwise just seeding */}
+      {bracketGenerated ? (
+        <div className="space-y-6">
+          <MatchDirector
+            tournamentId={tournamentId}
+            onStateChanged={handleStateChanged}
+          />
 
-                  {/* Seed Number */}
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
-                    {participant.seed_number}
-                  </div>
+          <Card className="border-zinc-800 bg-zinc-950/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-primary" />
+                Bracket Preview
+              </CardTitle>
+              <CardDescription>
+                Visual overview of the bracket structure for this tournament.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto pb-6">
+              <div className="min-w-max">
+                {tournamentFormat === 'Swiss' ? (
+                  <SwissBracketPreview
+                    teams={participants.map(p => p.team).filter(Boolean)}
+                    maxWins={3}
+                    maxLosses={3}
+                    teamCount={maxTeams}
+                  />
+                ) : (
+                  <SingleEliminationBracketPreview
+                    teams={participants.map(p => p.team).filter(Boolean)}
+                    teamCount={maxTeams}
+                    matchData={bracketGenerated ? matchData : undefined}
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-                  {/* Team Avatar */}
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    {participant.team?.team_avatar ? (
-                      <Image
-                        src={getTeamAvatarUrl(participant.team.team_avatar)!}
-                        alt=""
-                        width={40}
-                        height={40}
-                        className="w-full h-full object-cover"
-                        placeholder="blur"
-                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
-                        unoptimized={process.env.NODE_ENV === 'development'}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Users className="h-5 w-5 text-muted-foreground" />
+          {/* Seeding List — always accessible for admin overrides */}
+          {(() => {
+            // Compute eliminated teams from match data
+            const eliminatedTeamIds = new Set<string>()
+            for (const m of matchData) {
+              if (m.status === 'Completed' && m.winner_id) {
+                // The loser is eliminated (the team that isn't the winner)
+                if (m.team1_id && m.team1_id !== m.winner_id) eliminatedTeamIds.add(m.team1_id)
+                if (m.team2_id && m.team2_id !== m.winner_id) eliminatedTeamIds.add(m.team2_id)
+              }
+            }
+            const activeParticipants = participants.filter(p => !eliminatedTeamIds.has(p.team_id))
+
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Active Teams ({activeParticipants.length}/{participants.length})
+                  </CardTitle>
+                  <CardDescription>
+                    {eliminatedTeamIds.size > 0
+                      ? `${eliminatedTeamIds.size} team${eliminatedTeamIds.size > 1 ? 's' : ''} eliminated. Drag to reorder remaining seeding.`
+                      : 'Drag teams to reorder seeding. Changes here affect future round pairings.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {activeParticipants.map((participant, index) => (
+                      <div
+                        key={participant.id}
+                        draggable
+                        onDragStart={() => handleDragStart(index, participant.team_id)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDrop={(e) => handleDrop(e, index, participant.team_id)}
+                        className={`
+                      flex items-center gap-3 p-3 rounded-lg border transition-all
+                      cursor-grab hover:border-primary/50 hover:bg-muted/50
+                      ${draggedTeamId === participant.team_id ? 'opacity-50 border-primary' : 'border-border'}
+                    `}
+                      >
+                        <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
+                          {participant.seed_number}
+                        </div>
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                          {participant.team?.team_avatar ? (
+                            <Image
+                              src={getTeamAvatarUrl(participant.team.team_avatar)!}
+                              alt=""
+                              width={40}
+                              height={40}
+                              className="w-full h-full object-cover"
+                              placeholder="blur"
+                              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
+                              unoptimized={process.env.NODE_ENV === 'development'}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Users className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{participant.team?.name}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            {participant.team?.average_rank && (
+                              <div className="flex items-center gap-1">
+                                <Image
+                                  src={getRankImage(participant.team.average_rank)}
+                                  alt={participant.team.average_rank}
+                                  width={16}
+                                  height={16}
+                                />
+                                <span>{participant.team.average_rank}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => handleMoveSeed(participant.team_id, 'up')}
+                            disabled={index === 0}
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => handleMoveSeed(participant.team_id, 'down')}
+                            disabled={index === activeParticipants.length - 1}
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
+                </CardContent>
+              </Card>
+            )
+          })()}
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Current Seeding
+            </CardTitle>
+            <CardDescription>
+              {canEditSeeding
+                ? 'Drag teams to reorder or use arrows to adjust seeding'
+                : 'Seeding is locked. Reset bracket to make changes.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {participants.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No teams seeded yet</p>
+                <p className="text-sm">Generate seeding from approved registrations</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {participants.map((participant, index) => (
+                  <div
+                    key={participant.id}
+                    draggable={canEditSeeding}
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={(e) => handleDrop(e, index)}
+                    className={`
+                      flex items-center gap-3 p-3 rounded-lg border transition-all
+                      ${canEditSeeding ? 'cursor-grab hover:border-primary/50 hover:bg-muted/50' : 'cursor-default'}
+                      ${draggedItem === index ? 'opacity-50 border-primary' : 'border-border'}
+                    `}
+                  >
+                    {/* Drag Handle */}
+                    {canEditSeeding && (
+                      <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    )}
 
-                  {/* Team Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{participant.team?.name}</p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      {participant.team?.average_rank && (
-                        <div className="flex items-center gap-1">
-                          <Image
-                            src={getRankImage(participant.team.average_rank)}
-                            alt={participant.team.average_rank}
-                            width={16}
-                            height={16}
-                          />
-                          <span>{participant.team.average_rank}</span>
+                    {/* Seed Number */}
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
+                      {participant.seed_number}
+                    </div>
+
+                    {/* Team Avatar */}
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                      {participant.team?.team_avatar ? (
+                        <Image
+                          src={getTeamAvatarUrl(participant.team.team_avatar)!}
+                          alt=""
+                          width={40}
+                          height={40}
+                          className="w-full h-full object-cover"
+                          placeholder="blur"
+                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
+                          unoptimized={process.env.NODE_ENV === 'development'}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Users className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
                     </div>
-                  </div>
 
-                  {/* Move Buttons */}
-                  {canEditSeeding && (
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => handleMoveSeed(participant.team_id, 'up')}
-                        disabled={index === 0}
-                      >
-                        <ArrowUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => handleMoveSeed(participant.team_id, 'down')}
-                        disabled={index === participants.length - 1}
-                      >
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
+                    {/* Team Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{participant.team?.name}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        {participant.team?.average_rank && (
+                          <div className="flex items-center gap-1">
+                            <Image
+                              src={getRankImage(participant.team.average_rank)}
+                              alt={participant.team.average_rank}
+                              width={16}
+                              height={16}
+                            />
+                            <span>{participant.team.average_rank}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+                    {/* Move Buttons */}
+                    {canEditSeeding && (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleMoveSeed(participant.team_id, 'up')}
+                          disabled={index === 0}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleMoveSeed(participant.team_id, 'down')}
+                          disabled={index === participants.length - 1}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Reset Confirmation Dialog */}
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>

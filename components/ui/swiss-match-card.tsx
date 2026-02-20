@@ -37,14 +37,14 @@ const statusIndicators = {
   done: null
 }
 
-export function SwissMatchCard({ 
-  team1, 
-  team2, 
-  status, 
+export function SwissMatchCard({
+  team1,
+  team2,
+  status,
   winner = null,
   hideVs = false,
   backgroundColor = 'default',
-  className 
+  className
 }: SwissMatchCardProps) {
   const router = useRouter()
   const isMobile = useIsMobile()
@@ -78,19 +78,18 @@ export function SwissMatchCard({
     )}>
       {/* Team 1 */}
       <div className={cn(
-        "flex justify-center rounded-sm border-2 border-transparent",
-        isTeam1Winner && "opacity-100 border-green-500 shadow-[0_0_2px_rgba(34,197,94,0.5)]",
-        !isTeam1Winner && status === 'done' && winner && "opacity-60"
+        "flex justify-center rounded-sm",
+        !isTeam1Winner && status === 'done' && winner && "opacity-40"
       )}>
-        <div 
+        <div
           className={cn(
             "cursor-pointer transition-transform hover:scale-105",
             !team1 && "cursor-default"
           )}
           onClick={() => handleTeamClick(team1)}
         >
-          <TeamAvatar 
-            team={team1} 
+          <TeamAvatar
+            team={team1}
             size="lg"
             showTooltip={true}
             isWinner={isTeam1Winner}
@@ -109,19 +108,18 @@ export function SwissMatchCard({
 
       {/* Team 2 */}
       <div className={cn(
-        "flex justify-center rounded-sm border-2 border-transparent",
-        isTeam2Winner && "opacity-100 border-green-500 shadow-[0_0_2px_rgba(34,197,94,0.5)]",
-        !isTeam2Winner && status === 'done' && winner && "opacity-60"
+        "flex justify-center rounded-sm",
+        !isTeam2Winner && status === 'done' && winner && "opacity-40"
       )}>
-        <div 
+        <div
           className={cn(
             "cursor-pointer transition-transform hover:scale-105",
             !team2 && "cursor-default"
           )}
           onClick={() => handleTeamClick(team2)}
         >
-          <TeamAvatar 
-            team={team2} 
+          <TeamAvatar
+            team={team2}
             size="lg"
             showTooltip={true}
             isWinner={isTeam2Winner}

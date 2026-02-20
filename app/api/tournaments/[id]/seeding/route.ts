@@ -60,18 +60,18 @@ export async function GET(
 
     // Resolve Tournament ID (Number vs UUID)
     const isNumber = /^\d+$/.test(id);
-    let tournamentQuery = supabase.from('tournaments').select('id, status, format, max_teams');
-    
+    let tournamentQuery = supabase.from('tournaments').select('id, status, format, max_teams, current_round, total_rounds, swiss_rounds');
+
     if (isNumber) {
       tournamentQuery = tournamentQuery.eq('tournament_number', parseInt(id));
     } else {
       tournamentQuery = tournamentQuery.eq('id', id);
     }
-    
+
     const { data: tournament, error: tournamentError } = await tournamentQuery.single();
 
     if (tournamentError || !tournament) {
-       return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
     }
 
     const tournamentId = tournament.id;
@@ -148,13 +148,13 @@ export async function POST(
     // Verify tournament is in correct state
     const isNumber = /^\d+$/.test(id);
     let tournamentQuery = supabase.from('tournaments').select('id, status');
-    
+
     if (isNumber) {
       tournamentQuery = tournamentQuery.eq('tournament_number', parseInt(id));
     } else {
       tournamentQuery = tournamentQuery.eq('id', id);
     }
-    
+
     const { data: tournament, error: tournamentError } = await tournamentQuery.single();
 
     if (!tournament || tournamentError) {
@@ -163,17 +163,8 @@ export async function POST(
 
     const tournamentId = tournament.id;
 
-    // Check if bracket exists
-    const { count: bracketCount } = await supabase
-      .from('tournament_brackets')
-      .select('*', { count: 'exact', head: true })
-      .eq('tournament_id', tournamentId);
-
-    if ((bracketCount || 0) > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot modify seeding after bracket is generated. Reset bracket first.' 
-      }, { status: 400 });
-    }
+    // Note: Seeding can be modified at any time — admins may want to adjust
+    // for future round pairings even after bracket generation.
 
     switch (action) {
       case 'bulk_update':
@@ -203,7 +194,7 @@ async function bulkUpdateSeeding(tournamentId: string, seedings: { team_id: stri
   for (const seeding of seedings) {
     const { error } = await supabase
       .from('tournament_participants')
-      .update({ 
+      .update({
         seed_number: seeding.seed_number,
         initial_bracket_position: seeding.seed_number
       })
@@ -267,11 +258,11 @@ async function moveSeed(tournamentId: string, teamId: string, direction: 'up' | 
     .update({ seed_number: newSeed, initial_bracket_position: newSeed })
     .eq('id', participant.id);
 
-  await logAction(tournamentId, 'seed_moved', { 
-    team_id: teamId, 
-    direction, 
-    from: currentSeed, 
-    to: newSeed 
+  await logAction(tournamentId, 'seed_moved', {
+    team_id: teamId,
+    direction,
+    from: currentSeed,
+    to: newSeed
   });
 
   return NextResponse.json({ message: `Seed moved ${direction}` });
@@ -311,10 +302,10 @@ async function moveToPosition(tournamentId: string, teamId: string, targetPositi
       .eq('id', participants[i].id);
   }
 
-  await logAction(tournamentId, 'seed_moved_to_position', { 
-    team_id: teamId, 
-    from: currentIndex + 1, 
-    to: targetPosition 
+  await logAction(tournamentId, 'seed_moved_to_position', {
+    team_id: teamId,
+    from: currentIndex + 1,
+    to: targetPosition
   });
 
   return NextResponse.json({ message: 'Seed position updated' });

@@ -88,7 +88,7 @@ export function TeamAvatar({
         "rounded-full overflow-hidden shadow-lg transition-all duration-200 shrink-0",
         sizeClass,
         isWinner
-          ? "border-[1px] border-green-700 shadow-green-700/5"
+          ? "ring-2 ring-green-500/60 shadow-[0_0_14px_rgba(34,197,94,0.45),0_0_28px_rgba(34,197,94,0.15)]"
           : "border-[1px] border-transparent hover:border-zinc-600",
         className
       )}>

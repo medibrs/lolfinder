@@ -11,7 +11,7 @@ import { getRankImage } from '@/lib/rank-utils';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { SwissBracketPreview } from '@/components/tournament/swiss-bracket-preview';
-
+import { SingleEliminationBracketPreview } from '@/components/tournament/single-elimination-bracket-preview';
 type Props = {
   params: Promise<{
     id: string;
@@ -123,6 +123,66 @@ async function getRegisteredTeams(tournamentId: string) {
   return result;
 }
 
+async function getMatchData(tournamentId: string) {
+  // Use admin client because tournament_brackets has RLS with no public SELECT policy
+  const { createClient: createServiceClient } = await import('@supabase/supabase-js');
+  const supabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // Fetch matches
+  const { data: matches, error: matchError } = await supabase
+    .from('tournament_matches')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .order('match_number', { ascending: true });
+
+  if (matchError || !matches || matches.length === 0) return [];
+
+  // Fetch brackets separately
+  const bracketIds = [...new Set(matches.map(m => m.bracket_id).filter(Boolean))];
+  const bracketsMap: Record<string, any> = {};
+
+  if (bracketIds.length > 0) {
+    const { data: brackets } = await supabase
+      .from('tournament_brackets')
+      .select('id, round_number, is_final, bracket_position')
+      .in('id', bracketIds);
+
+    for (const b of (brackets || [])) {
+      bracketsMap[b.id] = b;
+    }
+  }
+
+  // Fetch teams referenced in matches
+  const allTeamIds = [...new Set([
+    ...matches.map(m => m.team1_id).filter(Boolean),
+    ...matches.map(m => m.team2_id).filter(Boolean),
+    ...matches.map(m => m.winner_id).filter(Boolean),
+  ])];
+
+  const teamsMap: Record<string, any> = {};
+  if (allTeamIds.length > 0) {
+    const { data: teams } = await supabase
+      .from('teams')
+      .select('id, name, team_avatar')
+      .in('id', allTeamIds);
+
+    for (const t of (teams || [])) {
+      teamsMap[t.id] = t;
+    }
+  }
+
+  return matches.map(m => ({
+    ...m,
+    bracket: bracketsMap[m.bracket_id] || null,
+    team1: teamsMap[m.team1_id] || null,
+    team2: teamsMap[m.team2_id] || null,
+    winner: teamsMap[m.winner_id] || null,
+  }));
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const tournament = await getTournament(id);
@@ -159,6 +219,7 @@ export default async function TournamentEventPage({ params }: Props) {
   const { id, slug } = await params;
   const tournament = await getTournament(id);
   const registeredTeams = tournament ? await getRegisteredTeams(tournament.id) : [];
+  const matchData = tournament ? await getMatchData(tournament.id) : [];
 
   if (!tournament) {
     notFound();
@@ -172,75 +233,111 @@ export default async function TournamentEventPage({ params }: Props) {
     if (now < startDate) {
       return { status: 'upcoming', color: 'bg-orange-500', text: 'Upcoming' };
     } else if (now >= startDate && now <= endDate) {
-      return { status: 'live', color: 'bg-green-500', text: 'Live' };
+      return { status: 'live', color: 'bg-green-500 animate-pulse', text: '● Live' };
     } else {
-      return { status: 'completed', color: 'bg-zinc-500', text: 'Completed' };
+      return { status: 'completed', color: 'bg-zinc-600', text: 'Completed' };
     }
   };
 
   const tournamentStatus = getTournamentStatus();
 
-  return (
-    <div className="min-h-screen pt-20 pb-8 bg-background">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Header with Background */}
-        <div className="relative h-48 md:h-64 rounded-xl overflow-hidden mb-6">
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-zinc-900"
-            style={{
-              backgroundImage: 'url(/leet_lol_header.jpg)',
-              filter: 'brightness(0.4)'
-            }}
-          />
-          <div className="relative h-full flex flex-col justify-end p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <Badge className={`${tournamentStatus.color} text-white text-xs px-2 py-1`}>
-                    {tournamentStatus.text}
-                  </Badge>
-                  <span className="text-zinc-400 text-sm">#{tournament.tournament_number}</span>
-                </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{tournament.name}</h1>
-                <p className="text-zinc-300 text-sm line-clamp-2 mb-4">{tournament.description || 'No description available'}</p>
-              </div>
-            </div>
+  // Parse description into paragraphs
+  const descriptionParagraphs = tournament.description
+    ? tournament.description.split('\n').filter((p: string) => p.trim().length > 0)
+    : [];
 
-            {/* Tournament Details Bar */}
-            <div className="bg-black/70 backdrop-blur-sm rounded-lg px-2 md:px-4 py-2 mt-4">
-              <div className="flex items-center justify-between gap-2 md:gap-4 text-white">
-                <div className="flex items-center gap-1 md:gap-2">
-                  <Calendar className="h-3 w-3 md:h-3.5 md:w-3.5 text-zinc-400" />
-                  <span className="text-[10px] md:text-xs font-medium">{startDate.toLocaleDateString()}</span>
+  // Parse rules into items
+  const ruleItems = tournament.rules
+    ? tournament.rules.split('\n').filter((r: string) => r.trim().length > 0)
+    : [];
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* ── FULL-BLEED HERO BANNER ── */}
+      <div className="relative w-full h-[300px] md:h-[380px] overflow-hidden">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-zinc-900"
+          style={{ backgroundImage: 'url(/leet_lol_header.jpg)' }}
+        />
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/50" />
+        {/* Bottom gradient fade into page background */}
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background via-background/80 to-transparent" />
+
+        {/* Hero content — pinned to bottom */}
+        <div className="absolute inset-x-0 bottom-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 pb-6">
+            {/* Status + number */}
+            <div className="flex items-center gap-3 mb-3">
+              <Badge className={`${tournamentStatus.color} text-white text-xs px-2.5 py-1 font-semibold shadow-lg`}>
+                {tournamentStatus.text}
+              </Badge>
+              <span className="text-zinc-500 text-sm font-mono">#{tournament.tournament_number}</span>
+            </div>
+            {/* Title */}
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-5 drop-shadow-lg">
+              {tournament.name}
+            </h1>
+
+            {/* Stats strip — glassmorphic */}
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl px-4 md:px-6 py-3 inline-flex items-center gap-4 md:gap-8 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-orange-400" />
+                <div>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Start</p>
+                  <p className="text-xs md:text-sm font-semibold text-white">{startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
-                <div className="flex items-center gap-1 md:gap-2">
-                  <Clock className="h-3 w-3 md:h-3.5 md:w-3.5 text-zinc-400" />
-                  <span className="text-[10px] md:text-xs font-medium">{endDate.toLocaleDateString()}</span>
+              </div>
+              <div className="w-px h-8 bg-white/10 hidden md:block" />
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-orange-400" />
+                <div>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">End</p>
+                  <p className="text-xs md:text-sm font-semibold text-white">{endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
-                <div className="flex items-center gap-1 md:gap-2">
-                  <Trophy className="h-3 w-3 md:h-3.5 md:w-3.5 text-zinc-400" />
-                  <span className="text-[10px] md:text-xs font-medium">{tournament.prize_pool || 'TBD'}</span>
+              </div>
+              <div className="w-px h-8 bg-white/10 hidden md:block" />
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-yellow-400" />
+                <div>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Prize</p>
+                  <p className="text-xs md:text-sm font-semibold text-white">{tournament.prize_pool || 'TBD'}</p>
                 </div>
-                <div className="flex items-center gap-1 md:gap-2">
-                  <Users className="h-3 w-3 md:h-3.5 md:w-3.5 text-zinc-400" />
-                  <span className="text-[10px] md:text-xs font-medium text-orange-500">{tournament.max_teams}</span>
+              </div>
+              <div className="w-px h-8 bg-white/10 hidden md:block" />
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-blue-400" />
+                <div>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Teams</p>
+                  <p className="text-xs md:text-sm font-semibold text-orange-400">{registeredTeams.length}/{tournament.max_teams}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
+      {/* ── PAGE CONTENT ── */}
+      <div className="max-w-7xl mx-auto px-4 pt-8 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Content */}
+
+          {/* ── MAIN COLUMN ── */}
           <div className="lg:col-span-3 space-y-6">
             {/* Tournament Bracket Preview */}
             <div className="w-full">
               {tournament.format === 'Swiss' ? (
                 <SwissBracketPreview
                   teams={registeredTeams.map((r: any) => r.teams).filter(Boolean)}
-                  maxWins={tournament.max_wins || 3}
-                  maxLosses={tournament.max_losses || 3}
+                  maxWins={3}
+                  maxLosses={3}
                   teamCount={tournament.max_teams || 16}
+                />
+              ) : tournament.format === 'Single_Elimination' ? (
+                <SingleEliminationBracketPreview
+                  teams={registeredTeams.map((r: any) => r.teams).filter(Boolean)}
+                  teamCount={tournament.max_teams || 16}
+                  matchData={matchData.length > 0 ? matchData : undefined}
                 />
               ) : (
                 <Card className="border-zinc-800 bg-zinc-900/50">
@@ -255,18 +352,52 @@ export default async function TournamentEventPage({ params }: Props) {
               )}
             </div>
 
+
+            {/* Rules & Regulations */}
+            {ruleItems.length > 0 && (
+              <Card className="border-zinc-800 overflow-hidden border-l-2 border-l-orange-500/60 py-0 gap-0">
+                <CardHeader className="px-5 py-3 !pb-3 border-b border-zinc-800/50 bg-zinc-900/20">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-orange-500/10">
+                      <Shield className="h-4 w-4 text-orange-400" />
+                    </div>
+                    Rules & Regulations
+                  </CardTitle>
+                  <CardDescription className="text-zinc-500 text-xs mt-1">
+                    All participants must follow these rules at all times
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-5">
+                  <div className="space-y-3">
+                    {ruleItems.map((rule: string, index: number) => (
+                      <div key={index} className="flex gap-3 items-start group">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
+                          <span className="text-xs font-bold text-orange-400">{index + 1}</span>
+                        </div>
+                        <p className="text-sm text-zinc-300 leading-relaxed pt-1">
+                          {rule}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Teams Attending */}
-            <Card className="border-zinc-800">
-              <CardHeader className="pb-3">
+            <Card className="border-zinc-800 py-0 gap-0 overflow-hidden">
+              <CardHeader className="px-5 py-3 !pb-3 border-b border-zinc-800/50 bg-zinc-900/20">
                 <CardTitle className="text-lg flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    Teams attending
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <Users className="h-4 w-4 text-primary" />
+                    </div>
+                    Teams Attending
                   </div>
                   <Badge variant="secondary">{registeredTeams.length}/{tournament.max_teams}</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-5">
                 {registeredTeams.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     {registeredTeams.map((registration: any) => {
@@ -292,7 +423,6 @@ export default async function TournamentEventPage({ params }: Props) {
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-zinc-700 to-zinc-800" />
                             )}
-                            {/* Dark overlay for text visibility */}
                             <div className="absolute inset-0 bg-black/60" />
                           </div>
 
@@ -363,18 +493,40 @@ export default async function TournamentEventPage({ params }: Props) {
             </Card>
           </div>
 
-          {/* Sidebar */}
+          {/* ── SIDEBAR ── */}
           <div className="space-y-4">
+            {/* About / Description */}
+            {descriptionParagraphs.length > 0 && (
+              <Card className="border-zinc-800 overflow-hidden py-0 gap-0">
+                <CardHeader className="px-4 py-2.5 !pb-2.5 border-b border-zinc-800/50 bg-zinc-900/20">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-blue-500/10">
+                      <Info className="h-4 w-4 text-blue-400" />
+                    </div>
+                    About
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    {descriptionParagraphs.map((paragraph: string, index: number) => (
+                      <p key={index} className="text-xs text-zinc-300 leading-relaxed">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Tournament Format */}
-            <Card className="border-zinc-800">
-              <CardHeader className="pb-2 pt-3 px-3">
+            <Card className="border-zinc-800 py-0 gap-0 overflow-hidden">
+              <CardHeader className="px-4 py-2.5 !pb-2.5 border-b border-zinc-800/50 bg-zinc-900/20">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Trophy className="h-4 w-4 text-primary" />
                   Format
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 px-3 pb-3">
-                {/* Format Type */}
+              <CardContent className="space-y-3 p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-400">Type</span>
                   <Badge variant="outline" className="font-medium">
@@ -436,11 +588,11 @@ export default async function TournamentEventPage({ params }: Props) {
             </Card>
 
             {/* Quick Stats */}
-            <Card className="border-zinc-800">
-              <CardHeader className="pb-2 pt-3 px-3">
+            <Card className="border-zinc-800 py-0 gap-0 overflow-hidden">
+              <CardHeader className="px-4 py-2.5 !pb-2.5 border-b border-zinc-800/50 bg-zinc-900/20">
                 <CardTitle className="text-sm">Quick Stats</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 px-3 pb-3">
+              <CardContent className="space-y-3 p-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-zinc-400">Total Teams</span>
                   <span className="text-sm font-medium">{registeredTeams.length}</span>

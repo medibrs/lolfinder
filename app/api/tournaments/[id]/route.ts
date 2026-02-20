@@ -38,16 +38,16 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
+
     const isNumber = /^\d+$/.test(id);
     let query = supabase.from('tournaments').select('*');
-    
+
     if (isNumber) {
       query = query.eq('tournament_number', parseInt(id));
     } else {
       query = query.eq('id', id);
     }
-    
+
     const { data, error } = await query.single();
 
     if (error) {
@@ -97,9 +97,18 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    
+
     // Validate input
     const validatedData = updateTournamentSchema.parse(body);
+
+    // Sanitize timestamp fields: convert empty strings to null
+    // Postgres rejects "" for timestamp with time zone columns
+    const timestampFields = ['start_date', 'end_date', 'registration_deadline'] as const;
+    for (const field of timestampFields) {
+      if ((validatedData as any)[field] === '') {
+        (validatedData as any)[field] = null;
+      }
+    }
 
     // Validate dates if both are provided
     if (validatedData.start_date && validatedData.end_date) {
@@ -118,13 +127,13 @@ export async function PUT(
       .select('format, max_teams, swiss_rounds')
       .eq('id', id)
       .single();
-    
+
     if (currentTournament) {
       // Use validated data if provided, otherwise fall back to current values
       const format = validatedData.format ?? currentTournament.format ?? 'Single_Elimination';
       const maxTeams = validatedData.max_teams ?? currentTournament.max_teams ?? 8;
       const swissRounds = validatedData.swiss_rounds ?? currentTournament.swiss_rounds ?? 5;
-      
+
       validatedData.total_rounds = calculateTotalRounds(format, maxTeams, swissRounds);
     }
 
@@ -164,7 +173,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    
+
     const { error } = await supabase
       .from('tournaments')
       .delete()

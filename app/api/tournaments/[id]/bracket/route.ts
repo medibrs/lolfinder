@@ -80,13 +80,13 @@ export async function POST(
     // Get tournament - handle both UUID and tournament_number
     const isNumber = /^\d+$/.test(id);
     let tournamentQuery = supabase.from('tournaments').select('*');
-    
+
     if (isNumber) {
       tournamentQuery = tournamentQuery.eq('tournament_number', parseInt(id));
     } else {
       tournamentQuery = tournamentQuery.eq('id', id);
     }
-    
+
     const { data: tournament, error: tournamentError } = await tournamentQuery.single();
 
     if (tournamentError || !tournament) {
@@ -167,7 +167,7 @@ async function generateSeeding(tournamentId: string, tournament: any, options: a
     .eq('tournament_id', tournamentId);
 
   let teams = registrations.map(r => r.team);
-  
+
   // Apply seeding method
   switch (seeding_method) {
     case 'rank':
@@ -329,7 +329,7 @@ async function randomizeSeeds(tournamentId: string) {
 
   // Shuffle and reassign
   const shuffled = shuffleArray([...participants]);
-  
+
   for (let i = 0; i < shuffled.length; i++) {
     await supabase
       .from('tournament_participants')
@@ -362,11 +362,11 @@ async function seedByRank(tournamentId: string) {
   const teamsWithRank = await Promise.all(
     participants.map(async (p) => {
       const { rank, value } = await calculateTeamAverageRank(p.team.id);
-      return { 
-        ...p.team, 
-        participant_id: p.id, 
-        calculated_rank: rank, 
-        rank_value: value 
+      return {
+        ...p.team,
+        participant_id: p.id,
+        calculated_rank: rank,
+        rank_value: value
       };
     })
   );
@@ -382,7 +382,7 @@ async function seedByRank(tournamentId: string) {
       .from('tournament_participants')
       .update({ seed_number: newSeedNumber, initial_bracket_position: newSeedNumber })
       .eq('id', sorted[i].participant_id);
-    
+
     // Find original participant and update with new seed
     const original = participants.find(p => p.id === sorted[i].participant_id);
     updatedParticipants.push({
@@ -400,7 +400,7 @@ async function seedByRank(tournamentId: string) {
     team_count: participants.length
   });
 
-  return NextResponse.json({ 
+  return NextResponse.json({
     message: 'Seeds set by rank successfully',
     participants: updatedParticipants
   });
@@ -417,8 +417,8 @@ async function generateBracket(tournamentId: string, tournament: any) {
     .limit(1);
 
   if (existingBrackets && existingBrackets.length > 0) {
-    return NextResponse.json({ 
-      error: 'Bracket already exists. Reset bracket first to regenerate.' 
+    return NextResponse.json({
+      error: 'Bracket already exists. Reset bracket first to regenerate.'
     }, { status: 400 });
   }
 
@@ -430,13 +430,13 @@ async function generateBracket(tournamentId: string, tournament: any) {
     .order('seed_number', { ascending: true });
 
   if (pError || !participants || participants.length < 2) {
-    return NextResponse.json({ 
-      error: 'Need at least 2 seeded teams to generate bracket' 
+    return NextResponse.json({
+      error: 'Need at least 2 seeded teams to generate bracket'
     }, { status: 400 });
   }
 
   const format = tournament.format || 'Single_Elimination';
-  
+
   switch (format) {
     case 'Single_Elimination':
       return await generateSingleEliminationBracket(tournamentId, tournament, participants);
@@ -452,8 +452,8 @@ async function generateBracket(tournamentId: string, tournament: any) {
 }
 
 async function generateSingleEliminationBracket(
-  tournamentId: string, 
-  tournament: any, 
+  tournamentId: string,
+  tournament: any,
   participants: any[]
 ) {
   const teamCount = participants.length;
@@ -463,7 +463,7 @@ async function generateSingleEliminationBracket(
 
   // Generate seeding order for bracket (1v8, 4v5, 3v6, 2v7 for 8 teams)
   const seedOrder = generateBracketSeedOrder(bracketSize);
-  
+
   const brackets: any[] = [];
   const matches: any[] = [];
   let matchNumber = 1;
@@ -471,7 +471,7 @@ async function generateSingleEliminationBracket(
   // Create all rounds
   for (let round = 1; round <= totalRounds; round++) {
     const matchesInRound = bracketSize / Math.pow(2, round);
-    
+
     for (let position = 1; position <= matchesInRound; position++) {
       // Create bracket entry
       const bracket = {
@@ -481,7 +481,7 @@ async function generateSingleEliminationBracket(
         is_final: round === totalRounds,
         is_third_place: false
       };
-      
+
       brackets.push(bracket);
     }
   }
@@ -505,7 +505,7 @@ async function generateSingleEliminationBracket(
     const bracket = firstRoundBrackets[i];
     const seed1Index = seedOrder[i * 2];
     const seed2Index = seedOrder[i * 2 + 1];
-    
+
     const team1 = participants[seed1Index] || null;
     const team2 = participants[seed2Index] || null;
 
@@ -536,9 +536,9 @@ async function generateSingleEliminationBracket(
   // Create empty matches for subsequent rounds
   for (let round = 2; round <= totalRounds; round++) {
     const roundBrackets = insertedBrackets.filter(b => b.round_number === round);
-    
+
     for (const bracket of roundBrackets) {
-      const bestOf = round === totalRounds 
+      const bestOf = round === totalRounds
         ? (tournament.finals_best_of || tournament.elimination_best_of || 3)
         : (tournament.elimination_best_of || 3);
 
@@ -568,7 +568,7 @@ async function generateSingleEliminationBracket(
   // Update tournament
   await supabase
     .from('tournaments')
-    .update({ 
+    .update({
       status: 'In_Progress',
       total_rounds: totalRounds,
       current_round: 1
@@ -599,8 +599,8 @@ async function generateDoubleEliminationBracket(
   participants: any[]
 ) {
   // TODO: Implement double elimination
-  return NextResponse.json({ 
-    error: 'Double elimination not yet implemented' 
+  return NextResponse.json({
+    error: 'Double elimination not yet implemented'
   }, { status: 501 });
 }
 
@@ -610,10 +610,83 @@ async function generateSwissRound(
   participants: any[],
   roundNumber: number
 ) {
-  // TODO: Implement Swiss pairing
-  return NextResponse.json({ 
-    error: 'Swiss format not yet implemented' 
-  }, { status: 501 });
+  if (roundNumber !== 1) {
+    return NextResponse.json({ error: 'Only Round 1 generation is supported here' }, { status: 400 });
+  }
+
+  const totalRounds = tournament.swiss_rounds || 5;
+
+  const newBrackets: any[] = [];
+  const matches: any[] = [];
+  let matchNumber = 1;
+
+  for (let i = 0; i < participants.length; i += 2) {
+    newBrackets.push({
+      tournament_id: tournamentId,
+      round_number: roundNumber,
+      bracket_position: Math.floor(i / 2) + 1,
+    });
+  }
+
+  const { data: insertedBrackets, error: bracketError } = await supabase
+    .from('tournament_brackets')
+    .insert(newBrackets)
+    .select('*');
+
+  if (bracketError || !insertedBrackets) {
+    console.error('Error inserting brackets:', bracketError);
+    return NextResponse.json({ error: 'Failed to create brackets' }, { status: 500 });
+  }
+
+  for (let i = 0; i < participants.length; i += 2) {
+    const p1 = participants[i];
+    const p2 = participants[i + 1] || null;
+    const bracket = insertedBrackets[Math.floor(i / 2)];
+
+    matches.push({
+      bracket_id: bracket.id,
+      tournament_id: tournamentId,
+      match_number: matchNumber++,
+      team1_id: p1?.team_id || null,
+      team2_id: p2?.team_id || null,
+      status: p2 ? 'Scheduled' : 'Completed',
+      result: !p2 ? 'Team1_Win' : null,
+      winner_id: !p2 ? p1?.team_id : null,
+      best_of: tournament.progression_best_of || 3
+    });
+  }
+
+  const { data: insertedMatches, error: matchError } = await supabase
+    .from('tournament_matches')
+    .insert(matches)
+    .select('*');
+
+  if (matchError) {
+    console.error('Error inserting matches:', matchError);
+    return NextResponse.json({ error: 'Failed to create matches' }, { status: 500 });
+  }
+
+  await supabase
+    .from('tournaments')
+    .update({
+      status: 'In_Progress',
+      current_round: 1,
+      total_rounds: totalRounds
+    })
+    .eq('id', tournamentId);
+
+  await logTournamentAction(tournamentId, 'bracket_generated', {
+    format: 'Swiss',
+    team_count: participants.length,
+    total_rounds: totalRounds
+  });
+
+  return NextResponse.json({
+    message: 'Swiss Round 1 generated successfully',
+    brackets: insertedBrackets,
+    matches: insertedMatches,
+    total_rounds: totalRounds
+  });
 }
 
 async function generateRoundRobinSchedule(
@@ -622,8 +695,8 @@ async function generateRoundRobinSchedule(
   participants: any[]
 ) {
   // TODO: Implement round robin
-  return NextResponse.json({ 
-    error: 'Round robin not yet implemented' 
+  return NextResponse.json({
+    error: 'Round robin not yet implemented'
   }, { status: 501 });
 }
 
@@ -640,10 +713,16 @@ async function resetBracket(tournamentId: string) {
     .delete()
     .eq('tournament_id', tournamentId);
 
+  // Reset participant swiss data
+  await supabase
+    .from('tournament_participants')
+    .update({ swiss_score: 0, opponents_played: [] })
+    .eq('tournament_id', tournamentId);
+
   // Reset tournament status
   await supabase
     .from('tournaments')
-    .update({ 
+    .update({
       status: 'Seeding',
       current_round: 0
     })
@@ -738,27 +817,27 @@ function sortTeamsByRank(teams: any[]): any[] {
 // Generate bracket seed order (1v8, 4v5, 3v6, 2v7 pattern)
 function generateBracketSeedOrder(bracketSize: number): number[] {
   if (bracketSize === 2) return [0, 1];
-  
+
   const order: number[] = [];
   const halfSize = bracketSize / 2;
   const subOrder = generateBracketSeedOrder(halfSize);
-  
+
   for (const seed of subOrder) {
     order.push(seed);
     order.push(bracketSize - 1 - seed);
   }
-  
+
   return order;
 }
 
 async function advanceByeWinners(
-  tournamentId: string, 
-  brackets: any[], 
+  tournamentId: string,
+  brackets: any[],
   matches: any[]
 ) {
   // Find completed matches (byes) in round 1
-  const byeMatches = matches.filter(m => 
-    m.status === 'Completed' && 
+  const byeMatches = matches.filter(m =>
+    m.status === 'Completed' &&
     brackets.find(b => b.id === m.bracket_id)?.round_number === 1
   );
 
@@ -770,7 +849,7 @@ async function advanceByeWinners(
     const nextRoundBrackets = brackets.filter(b => b.round_number === 2);
     const nextPosition = Math.ceil(bracket.bracket_position / 2);
     const nextBracket = nextRoundBrackets.find(b => b.bracket_position === nextPosition);
-    
+
     if (!nextBracket) continue;
 
     const nextMatch = matches.find(m => m.bracket_id === nextBracket.id);
@@ -788,8 +867,8 @@ async function advanceByeWinners(
 }
 
 async function logTournamentAction(
-  tournamentId: string, 
-  action: string, 
+  tournamentId: string,
+  action: string,
   details: any
 ) {
   await supabase
