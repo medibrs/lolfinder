@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { 
-  ArrowUp, ArrowDown, Shuffle, Trophy, Users, 
+import {
+  ArrowUp, ArrowDown, Shuffle, Trophy, Users,
   Play, RotateCcw, GripVertical, Crown, AlertTriangle,
   ChevronRight, Check, X
 } from 'lucide-react'
@@ -49,11 +49,11 @@ interface BracketManagerProps {
   maxTeams: number
 }
 
-export default function BracketManager({ 
-  tournamentId, 
+export default function BracketManager({
+  tournamentId,
   tournamentStatus,
   tournamentFormat,
-  maxTeams 
+  maxTeams
 }: BracketManagerProps) {
   const { toast } = useToast()
   const [participants, setParticipants] = useState<Participant[]>([])
@@ -74,7 +74,7 @@ export default function BracketManager({
       setLoading(true)
       const response = await fetch(`/api/tournaments/${tournamentId}/seeding`)
       const data = await response.json()
-      
+
       if (response.ok) {
         setParticipants(data.participants || [])
         setBracketGenerated(data.bracket_generated)
@@ -96,9 +96,9 @@ export default function BracketManager({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'generate_seeding', seeding_method: method })
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         toast({ title: 'Success', description: `Seeding generated (${method})` })
         // Use response data directly instead of re-fetching
@@ -123,9 +123,9 @@ export default function BracketManager({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'generate_bracket' })
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         toast({ title: 'Success', description: 'Bracket generated successfully!' })
         setBracketGenerated(true)
@@ -148,9 +148,9 @@ export default function BracketManager({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset_bracket' })
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         toast({ title: 'Success', description: 'Bracket reset. You can now edit seeding.' })
         setBracketGenerated(false)
@@ -195,7 +195,7 @@ export default function BracketManager({
     // Optimistic update
     const currentIdx = participants.findIndex(p => p.team_id === teamId)
     const targetIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1
-    
+
     if (currentIdx !== -1 && targetIdx >= 0 && targetIdx < participants.length) {
       const newParticipants = [...participants]
       const currentSeed = newParticipants[currentIdx].seed_number
@@ -220,7 +220,7 @@ export default function BracketManager({
 
   const handleRandomizeSeeds = async () => {
     setActionLoading('randomize')
-    
+
     // Optimistic update - shuffle locally
     const shuffled = [...participants].sort(() => Math.random() - 0.5)
     const reseeded = shuffled.map((p, idx) => ({ ...p, seed_number: idx + 1 }))
@@ -232,7 +232,7 @@ export default function BracketManager({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'randomize_seeds' })
       })
-      
+
       if (response.ok) {
         toast({ title: 'Success', description: 'Seeds randomized' })
       } else {
@@ -256,9 +256,9 @@ export default function BracketManager({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'seed_by_rank' })
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         toast({ title: 'Success', description: 'Seeds ordered by tier' })
         // Use response data directly - already sorted by tier
@@ -296,7 +296,7 @@ export default function BracketManager({
     if (draggedParticipant && targetParticipant) {
       await handleSwapSeeds(draggedParticipant.team_id, targetParticipant.team_id)
     }
-    
+
     setDraggedItem(null)
   }
 
@@ -329,9 +329,9 @@ export default function BracketManager({
                   {bracketGenerated ? 'Bracket Generated' : 'Bracket Not Generated'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {bracketGenerated 
+                  {bracketGenerated
                     ? 'Tournament is ready to start. Reset bracket to modify seeding.'
-                    : participants.length > 0 
+                    : participants.length > 0
                       ? 'Review seeding and generate bracket when ready.'
                       : `${approvedCount} teams ready for seeding.`}
                 </p>
@@ -367,8 +367,8 @@ export default function BracketManager({
                 Create initial seeding from approved team registrations
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="secondary"
                   onClick={() => handleGenerateSeeding('random')}
                   disabled={actionLoading !== null || bracketGenerated}
@@ -376,8 +376,8 @@ export default function BracketManager({
                   <Shuffle className="h-4 w-4 mr-2" />
                   Random Seeding
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="secondary"
                   onClick={() => handleGenerateSeeding('rank')}
                   disabled={actionLoading !== null || bracketGenerated}
@@ -400,8 +400,8 @@ export default function BracketManager({
                 Manually reorder teams by dragging or using arrows below
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="secondary"
                   onClick={handleRandomizeSeeds}
                   disabled={actionLoading !== null || !canEditSeeding || participants.length === 0}
@@ -409,8 +409,8 @@ export default function BracketManager({
                   <Shuffle className="h-4 w-4 mr-2" />
                   Shuffle
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="secondary"
                   onClick={handleSeedByRank}
                   disabled={actionLoading !== null || !canEditSeeding || participants.length === 0}
@@ -433,7 +433,7 @@ export default function BracketManager({
                 Create the tournament bracket with current seeding ({tournamentFormat?.replace('_', ' ')})
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button 
+                <Button
                   onClick={handleGenerateBracket}
                   disabled={actionLoading !== null || bracketGenerated || participants.length < 2}
                 >
@@ -441,7 +441,7 @@ export default function BracketManager({
                   Generate Bracket
                 </Button>
                 {bracketGenerated && (
-                  <Button 
+                  <Button
                     variant="destructive"
                     onClick={() => setShowResetDialog(true)}
                     disabled={actionLoading !== null}
@@ -464,7 +464,7 @@ export default function BracketManager({
             Current Seeding
           </CardTitle>
           <CardDescription>
-            {canEditSeeding 
+            {canEditSeeding
               ? 'Drag teams to reorder or use arrows to adjust seeding'
               : 'Seeding is locked. Reset bracket to make changes.'}
           </CardDescription>
@@ -495,12 +495,12 @@ export default function BracketManager({
                   {canEditSeeding && (
                     <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   )}
-                  
+
                   {/* Seed Number */}
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
                     {participant.seed_number}
                   </div>
-                  
+
                   {/* Team Avatar */}
                   <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                     {participant.team?.team_avatar ? (
@@ -511,7 +511,8 @@ export default function BracketManager({
                         height={40}
                         className="w-full h-full object-cover"
                         placeholder="blur"
-                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
+                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
+                        unoptimized={process.env.NODE_ENV === 'development'}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -519,7 +520,7 @@ export default function BracketManager({
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Team Info */}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{participant.team?.name}</p>
@@ -537,7 +538,7 @@ export default function BracketManager({
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Move Buttons */}
                   {canEditSeeding && (
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -580,7 +581,7 @@ export default function BracketManager({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleResetBracket}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

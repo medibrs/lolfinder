@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, MessageSquare } from 'lucide-react'
 import RoleIcon from '@/components/RoleIcon'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +56,7 @@ export default function PlayersTable() {
   const [sendingMessage, setSendingMessage] = useState(false)
 
   const supabase = createClient()
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchPlayers()
@@ -115,10 +117,17 @@ export default function PlayersTable() {
       }
 
       setMessageOpen(false)
-      alert('Message sent successfully!')
+      toast({
+        title: "Message Sent",
+        description: `Your message has been sent to ${selectedPlayer.summoner_name}.`,
+      })
     } catch (error: any) {
       console.error('Error sending message:', error)
-      alert(`Failed to send message: ${error.message || 'Unknown error'}`)
+      toast({
+        title: "Error Sending Message",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      })
     } finally {
       setSendingMessage(false)
     }
@@ -141,10 +150,17 @@ export default function PlayersTable() {
         }
 
         setPlayers(players.filter(p => p.id !== playerId))
-        alert('Player deleted successfully')
+        toast({
+          title: "Player Deleted",
+          description: "The player account has been removed.",
+        })
       } catch (error: any) {
         console.error('Error deleting player:', error)
-        alert(`Failed to delete player: ${error.message}`)
+        toast({
+          title: "Deletion Failed",
+          description: error.message || "Failed to delete player profile.",
+          variant: "destructive",
+        })
       }
     }
   }

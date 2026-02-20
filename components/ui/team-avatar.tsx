@@ -45,24 +45,24 @@ export function getTeamAvatarUrl(avatarId?: number): string | null {
   return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${avatarId}.png`
 }
 
-export function TeamAvatar({ 
-  team, 
-  isWinner, 
+export function TeamAvatar({
+  team,
+  isWinner,
   size = 'md',
   showTooltip = true,
-  className 
+  className
 }: TeamAvatarProps) {
   const isMobile = useIsMobile()
   const [imageError, setImageError] = useState(false)
-  
+
   // Use proportionally smaller sizes on mobile
-  const actualSize = isMobile 
+  const actualSize = isMobile
     ? (size === 'lg' ? 'sm' : size === 'md' ? 'xs' : 'xxs')
     : size
-  
+
   const sizeClass = sizeClasses[actualSize]
   const iconSize = iconSizes[actualSize]
-  
+
   // Generate URL synchronously - no async delay
   const avatarUrl = getTeamAvatarUrl(team?.team_avatar)
 
@@ -87,8 +87,8 @@ export function TeamAvatar({
       <div className={cn(
         "rounded-full overflow-hidden shadow-lg transition-all duration-200 shrink-0",
         sizeClass,
-        isWinner 
-          ? "border-[1px] border-green-700 shadow-green-700/5" 
+        isWinner
+          ? "border-[1px] border-green-700 shadow-green-700/5"
           : "border-[1px] border-transparent hover:border-zinc-600",
         className
       )}>
@@ -100,8 +100,7 @@ export function TeamAvatar({
             height={48}
             className="w-full h-full object-cover"
             onError={handleImageError}
-            placeholder="blur"
-            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
+            unoptimized={process.env.NODE_ENV === 'development'}
           />
         ) : (
           <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
@@ -109,7 +108,7 @@ export function TeamAvatar({
           </div>
         )}
       </div>
-      
+
       {/* Tooltip */}
       {showTooltip && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/90 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-zinc-800">

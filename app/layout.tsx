@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import Navigation from '@/components/navigation'
 import NotificationPermission from '@/components/NotificationPermission'
+import { Toaster } from "@/components/ui/toaster"
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -251,9 +252,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-      <link rel="icon" href="/favicon.ico" />
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -264,6 +265,7 @@ export default function RootLayout({
           <Navigation />
         </Suspense>
         {children}
+        <Toaster />
         <NotificationPermission />
         <Analytics />
         <script
@@ -285,4 +287,3 @@ export default function RootLayout({
     </html>
   )
 }
- 

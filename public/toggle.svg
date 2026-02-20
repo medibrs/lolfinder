@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 32" width="128" height="64">
+  <defs>
+    <filter id="moonGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="blur" />
+      <feFlood flood-color="#A0E7FF" result="glowColor" />
+      <feComposite in="glowColor" in2="blur" operator="in" result="coloredBlur" />
+      <feMerge>
+        <feMergeNode in="coloredBlur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    /* CSS for transitions and hover states */
+    .switch-container {
+      cursor: pointer;
+    }
+
+    /* The track background transition */
+    .track {
+      fill: #E2E8F0; /* Light mode background (Clean sky gray) */
+      transition: fill 0.5s ease;
+    }
+
+    /* The moving thumb container transition */
+    .thumb-group {
+      transform: translateX(0);
+      transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+
+    /* Icon opacity transitions for the cross-fade */
+    .sun-icon {
+      opacity: 1;
+      transition: opacity 0.3s ease 0.1s; /* Slight delay so sun stays visible briefly during slide */
+    }
+
+    .moon-icon {
+      opacity: 0;
+      /* Initially no filter so it doesn't pop in strangely */
+      filter: none;
+      transition: opacity 0.3s ease, filter 0.3s ease;
+    }
+
+    /* --- Hover States (Triggered by hovering the main container) --- */
+    
+    /* Darken the track */
+    .switch-container:hover .track {
+      fill: #1A202C; /* Dark mode background (Midnight blue/gray) */
+    }
+
+    /* Move the thumb to the right */
+    .switch-container:hover .thumb-group {
+      transform: translateX(32px);
+    }
+
+    /* Fade out the sun */
+    .switch-container:hover .sun-icon {
+      opacity: 0;
+      transition-delay: 0s; /* Fade out immediately on hover */
+    }
+
+    /* Fade in the moon and apply the glow filter */
+    .switch-container:hover .moon-icon {
+      opacity: 1;
+      /* Apply the SVG filter defined in defs */
+      filter: url(#moonGlow);
+      transition-delay: 0.1s; /* Slight delay for smoother cross-fade */
+    }
+  </style>
+
+  <g class="switch-container">
+    <rect class="track" x="0" y="0" width="64" height="32" rx="16" />
+
+    <g class="thumb-group">
+      <circle cx="16" cy="16" r="13" fill="#FFFFFF" />
+
+      <g transform="translate(10, 10)">
+        <g class="sun-icon" fill="#F6AD55">
+          <circle cx="6" cy="6" r="3.5" />
+          <g stroke="#F6AD55" stroke-width="1.5" stroke-linecap="round">
+            <line x1="6" y1="0" x2="6" y2="1.5" />
+            <line x1="6" y1="10.5" x2="6" y2="12" />
+            <line x1="0" y1="6" x2="1.5" y2="6" />
+            <line x1="10.5" y1="6" x2="12" y2="6" />
+            <line x1="1.75" y1="1.75" x2="2.8" y2="2.8" />
+            <line x1="9.2" y1="9.2" x2="10.25" y2="10.25" />
+            <line x1="1.75" y1="10.25" x2="2.8" y2="9.2" />
+            <line x1="9.2" y1="2.8" x2="10.25" y2="1.75" />
+          </g>
+        </g>
+
+        <path class="moon-icon" d="M 8.5 1.5 A 5 5 0 1 1 1.5 8.5 A 4 4 0 1 0 8.5 1.5 Z" fill="#CBD5E0" />
+      </g>
+    </g>
+  </g>
+</svg>

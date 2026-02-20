@@ -12,12 +12,13 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
+import {
   Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Trophy, Calendar, Users, Check, X, Clock,
   Play, Pause, Square, Settings, Shield, AlertCircle, TrendingUp, BarChart3, Activity,
   Zap, Target, Flag, Award, ChevronRight, Plus, Copy, Download, Upload, RefreshCw
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
   DialogContent,
@@ -97,6 +98,7 @@ export default function TournamentsTable() {
   const [manageDialogOpen, setManageDialogOpen] = useState(false)
   const [managingTournament, setManagingTournament] = useState<Tournament | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchTournaments()
@@ -106,19 +108,19 @@ export default function TournamentsTable() {
     try {
       const response = await fetch('/api/tournaments')
       const data = await response.json()
-      
+
       // Fetch registration counts and enhanced details for each tournament
       const tournamentsWithDetails = await Promise.all(
         data.map(async (tournament: Tournament) => {
           try {
             const regResponse = await fetch(`/api/tournaments/${tournament.id}/registrations`)
             const registrations = await regResponse.json()
-            
+
             const now = new Date()
             const startDate = new Date(tournament.start_date)
             const endDate = new Date(tournament.end_date)
             const registrationDeadline = tournament.registration_deadline ? new Date(tournament.registration_deadline) : null
-            
+
             // Enhanced status logic based on tournament documentation
             let status: Tournament['status'] = 'Registration'
             if (registrationDeadline && now > registrationDeadline) {
@@ -130,10 +132,14 @@ export default function TournamentsTable() {
             if (now > endDate) {
               status = 'Completed'
             }
-            
+
+            const approvedRegistrations = Array.isArray(registrations)
+              ? registrations.filter((r: any) => r.status === 'approved')
+              : []
+
             return {
               ...tournament,
-              registration_count: registrations.length,
+              registration_count: approvedRegistrations.length,
               status: tournament.status || status
             }
           } catch (error) {
@@ -145,7 +151,7 @@ export default function TournamentsTable() {
           }
         })
       )
-      
+
       setTournaments(tournamentsWithDetails)
     } catch (error) {
       console.error('Error fetching tournaments:', error)
@@ -156,10 +162,10 @@ export default function TournamentsTable() {
 
   const filteredTournaments = tournaments.filter(tournament => {
     const matchesSearch = tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (tournament.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (tournament.description || '').toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || tournament.status === statusFilter
     const matchesFormat = formatFilter === 'all' || tournament.format === formatFilter
-    
+
     return matchesSearch && matchesStatus && matchesFormat
   })
 
@@ -196,9 +202,18 @@ export default function TournamentsTable() {
         await fetchTournaments()
         setEditDialogOpen(false)
         setEditingTournament(null)
+        toast({
+          title: "Tournament Updated",
+          description: "The tournament settings have been saved successfully.",
+        })
       } else {
         const error = await response.json()
         console.error('Failed to update tournament:', response.status, error)
+        toast({
+          title: "Update Failed",
+          description: error.message || "Failed to update tournament settings.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Error updating tournament:', error)
@@ -215,10 +230,27 @@ export default function TournamentsTable() {
   const deleteTournament = async (tournamentId: string) => {
     if (confirm('Are you sure you want to delete this tournament? This will also delete all registrations, matches, and related data.')) {
       try {
-        await fetch(`/api/tournaments/${tournamentId}`, { method: 'DELETE' })
-        setTournaments(tournaments.filter(t => t.id !== tournamentId))
+        const response = await fetch(`/api/tournaments/${tournamentId}`, { method: 'DELETE' })
+        if (response.ok) {
+          setTournaments(tournaments.filter(t => t.id !== tournamentId))
+          toast({
+            title: "Tournament Deleted",
+            description: "The tournament has been removed permanentely.",
+          })
+        } else {
+          toast({
+            title: "Delete Failed",
+            description: "Failed to delete the tournament.",
+            variant: "destructive",
+          })
+        }
       } catch (error) {
         console.error('Error deleting tournament:', error)
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred while deleting.",
+          variant: "destructive",
+        })
       }
     }
   }
@@ -244,9 +276,24 @@ export default function TournamentsTable() {
 
       if (response.ok) {
         await fetchTournaments()
+        toast({
+          title: "Tournament Duplicated",
+          description: `Created new tournament: ${newName}`,
+        })
+      } else {
+        toast({
+          title: "Duplication Failed",
+          description: "Failed to duplicate the tournament.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Error duplicating tournament:', error)
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while duplicating.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -298,7 +345,7 @@ export default function TournamentsTable() {
     const inProgress = tournaments.filter(t => t.status === 'In_Progress').length
     const completed = tournaments.filter(t => t.status === 'Completed').length
     const totalRegistrations = tournaments.reduce((sum, t) => sum + (t.registration_count || 0), 0)
-    
+
     return { total, upcoming, inProgress, completed, totalRegistrations }
   }
 
@@ -344,7 +391,7 @@ export default function TournamentsTable() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-green-500/10 to-green-600/10 border-green-500/20">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
@@ -356,7 +403,7 @@ export default function TournamentsTable() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border-indigo-500/20">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
@@ -368,7 +415,7 @@ export default function TournamentsTable() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-gray-500/10 to-gray-600/10 border-gray-500/20">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
@@ -380,7 +427,7 @@ export default function TournamentsTable() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/20">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
@@ -407,7 +454,7 @@ export default function TournamentsTable() {
                 Manage all tournaments on the platform ({filteredTournaments.length} total)
               </CardDescription>
             </div>
-            <Button onClick={() => window.location.href = '/admin/create-tournament'} className="w-full sm:w-auto sm:self-start">
+            <Button onClick={() => window.location.search = 'tab=overview'} className="w-full sm:w-auto sm:self-start">
               <Plus className="h-4 w-4 mr-2" />
               Create Tournament
             </Button>
@@ -425,7 +472,7 @@ export default function TournamentsTable() {
                 className="pl-10"
               />
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full">
@@ -475,21 +522,23 @@ export default function TournamentsTable() {
               <TableBody>
                 {filteredTournaments.map((tournament) => (
                   <TableRow key={tournament.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <a 
+                    <TableCell className="min-w-[200px]">
+                      <a
                         href={`/admin/tournaments/${tournament.tournament_number || tournament.id}`}
                         className="block hover:text-primary transition-colors"
                       >
                         <div className="flex items-center gap-2">
-                          <div className="font-medium">{tournament.name}</div>
+                          <div className="font-medium truncate max-w-[140px]" title={tournament.name}>
+                            {tournament.name}
+                          </div>
                           {tournament.tournament_number && (
                             <Badge variant="outline" className="text-xs">#{tournament.tournament_number}</Badge>
                           )}
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <div className="text-sm text-muted-foreground line-clamp-1">
+                        {/* <div className="text-sm text-muted-foreground line-clamp-1">
                           {tournament.description}
-                        </div>
+                        </div> */}
                       </a>
                     </TableCell>
                     <TableCell>
@@ -532,8 +581,8 @@ export default function TournamentsTable() {
                         {tournament.current_round && tournament.total_rounds ? (
                           <div className="flex items-center gap-2">
                             <div className="w-16 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-blue-600 h-2 rounded-full" 
+                              <div
+                                className="bg-blue-600 h-2 rounded-full"
                                 style={{ width: `${(tournament.current_round / tournament.total_rounds) * 100}%` }}
                               />
                             </div>
@@ -572,7 +621,7 @@ export default function TournamentsTable() {
                             Duplicate
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => deleteTournament(tournament.id)}
                           >
@@ -609,7 +658,7 @@ export default function TournamentsTable() {
               Update tournament details, format, and advanced settings.
             </DialogDescription>
           </DialogHeader>
-          
+
           {editingTournament && (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
@@ -617,7 +666,7 @@ export default function TournamentsTable() {
                 <TabsTrigger value="format">Format Settings</TabsTrigger>
                 <TabsTrigger value="advanced">Advanced</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="basic" className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -638,7 +687,7 @@ export default function TournamentsTable() {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="description">Description</Label>
                   <Textarea
@@ -648,7 +697,7 @@ export default function TournamentsTable() {
                     rows={3}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="start_date">Start Date</Label>
@@ -669,7 +718,7 @@ export default function TournamentsTable() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="registration_deadline">Registration Deadline</Label>
@@ -691,12 +740,12 @@ export default function TournamentsTable() {
                   </div>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="format" className="space-y-4">
                 <div>
                   <Label htmlFor="format">Tournament Format</Label>
-                  <Select 
-                    value={editingTournament.format} 
+                  <Select
+                    value={editingTournament.format}
                     onValueChange={(value: any) => setEditingTournament({ ...editingTournament, format: value })}
                   >
                     <SelectTrigger>
@@ -751,7 +800,7 @@ export default function TournamentsTable() {
                   </div>
                 )}
               </TabsContent>
-              
+
               <TabsContent value="advanced" className="space-y-4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -765,9 +814,9 @@ export default function TournamentsTable() {
                       onCheckedChange={(checked) => setEditingTournament({ ...editingTournament, is_active: checked })}
                     />
                   </div>
-                  
+
                   <Separator />
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="current_round">Current Round</Label>
@@ -794,7 +843,7 @@ export default function TournamentsTable() {
               </TabsContent>
             </Tabs>
           )}
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={saving}>
               Cancel
@@ -810,9 +859,9 @@ export default function TournamentsTable() {
       <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
         <DialogContent className="max-w-[95vw] w-full h-[90vh] sm:h-[95vh] p-0 overflow-hidden">
           {managingTournament && (
-            <TournamentManager 
-              tournamentId={managingTournament.id} 
-              onClose={() => setManageDialogOpen(false)} 
+            <TournamentManager
+              tournamentId={managingTournament.id}
+              onClose={() => setManageDialogOpen(false)}
             />
           )}
         </DialogContent>

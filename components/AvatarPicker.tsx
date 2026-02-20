@@ -21,7 +21,7 @@ interface AvatarPickerProps {
 }
 
 export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect, disabled = false }: AvatarPickerProps) {
-  const [takenAvatars, setTakenAvatars] = useState<{id: number; teamName: string; teamId: string}[]>([])
+  const [takenAvatars, setTakenAvatars] = useState<{ id: number; teamName: string; teamId: string }[]>([])
   const [loading, setLoading] = useState(false)
 
   const fetchTakenAvatars = async () => {
@@ -65,25 +65,25 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
             })
             .map((avatarId) => {
               const isCurrentAvatar = currentAvatar === avatarId
-              
+
               return (
                 <button
                   key={avatarId}
                   onClick={() => handleAvatarSelect(avatarId)}
                   disabled={disabled}
-                  className={`relative group rounded-none overflow-hidden border-2 transition-all active:scale-95 aspect-square focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                    isCurrentAvatar 
-                      ? 'border-primary ring-2 ring-primary/20' 
-                      : 'border-border active:border-primary hover:border-primary hover:scale-105'
-                  }`}
+                  className={`relative group rounded-none overflow-hidden border-2 transition-all active:scale-95 aspect-square focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${isCurrentAvatar
+                    ? 'border-primary ring-2 ring-primary/20'
+                    : 'border-border active:border-primary hover:border-primary hover:scale-105'
+                    }`}
                   title={isCurrentAvatar ? 'Current Avatar' : 'Available'}
                 >
                   <Image
                     src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`}
                     alt={`Avatar ${avatarId}`}
-                    width={300}
-                    height={300}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                    unoptimized={process.env.NODE_ENV === 'development'}
                   />
                   {isCurrentAvatar && (
                     <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
@@ -134,20 +134,21 @@ export function AvatarPreview({ avatarId, onEdit, showEditButton = false, size =
   }
 
   return (
-    <div 
+    <div
       className={`relative ${showEditButton ? 'cursor-pointer' : ''}`}
       onClick={showEditButton && onEdit ? onEdit : undefined}
     >
       <div className={`${sizeClasses[size]} rounded-xl overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 to-accent/10`}>
         {avatarId ? (
-          <Image 
-            src={getTeamAvatarUrl(avatarId) ?? ''} 
+          <Image
+            src={getTeamAvatarUrl(avatarId) ?? ''}
             alt="Team Avatar"
             width={80}
             height={80}
             className="w-full h-full object-cover"
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
+            unoptimized={process.env.NODE_ENV === 'development'}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

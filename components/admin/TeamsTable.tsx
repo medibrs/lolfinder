@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { TeamAvatar } from '@/components/ui/team-avatar'
 
 interface Team {
   id: string
@@ -31,6 +34,8 @@ interface Team {
   created_at: string
   member_count?: number
   captain_name?: string
+  captain_avatar?: number
+  team_avatar?: number
 }
 
 interface Tournament {
@@ -58,6 +63,7 @@ export default function TeamsTable() {
   const [addingToTournament, setAddingToTournament] = useState(false)
   const [teamTournaments, setTeamTournaments] = useState<string[]>([])
   const [loadingTournaments, setLoadingTournaments] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchTeams()
@@ -79,7 +85,7 @@ export default function TeamsTable() {
     setSelectedTournamentId('')
     setTournamentDialogOpen(true)
     setLoadingTournaments(true)
-    
+
     // Fetch which tournaments this team is already registered in
     try {
       const supabase = createClient()
@@ -88,7 +94,7 @@ export default function TeamsTable() {
         .select('tournament_id')
         .eq('team_id', team.id)
         .in('status', ['pending', 'approved'])
-      
+
       setTeamTournaments(data?.map(r => r.tournament_id) || [])
     } catch (error) {
       console.error('Error fetching team tournaments:', error)
@@ -99,11 +105,11 @@ export default function TeamsTable() {
 
   const addTeamToTournament = async () => {
     if (!selectedTeam || !selectedTournamentId) return
-    
+
     setAddingToTournament(true)
     try {
       const supabase = createClient()
-      
+
       // Check if already registered
       const { data: existing } = await supabase
         .from('tournament_registrations')
@@ -111,13 +117,13 @@ export default function TeamsTable() {
         .eq('team_id', selectedTeam.id)
         .eq('tournament_id', selectedTournamentId)
         .single()
-      
+
       if (existing) {
         console.error('Team is already registered for this tournament')
         setAddingToTournament(false)
         return
       }
-      
+
       // Insert registration directly with approved status
       const { error } = await supabase
         .from('tournament_registrations')
@@ -126,7 +132,7 @@ export default function TeamsTable() {
           tournament_id: selectedTournamentId,
           status: 'approved'
         }])
-      
+
       if (!error) {
         // Send notification to team captain
         await supabase
@@ -145,8 +151,17 @@ export default function TeamsTable() {
 
         setTeamTournaments([...teamTournaments, selectedTournamentId])
         setSelectedTournamentId('')
+        toast({
+          title: "Team Registered",
+          description: `"${selectedTeam.name}" has been added to the tournament.`,
+        })
       } else {
         console.error('Error adding team to tournament:', error)
+        toast({
+          title: "Registration Failed",
+          description: "Failed to add team to tournament.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Error adding team to tournament:', error)
@@ -157,7 +172,7 @@ export default function TeamsTable() {
 
   const removeTeamFromTournament = async (tournamentId: string) => {
     if (!selectedTeam) return
-    
+
     try {
       const supabase = createClient()
       await supabase
@@ -165,39 +180,51 @@ export default function TeamsTable() {
         .delete()
         .eq('team_id', selectedTeam.id)
         .eq('tournament_id', tournamentId)
-      
+
       setTeamTournaments(teamTournaments.filter(id => id !== tournamentId))
+      toast({
+        title: "Team Removed",
+        description: "The team has been removed from the tournament.",
+      })
     } catch (error) {
       console.error('Error removing team from tournament:', error)
+      toast({
+        title: "Removal Failed",
+        description: "Failed to remove team from tournament.",
+        variant: "destructive",
+      })
     }
   }
 
   const fetchTeams = async () => {
     try {
       const response = await fetch('/api/teams')
-      const data = await response.json()
-      
+      const result = await response.json()
+      const teamsData = Array.isArray(result) ? result : (result.data || [])
+
       // Fetch member counts and captain names for each team
       const teamsWithDetails = await Promise.all(
-        data.map(async (team: Team) => {
+        teamsData.map(async (team: Team) => {
           try {
             const teamResponse = await fetch(`/api/teams/${team.id}`)
             const teamData = await teamResponse.json()
             return {
               ...team,
               member_count: teamData.members?.length || 0,
-              captain_name: teamData.captain?.summoner_name || 'Unknown'
+              captain_name: teamData.captain?.summoner_name || 'Unknown',
+              captain_avatar: teamData.captain?.profile_icon_id
             }
           } catch (error) {
             return {
               ...team,
               member_count: 0,
-              captain_name: 'Unknown'
+              captain_name: 'Unknown',
+              captain_avatar: undefined
             }
           }
         })
       )
-      
+
       setTeams(teamsWithDetails)
     } catch (error) {
       console.error('Error fetching teams:', error)
@@ -210,7 +237,7 @@ export default function TeamsTable() {
     const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesTier = tierFilter === 'all' || team.tier === tierFilter
     const matchesStatus = statusFilter === 'all' || team.recruiting_status === statusFilter
-    
+
     return matchesSearch && matchesTier && matchesStatus
   })
 
@@ -219,8 +246,17 @@ export default function TeamsTable() {
       try {
         await fetch(`/api/teams/${teamId}`, { method: 'DELETE' })
         setTeams(teams.filter(t => t.id !== teamId))
+        toast({
+          title: "Team Deleted",
+          description: "The team and its members have been removed.",
+        })
       } catch (error) {
         console.error('Error deleting team:', error)
+        toast({
+          title: "Delete Failed",
+          description: "Failed to delete the team.",
+          variant: "destructive",
+        })
       }
     }
   }
@@ -239,7 +275,7 @@ export default function TeamsTable() {
     setSendingMessage(true)
     try {
       const supabase = createClient()
-      
+
       // Create a notification for the team captain
       const { error } = await supabase
         .from('notifications')
@@ -257,24 +293,31 @@ export default function TeamsTable() {
 
       if (error) {
         console.error('Error sending message:', error)
-        // Keep the error visible but don't use alert
+        toast({
+          title: "Message Failed",
+          description: "Failed to send notification to team captain.",
+          variant: "destructive",
+        })
         setSendingMessage(false)
       } else {
-        setMessageSent(true)
-        setTimeout(() => {
-          setContactDialogOpen(false)
-          setMessageSubject('')
-          setMessageContent('')
-          setMessageSent(false)
-        }, 1500)
+        toast({
+          title: "Message Sent",
+          description: "Notification sent to team captain successfully.",
+        })
+        setContactDialogOpen(false)
+        setMessageSubject('')
+        setMessageContent('')
       }
     } catch (error) {
       console.error('Error sending message:', error)
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      })
       setSendingMessage(false)
     } finally {
-      if (!messageSent) {
-        setSendingMessage(false)
-      }
+      setSendingMessage(false)
     }
   }
 
@@ -337,7 +380,7 @@ export default function TeamsTable() {
               className="pl-10"
             />
           </div>
-          
+
           <Select value={tierFilter} onValueChange={setTierFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by tier" />
@@ -354,7 +397,7 @@ export default function TeamsTable() {
               <SelectItem value="Grandmaster">Grandmaster</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />
@@ -387,17 +430,21 @@ export default function TeamsTable() {
               {filteredTeams.map((team) => (
                 <TableRow key={team.id}>
                   <TableCell>
-                    <div>
+                    <div className="flex items-center gap-3">
+                      <TeamAvatar team={team} size="sm" showTooltip={false} />
                       <div className="font-medium">{team.name}</div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+                      <Avatar className="w-6 h-6">
+                        {team.captain_avatar ? (
+                          <AvatarImage src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${team.captain_avatar}.png`} />
+                        ) : null}
+                        <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 text-xs">
                           {team.captain_name?.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
+                        </AvatarFallback>
+                      </Avatar>
                       <span className="text-sm">{team.captain_name}</span>
                     </div>
                   </TableCell>
@@ -447,7 +494,7 @@ export default function TeamsTable() {
                           Manage Tournaments
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => deleteTeam(team.id)}
                         >
@@ -504,8 +551,8 @@ export default function TeamsTable() {
             <Button variant="outline" onClick={() => setContactDialogOpen(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={sendMessageToCaptain} 
+            <Button
+              onClick={sendMessageToCaptain}
               disabled={!messageContent.trim() || sendingMessage || messageSent}
               className={messageSent ? "bg-green-600 hover:bg-green-700" : ""}
             >
@@ -522,7 +569,7 @@ export default function TeamsTable() {
 
       {/* Tournament Management Dialog */}
       <Dialog open={tournamentDialogOpen} onOpenChange={setTournamentDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[501px]">
           <DialogHeader>
             <DialogTitle>Manage Tournament Registration</DialogTitle>
             <DialogDescription>
@@ -561,7 +608,7 @@ export default function TeamsTable() {
                 </div>
               )}
             </div>
-            
+
             {/* Add to Tournament */}
             <div className="grid gap-2">
               <Label>Add to Tournament</Label>
@@ -580,7 +627,7 @@ export default function TeamsTable() {
                       ))}
                   </SelectContent>
                 </Select>
-                <Button 
+                <Button
                   onClick={addTeamToTournament}
                   disabled={!selectedTournamentId || addingToTournament}
                 >
