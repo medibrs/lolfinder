@@ -27,7 +27,7 @@ interface TopCutTeamGridProps {
   className?: string
 }
 
-export function TopCutTeamGrid({ 
+export function TopCutTeamGrid({
   teams,
   leftTeams,
   rightTeams,
@@ -35,7 +35,7 @@ export function TopCutTeamGrid({
   leftTitle,
   rightTitle,
   backgroundColor = 'default',
-  className 
+  className
 }: TopCutTeamGridProps) {
   const isMobile = useIsMobile()
   const router = useRouter()
@@ -58,7 +58,7 @@ export function TopCutTeamGrid({
   }
 
   const renderTeamAvatar = (team: SwissMatchCardTeam, index: number) => (
-    <div 
+    <div
       key={`${team.id}-${index}`}
       className={cn(
         "cursor-pointer transition-transform hover:scale-105",
@@ -66,9 +66,9 @@ export function TopCutTeamGrid({
       )}
       onClick={() => handleTeamClick(team)}
     >
-      <TeamAvatar 
-        team={team} 
-        size={isMobile ? "sm" : "md"}
+      <TeamAvatar
+        team={team}
+        size={isMobile ? "md" : "lg"}
         showTooltip={true}
       />
     </div>
@@ -77,7 +77,7 @@ export function TopCutTeamGrid({
   const renderTeamColumn = (teamList: SwissMatchCardTeam[], columnTitle?: string, forceHorizontal?: boolean) => {
     // Use horizontal layout for small team counts (2 or less) or when forced
     const useHorizontal = forceHorizontal || teamList.length <= 2
-    
+
     return (
       <div className="flex flex-col">
         {columnTitle && <TitleCard title={columnTitle} />}
@@ -98,9 +98,9 @@ export function TopCutTeamGrid({
                 team.id.startsWith('ph-') && "cursor-default"
               )}>
                 <div onClick={() => handleTeamClick(team)}>
-                  <TeamAvatar 
-                    team={team} 
-                    size={isMobile ? "sm" : "lg"}
+                  <TeamAvatar
+                    team={team}
+                    size={isMobile ? "md" : "lg"}
                     showTooltip={true}
                   />
                 </div>
@@ -131,13 +131,12 @@ export function TopCutTeamGrid({
       className
     )}>
       <div className={cn(
-        isMobile ? "flex flex-col" : "flex flex-row",
+        "flex flex-row",
         isMobile ? "gap-0" : "gap-0"
       )}>
         {/* Left Section */}
         <div className={cn(
-          "flex-1",
-          !isMobile && "border-r border-inherit"
+          "flex-1 border-r border-inherit"
         )}>
           {renderTeamColumn(displayLeftTeams, leftTitle)}
         </div>

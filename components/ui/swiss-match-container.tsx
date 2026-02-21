@@ -39,12 +39,12 @@ interface SwissMatchContainerProps {
   className?: string
 }
 
-export function SwissMatchContainer({ 
+export function SwissMatchContainer({
   columns,
-  className 
+  className
 }: SwissMatchContainerProps) {
   const isMobile = useIsMobile()
-  
+
   return (
     <div className={cn(
       "w-full overflow-hidden",
@@ -61,7 +61,7 @@ export function SwissMatchContainer({
             isLastColumn={index === columns.length - 1}
           />
         ))}
-        
+
         {/* Empty State */}
         {columns.length === 0 && (
           <div className="text-center py-12 w-full">

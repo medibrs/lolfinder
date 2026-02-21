@@ -33,28 +33,28 @@ interface BracketArrowProps {
   className?: string
 }
 
-export function BracketArrow({ 
+export function BracketArrow({
   direction = 0,
   style = 'straight',
   color = 'white',
   size = 'md',
   glowIntensity = 1,
-  className 
+  className
 }: BracketArrowProps) {
   const isMobile = useIsMobile()
-  
+
   // Resolve color
-  const resolvedColor = color in arrowColors 
-    ? arrowColors[color as PresetColor] 
+  const resolvedColor = color in arrowColors
+    ? arrowColors[color as PresetColor]
     : color
-  
+
   // Size classes - smaller on mobile
   const sizeClasses = {
     sm: isMobile ? 'w-3 h-2' : 'w-6 h-4',
     md: isMobile ? 'w-4 h-3' : 'w-10 h-6',
     lg: isMobile ? 'w-5 h-4' : 'w-14 h-8',
   }
-  
+
   // Glow filter
   const glowFilters = {
     0: 'none',
@@ -62,39 +62,39 @@ export function BracketArrow({
     2: `drop-shadow(0 0 4px ${resolvedColor}60)`,
     3: `drop-shadow(0 0 6px ${resolvedColor}80)`,
   }
-  
+
   // Generate unique ID for gradient
   const gradientId = `arrow-gradient-${Math.random().toString(36).substr(2, 9)}`
-  
+
   // Path for the arrow line - shorter on mobile
-  const linePath = style === 'curved' 
+  const linePath = style === 'curved'
     ? (isMobile ? 'M8 12 L 24 12' : 'M4 12 Q 16 12, 20 12 Q 24 12, 32 12')
     : (isMobile ? 'M8 12 L 24 12' : 'M4 12 L 32 12')
-  
+
   // Arrow head path - adjusted for mobile
   const arrowHeadPath = isMobile ? 'M20 9 L 26 12 L 20 15' : 'M28 8 L 36 12 L 28 16'
 
   return (
-    <svg 
-      viewBox="0 0 40 24" 
+    <svg
+      viewBox="0 0 40 24"
       className={cn(
         "transition-all duration-300",
         sizeClasses[size],
         className
       )}
-      style={{ 
+      style={{
         filter: glowFilters[glowIntensity],
         transform: `rotate(${direction}deg)`,
       }}
     >
-      <path 
+      <path
         d={linePath}
         fill="none"
         stroke={resolvedColor}
         strokeWidth="2"
         strokeLinecap="round"
       />
-      <path 
+      <path
         d={arrowHeadPath}
         fill="none"
         stroke={resolvedColor}
@@ -119,27 +119,27 @@ interface CurvedBracketArrowProps {
   className?: string
 }
 
-export function CurvedBracketArrow({ 
+export function CurvedBracketArrow({
   curve,
   color = 'white',
   size = 'md',
   glowIntensity = 2,
-  className 
+  className
 }: CurvedBracketArrowProps) {
   const isMobile = useIsMobile()
-  
+
   // Resolve color
-  const resolvedColor = color in arrowColors 
-    ? arrowColors[color as PresetColor] 
+  const resolvedColor = color in arrowColors
+    ? arrowColors[color as PresetColor]
     : color
-  
+
   // Size classes - smaller on mobile
   const sizeClasses = {
     sm: isMobile ? 'w-3 h-2' : 'w-8 h-4',
     md: isMobile ? 'w-4 h-3' : 'w-10 h-5',
     lg: isMobile ? 'w-5 h-4' : 'w-14 h-7',
   }
-  
+
   // Glow filter
   const glowFilters = {
     0: 'none',
@@ -147,23 +147,23 @@ export function CurvedBracketArrow({
     2: `drop-shadow(0 0 4px ${resolvedColor}60)`,
     3: `drop-shadow(0 0 6px ${resolvedColor}80)`,
   }
-  
+
   // Generate unique ID for gradient
   const gradientId = `curved-arrow-gradient-${Math.random().toString(36).substr(2, 9)}`
-  
+
   // Curved paths - shorter on mobile
   const curvePath = curve === 'up'
     ? (isMobile ? 'M4 14 Q 12 14, 16 10 Q 20 6, 24 6' : 'M0 16 Q 15 16, 20 10 Q 25 4, 32 4')
     : (isMobile ? 'M4 6 Q 12 6, 16 10 Q 20 14, 24 14' : 'M0 4 Q 15 4, 20 10 Q 25 16, 32 16')
-  
+
   const arrowY = curve === 'up' ? (isMobile ? 6 : 4) : (isMobile ? 14 : 16)
-  const arrowHeadPath = isMobile 
+  const arrowHeadPath = isMobile
     ? `M20 ${arrowY - 3} L 26 ${arrowY} L 20 ${arrowY + 3}`
     : `M28 ${arrowY - 4} L 36 ${arrowY} L 28 ${arrowY + 4}`
 
   return (
-    <svg 
-      viewBox="0 0 40 20" 
+    <svg
+      viewBox="0 0 40 20"
       className={cn(
         "transition-all duration-300",
         sizeClasses[size],
@@ -177,14 +177,14 @@ export function CurvedBracketArrow({
           <stop offset="100%" stopColor={resolvedColor} stopOpacity="1" />
         </linearGradient>
       </defs>
-      <path 
+      <path
         d={curvePath}
         fill="none"
         stroke={`url(#${gradientId})`}
         strokeWidth="2"
         strokeLinecap="round"
       />
-      <path 
+      <path
         d={arrowHeadPath}
         fill="none"
         stroke={resolvedColor}
@@ -206,19 +206,19 @@ interface MatchGroupArrowsProps {
   className?: string
 }
 
-export function MatchGroupArrows({ 
+export function MatchGroupArrows({
   winnerColor = 'green',
   loserColor = 'red',
   size = 'md',
   straight = false,
-  className 
+  className
 }: MatchGroupArrowsProps) {
   const isMobile = useIsMobile()
-  
+
   return (
     <div className={cn(
       "flex flex-col justify-between items-center h-full",
-      isMobile ? "w-4 py-0" : "w-10 py-2",
+      isMobile ? "w-2.5 py-0" : "w-10 py-2",
       className
     )}>
       {straight ? (

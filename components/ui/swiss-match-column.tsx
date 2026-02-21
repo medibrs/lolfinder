@@ -41,23 +41,23 @@ interface SwissMatchColumnProps {
   className?: string
 }
 
-export function SwissMatchColumn({ 
+export function SwissMatchColumn({
   rounds,
   isLastColumn = false,
-  className 
+  className
 }: SwissMatchColumnProps) {
   const isMobile = useIsMobile()
-  
+
   return (
     <div className={cn(
       "w-full flex flex-col justify-evenly",
-      isMobile ? "gap-[16px]" : "gap-[32px]",
+      isMobile ? "gap-[8px]" : "gap-[32px]",
       className
     )}>
       {rounds.map((round, index) => {
         // Determine arrow style based on round data
         let arrowStyle: 'curved' | 'straight' | 'none' = 'none'
-        
+
         if (round.type !== 'topcut') {
           if (round.isLastRound) {
             arrowStyle = 'straight'
@@ -65,14 +65,14 @@ export function SwissMatchColumn({
             arrowStyle = 'curved'
           }
         }
-        
+
         return round.type === 'topcut' ? (
           <SwissMatchCardWrapper
             key={index}
             title={round.title}
             arrowStyle="none"
           >
-            <TopCutTeamGrid 
+            <TopCutTeamGrid
               {...round.topCut}
             />
           </SwissMatchCardWrapper>
@@ -85,7 +85,7 @@ export function SwissMatchColumn({
           />
         )
       })}
-      
+
       {/* Empty State */}
       {rounds.length === 0 && (
         <div className="text-center py-12">

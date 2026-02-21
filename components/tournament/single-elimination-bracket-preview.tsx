@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { SwissMatchCard, SwissMatchCardTeam } from '@/components/ui/swiss-match-card'
+import { SingleElimMatchCard, SingleElimMatchCardTeam } from '@/components/ui/single-elim-match-card'
 import { cn } from '@/lib/utils'
 import { TitleCard } from '@/components/ui/title-card'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -14,8 +14,8 @@ interface Team {
 
 interface SingleElimMatch {
     id: string
-    team1: SwissMatchCardTeam | null
-    team2: SwissMatchCardTeam | null
+    team1: SingleElimMatchCardTeam | null
+    team2: SingleElimMatchCardTeam | null
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
 }
@@ -72,13 +72,13 @@ function buildBracketFromMatches(matches: RawMatch[], totalRounds: number): Sing
         const title = getRoundTitle(round, totalRounds)
 
         const mappedMatches: SingleElimMatch[] = roundMatches.map(m => {
-            const team1: SwissMatchCardTeam | null = m.team1
+            const team1: SingleElimMatchCardTeam | null = m.team1
                 ? { id: m.team1.id, name: m.team1.name, team_avatar: m.team1.team_avatar }
                 : m.team1_id
                     ? { id: m.team1_id, name: 'Unknown', team_avatar: undefined }
                     : null
 
-            const team2: SwissMatchCardTeam | null = m.team2
+            const team2: SingleElimMatchCardTeam | null = m.team2
                 ? { id: m.team2.id, name: m.team2.name, team_avatar: m.team2.team_avatar }
                 : m.team2_id
                     ? { id: m.team2_id, name: 'Unknown', team_avatar: undefined }
@@ -238,9 +238,9 @@ export function SingleEliminationBracketPreview({ teams, teamCount, matchData }:
     }
 
     return (
-        <div className="w-full pb-0 mb-4">
+        <div className="w-full pb-0 mb-4 overflow-x-auto">
             <div className={cn(
-                "flex items-stretch w-full",
+                "flex items-stretch min-w-max",
                 isMobile ? "p-1" : "p-4 gap-1"
             )}>
                 {bracketData.rounds.map((round, colIndex) => {
@@ -267,28 +267,28 @@ export function SingleEliminationBracketPreview({ teams, teamCount, matchData }:
                                                 className="flex-1 flex flex-col justify-center relative py-2"
                                             >
                                                 <div className="w-full relative z-10">
-                                                    <SwissMatchCard
+                                                    <SingleElimMatchCard
                                                         team1={match.team1}
                                                         team2={match.team2}
                                                         status={match.status}
                                                         winner={match.winner}
-                                                        className="bg-zinc-900 border border-zinc-800/80 w-full"
+                                                        className="w-full"
                                                     />
                                                 </div>
 
                                                 {/* Connecting Lines Outward */}
                                                 {!isLastColumn && (
-                                                    <div className="w-[5px] md:w-[10px] h-[2px] bg-zinc-700 absolute right-[-5px] md:right-[-10px] top-1/2" />
+                                                    <div className="h-[2px] bg-zinc-700 absolute top-1/2 z-0 right-[-5px] md:right-[-10px]" style={{ left: '50%' }} />
                                                 )}
                                                 {/* Connecting Line Inward (except first column) */}
                                                 {colIndex !== 0 && (
-                                                    <div className="w-[5px] md:w-[10px] h-[2px] bg-zinc-700 absolute left-[-5px] md:left-[-10px] top-1/2" />
+                                                    <div className="h-[2px] bg-zinc-700 absolute top-1/2 z-0 left-[-5px] md:left-[-10px]" style={{ right: '50%' }} />
                                                 )}
 
                                                 {/* Vertical Connectors (rendered by the top match of each pair pointing to the next match) */}
                                                 {!isLastColumn && matchIndex % 2 === 0 && (
                                                     <div
-                                                        className="absolute bg-zinc-700 w-[2px] right-[-5px] md:right-[-10px]"
+                                                        className="absolute bg-zinc-700 w-[2px] z-0 right-[-5px] md:right-[-10px]"
                                                         style={{
                                                             top: '50%',
                                                             height: '100%',

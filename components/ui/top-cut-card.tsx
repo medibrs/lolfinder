@@ -19,7 +19,7 @@ interface TopCutCardProps {
   className?: string
 }
 
-export function TopCutCard({ 
+export function TopCutCard({
   teams,
   leftTeams,
   rightTeams,
@@ -28,7 +28,7 @@ export function TopCutCard({
   rightTitle,
   layout = 'single',
   backgroundColor = 'default',
-  className 
+  className
 }: TopCutCardProps) {
   const isMobile = useIsMobile()
   const router = useRouter()
@@ -49,13 +49,13 @@ export function TopCutCard({
   }
 
   const renderTeamAvatar = (team: SwissMatchCardTeam) => (
-    <div 
+    <div
       key={team.id}
       className="cursor-pointer"
       onClick={() => handleTeamClick(team)}
     >
-      <TeamAvatar 
-        team={team} 
+      <TeamAvatar
+        team={team}
         size="md"
         showTooltip={true}
       />
@@ -65,7 +65,7 @@ export function TopCutCard({
   // Single layout - use SwissMatchCard for consistency
   if (layout === 'single') {
     const displayTeams = teams || []
-    
+
     // Create pairs for SwissMatchCard (2 teams per card)
     const teamPairs: Array<{
       team1: SwissMatchCardTeam | null
@@ -73,7 +73,7 @@ export function TopCutCard({
       status: 'live' | 'scheduled' | 'done'
       winner?: 'team1' | 'team2' | null
     }> = []
-    
+
     // Group teams into pairs
     for (let i = 0; i < displayTeams.length; i += 2) {
       teamPairs.push({
@@ -83,7 +83,7 @@ export function TopCutCard({
         winner: null
       })
     }
-    
+
     return (
       <div className={cn(
         "relative transition-all duration-200 rounded-md",
@@ -115,7 +115,7 @@ export function TopCutCard({
   // Versus layout - two columns with SwissMatchCard
   const displayLeftTeams = leftTeams || []
   const displayRightTeams = rightTeams || []
-  
+
   // Create pairs for left and right columns
   const leftPairs: Array<{
     team1: SwissMatchCardTeam | null
@@ -123,14 +123,14 @@ export function TopCutCard({
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
   }> = []
-  
+
   const rightPairs: Array<{
     team1: SwissMatchCardTeam | null
     team2: SwissMatchCardTeam | null
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
   }> = []
-  
+
   // Group left teams into pairs
   for (let i = 0; i < displayLeftTeams.length; i += 2) {
     leftPairs.push({
@@ -140,7 +140,7 @@ export function TopCutCard({
       winner: null
     })
   }
-  
+
   // Group right teams into pairs
   for (let i = 0; i < displayRightTeams.length; i += 2) {
     rightPairs.push({
@@ -159,7 +159,7 @@ export function TopCutCard({
       className
     )}>
       <div className={cn(
-        isMobile ? "flex flex-col" : "flex flex-row justify-center",
+        "flex flex-row justify-center",
         isMobile ? "gap-[1px]" : "gap-1"
       )}>
         {/* Left Column */}

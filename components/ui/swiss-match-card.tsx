@@ -68,17 +68,25 @@ export function SwissMatchCard({
     }
   }
 
+  // Remove VS text vertically when we're on mobile and it hasn't been explicitly requested
+  const shouldHideVs = isMobile || hideVs
+
   return (
     <div className={cn(
-      "relative transition-all duration-200 grid items-center rounded-md",
+      "relative transition-all duration-200 flex items-center justify-center rounded-md mx-auto w-full",
+      // Flex constraints: start small on iPads, grow gradually matching grid column availability
+      isMobile ? "max-w-[52px]" : "max-w-[120px] xl:max-w-[160px] 2xl:max-w-[180px]",
       getBackgroundClass(),
-      isMobile || hideVs ? "grid-cols-[auto_auto] gap-[2px] px-[2px] py-[2px] justify-around" : "grid-cols-[1fr_12px_1fr] gap-[2px] px-2 py-2",
+      // Shrink outer margin/padding on intermediate resolutions
+      shouldHideVs
+        ? (isMobile ? "gap-[2px] px-[2px] py-[2px]" : "gap-2 px-1 py-1 xl:gap-2 xl:px-2")
+        : "gap-2 px-1 py-1 xl:gap-4 xl:px-2 xl:py-2",
       status === 'live' && "border border-red-500/70 shadow-[0_0_10px_rgba(239,68,68,0.4)] animate-pulse",
       className
     )}>
       {/* Team 1 */}
       <div className={cn(
-        "flex justify-center rounded-sm",
+        "rounded-sm",
         !isTeam1Winner && status === 'done' && winner && "opacity-40"
       )}>
         <div
@@ -90,16 +98,16 @@ export function SwissMatchCard({
         >
           <TeamAvatar
             team={team1}
-            size="lg"
+            size={isMobile ? "md" : "lg"}
             showTooltip={true}
             isWinner={isTeam1Winner}
           />
         </div>
       </div>
 
-      {/* VS Divider */}
-      {!isMobile && !hideVs && (
-        <div className="flex justify-center">
+      {/* VS Divider - Hidden on tablets/smaller desktops because grid columns are constrained */}
+      {!shouldHideVs && (
+        <div className="hidden xl:flex justify-center items-center">
           <div className="font-light text-zinc-500 uppercase tracking-wider text-[10px]">
             vs
           </div>
@@ -108,7 +116,7 @@ export function SwissMatchCard({
 
       {/* Team 2 */}
       <div className={cn(
-        "flex justify-center rounded-sm",
+        "rounded-sm",
         !isTeam2Winner && status === 'done' && winner && "opacity-40"
       )}>
         <div
@@ -120,7 +128,7 @@ export function SwissMatchCard({
         >
           <TeamAvatar
             team={team2}
-            size="lg"
+            size={isMobile ? "md" : "lg"}
             showTooltip={true}
             isWinner={isTeam2Winner}
           />
