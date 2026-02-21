@@ -6,6 +6,19 @@ const PLATFORM_ROUTING = 'euw1';
 
 import { logRiotRequest } from './riot-logging';
 
+/**
+ * Deterministically generates a required League of Legends Profile Icon ID (1-28)
+ * based on the user's UUID so they don't get a randomly shifting target upon refresh.
+ */
+export function getExpectedIconId(userId: string): number {
+  if (!userId) return 1;
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash += userId.charCodeAt(i);
+  }
+  return (hash % 28) + 1; // Returns a number between 1 and 28 (base animal/minion icons everyone owns)
+}
+
 interface RiotAccount {
   puuid: string;
   gameName: string;
@@ -35,8 +48,8 @@ interface LeagueEntry {
 }
 
 export async function getRiotAccount(gameName: string, tagLine: string, userId?: string): Promise<RiotAccount | null> {
-  
-  if(!RIOT_API_KEY) {
+
+  if (!RIOT_API_KEY) {
     throw new Error('Riot API Key is not configured');
   }
 

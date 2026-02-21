@@ -48,6 +48,13 @@ export default function SetupProfilePage() {
   const [riotError, setRiotError] = useState<string | null>(null)
   const [fetchedTier, setFetchedTier] = useState<string | null>(null)
 
+  // Ownership Verification State
+  const [verificationRequired, setVerificationRequired] = useState<{
+    expectedIconId: number;
+    currentIconId: number;
+    summonerName: string;
+  } | null>(null)
+
   useEffect(() => {
     // Load existing profile if it exists (auth is handled by middleware)
     const loadExistingProfile = async () => {
@@ -190,13 +197,23 @@ export default function SetupProfilePage() {
       } else {
         const errorData = await response.json()
 
-        // Show Riot API validation errors to the user
-        const errorMessage = errorData.error || errorData.details?.[0]?.message || 'Failed to save profile'
-        setRiotError(errorMessage)
+        if (errorData.requiresVerification) {
+          setVerificationRequired({
+            expectedIconId: errorData.expectedIconId,
+            currentIconId: errorData.currentIconId,
+            summonerName: errorData.summonerName
+          });
+          setRiotError(errorData.error);
+        } else {
+          // Show normal Riot API validation errors to the user
+          const errorMessage = errorData.error || errorData.details?.[0]?.message || 'Failed to save profile'
+          setRiotError(errorMessage)
+          setVerificationRequired(null) // Clear verification if there is a different error (like already claimed)
+        }
       }
     } catch (error) {
-
       setRiotError('An unexpected error occurred')
+      setVerificationRequired(null)
     } finally {
       setLoading(false)
     }
@@ -271,8 +288,52 @@ export default function SetupProfilePage() {
                       className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                     />
                     <p className="text-xs text-gray-400 mt-1">Enter your Riot ID in the format: GameName#TagLine</p>
-                    {riotError && (
-                      <p className="text-xs text-red-400 mt-1">{riotError}</p>
+
+                    {/* Riot Error & Verification Block */}
+                    {riotError && !verificationRequired && (
+                      <p className="text-xs text-red-500 mt-2 font-medium bg-red-500/10 p-2 rounded border border-red-500/20">{riotError}</p>
+                    )}
+
+                    {verificationRequired && (
+                      <div className="mt-4 p-4 bg-yellow-900/30 border border-yellow-500/50 rounded-lg shadow-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="text-yellow-400 mt-1">
+                            <Zap className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-yellow-200 font-bold text-sm mb-1">Ownership Verification Required</h4>
+                            <p className="text-yellow-100/90 text-sm mb-3">
+                              To prove you own <span className="font-bold">{verificationRequired.summonerName}</span>, please open the League of Legends client and change your profile icon to the exact one shown below.
+                            </p>
+
+                            <div className="flex items-center gap-6 mt-4 mb-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                              <div className="flex items-center flex-col gap-2">
+                                <span className="text-xs text-gray-400 font-semibold uppercase">Change To</span>
+                                <img
+                                  src={`https://ddragon.leagueoflegends.com/cdn/14.4.1/img/profileicon/${verificationRequired.expectedIconId}.png`}
+                                  alt="Expected Icon"
+                                  className="w-16 h-16 rounded-full border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]"
+                                />
+                              </div>
+                              <div className="text-gray-500">
+                                <svg className="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                              </div>
+                              <div className="flex items-center flex-col gap-2 opacity-50 grayscale">
+                                <span className="text-xs text-gray-500 font-semibold uppercase">Currently</span>
+                                <img
+                                  src={`https://ddragon.leagueoflegends.com/cdn/14.4.1/img/profileicon/${verificationRequired.currentIconId}.png`}
+                                  alt="Current Icon"
+                                  className="w-12 h-12 rounded-full border border-gray-600"
+                                />
+                              </div>
+                            </div>
+
+                            <p className="text-xs text-yellow-200/70 mt-3 italic">
+                              Once changed in-game, wait 30 seconds for the Riot servers to update, then click Submit below again!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

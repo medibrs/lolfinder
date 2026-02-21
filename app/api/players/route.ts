@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
-import { validateAndFetchRiotData } from '@/lib/riot';
+import { validateAndFetchRiotData, getExpectedIconId } from '@/lib/riot';
 
 // Validation schema - tier and opgg_url are now auto-fetched from Riot API
 const createPlayerSchema = z.object({
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // Get total count for pagination info
     let countQuery = supabase.from('players').select('*', { count: 'exact', head: true });
-    
+
     // Apply same filters to count query
     if (role) {
       countQuery = countQuery.or(`main_role.eq.${role},secondary_role.eq.${role}`);
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    
+
     // Validate input
     const validatedData = createPlayerSchema.parse(body);
 
@@ -109,6 +109,41 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // 1. Check if the Riot PUUID has already been claimed by another user in our database
+    const { data: existingClaim, error: claimSearchError } = await supabase
+      .from('players')
+      .select('id, summoner_name')
+      .eq('puuid', riotData.puuid)
+      .maybeSingle();
+
+    if (claimSearchError) {
+      console.error('Error checking existing claims:', claimSearchError);
+    }
+
+    if (existingClaim && existingClaim.id !== user.id) {
+      console.log(`[Riot Verification - POST] User ${user.email} (${user.id}) tried to claim ${riotData.summonerName} but it's already owned by ${existingClaim.id}`);
+      return NextResponse.json({
+        error: `This Riot account (${riotData.summonerName}) is already claimed by another user on this platform.`
+      }, { status: 400 });
+    }
+
+    // 2. Perform Ownership Verification using the Profile Icon challenge
+    const expectedIconId = getExpectedIconId(user.id);
+    console.log(`[Riot Verification - POST] User ${user.email} (${user.id}) attempting to claim ${riotData.summonerName}. Current Icon: ${riotData.profileIconId} | Expected Icon: ${expectedIconId}`);
+
+    if (riotData.profileIconId !== expectedIconId) {
+      console.log(`   -> Failed: Icon Mismatch.`);
+      return NextResponse.json({
+        error: `Ownership Verification Required.`,
+        requiresVerification: true,
+        expectedIconId,
+        currentIconId: riotData.profileIconId,
+        summonerName: riotData.summonerName
+      }, { status: 400 });
+    }
+
+    console.log(`   -> SUCCESS! User successfully proved ownership of ${riotData.summonerName}. Generating Profile.`);
 
     // Use the authenticated user's ID as the player ID
     const playerData = {
