@@ -5,18 +5,16 @@ export const useCurrentUserName = () => {
   const [name, setName] = useState<string | null>(null)
 
   useEffect(() => {
+    const supabase = createClient()
+
     const fetchProfileName = async () => {
       try {
-        const supabase = createClient()
-
-        // Get current user
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
           setName('?')
           return
         }
 
-        // Get summoner name from player profile (never expose real names)
         const { data: playerData } = await supabase
           .from('players')
           .select('summoner_name')
@@ -25,12 +23,25 @@ export const useCurrentUserName = () => {
 
         setName(playerData?.summoner_name ?? 'Player')
       } catch (error) {
-
         setName('?')
       }
     }
 
     fetchProfileName()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!session) {
+          setName('?')
+        } else {
+          fetchProfileName()
+        }
+      }
+    )
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   return name || '?'
