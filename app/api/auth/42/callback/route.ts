@@ -96,7 +96,6 @@ export async function GET(request: Request) {
         // 6. Sign them into the local NextJS SSR Cookie Storage
         const ssrSupabase = await createSSRClient()
         const { error: verifyError } = await ssrSupabase.auth.verifyOtp({
-            email,
             token_hash: linkData.properties.hashed_token,
             type: 'magiclink'
         })
