@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lolfinder-v1'
+const CACHE_NAME = 'lolfinder-v2' // Incremented to forcefully wipe v1
 const urlsToCache = [
   '/',
   '/tournaments',
@@ -8,24 +8,51 @@ const urlsToCache = [
   '/favicon-16x16.png'
 ]
 
-// Install event - cache resources
+// Install event - cache resources and forcefully take over
 self.addEventListener('install', (event) => {
+  self.skipWaiting() // Force the waiting service worker to become the active service worker
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
   )
 })
 
-// Fetch event - serve from cache when offline
+// Activate event - clean up old caches immediately
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName) // Wipes the old 'lolfinder-v1' completely
+          }
+        })
+      )
+    }).then(() => self.clients.claim()) // Immediately take control of all open pages
+  )
+})
+
+// Fetch event - Network First, falling back to cache
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return
+
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Cache hit - return response
-        if (response) {
+        // Only cache valid responses
+        if (!response || response.status !== 200 || response.type !== 'basic') {
           return response
         }
-        return fetch(event.request)
+
+        const responseClone = response.clone()
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseClone)
+        })
+        return response
+      })
+      .catch(() => {
+        // Offline fallback
+        return caches.match(event.request)
       })
   )
 })
@@ -78,7 +105,7 @@ self.addEventListener('notificationclick', (event) => {
           return client.focus()
         }
       }
-      
+
       // Open new window
       if (clients.openWindow) {
         const url = event.notification.data?.url || '/notifications'
