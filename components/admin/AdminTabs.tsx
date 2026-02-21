@@ -43,7 +43,7 @@ function RiotDataUpdateCard() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch('/api/admin/update-all-players', {
         method: 'POST',
         headers: {
@@ -56,10 +56,10 @@ function RiotDataUpdateCard() {
       setUpdateResult(result)
 
       if (!response.ok) {
-        console.error('Update failed:', result)
+
       }
     } catch (error) {
-      console.error('Error updating players:', error)
+
       setUpdateResult({ error: 'Failed to update players' })
     } finally {
       setIsUpdating(false)
@@ -73,8 +73,8 @@ function RiotDataUpdateCard() {
       <p className="text-muted-foreground mb-4">
         Update all registered players with fresh Riot API data including rank, wins, losses, and profile icons.
       </p>
-      
-      <Button 
+
+      <Button
         onClick={handleUpdateAllPlayers}
         disabled={isUpdating}
         className="w-full bg-purple-600 hover:bg-purple-700"
@@ -96,7 +96,7 @@ function RiotDataUpdateCard() {
                 <p className="text-green-400">Success: {updateResult.summary?.success}</p>
                 <p className="text-red-400">Failed: {updateResult.summary?.failed}</p>
               </div>
-              
+
               {updateResult.errors && updateResult.errors.length > 0 && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-xs text-muted-foreground">View Errors</summary>

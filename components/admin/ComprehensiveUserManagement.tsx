@@ -47,14 +47,14 @@ export default function ComprehensiveUserManagement() {
     try {
       // Fetch users from admin API endpoint
       const response = await fetch('/api/admin/users')
-      
+
       if (!response.ok) {
-        console.error('Error fetching users:', response.statusText)
+
         return
       }
-      
+
       const data = await response.json()
-      
+
       if (data.users) {
         setUsers(data.users.map((user: any) => ({
           id: user.id,
@@ -67,7 +67,7 @@ export default function ComprehensiveUserManagement() {
         })))
       }
     } catch (error) {
-      console.error('Error:', error)
+
     } finally {
       setLoading(false)
     }
@@ -77,7 +77,7 @@ export default function ComprehensiveUserManagement() {
     setUpdating(userId)
     try {
       const newRole = currentRole === 'admin' ? 'user' : 'admin'
-      
+
       const response = await fetch('/api/admin/set-role', {
         method: 'POST',
         headers: {
@@ -94,13 +94,13 @@ export default function ComprehensiveUserManagement() {
       }
 
       // Update local state
-      setUsers(prev => prev.map(user => 
-        user.id === userId 
+      setUsers(prev => prev.map(user =>
+        user.id === userId
           ? { ...user, app_metadata: { ...user.app_metadata, role: newRole } }
           : user
       ))
     } catch (error) {
-      console.error('Error updating role:', error)
+
     } finally {
       setUpdating(null)
     }
@@ -130,7 +130,7 @@ export default function ComprehensiveUserManagement() {
       setUsers(prev => prev.filter(user => user.id !== userId))
       alert('User deleted successfully.')
     } catch (error: any) {
-      console.error('Error deleting user:', error)
+
       alert(`Failed to delete user: ${error.message}`)
     } finally {
       setDeleting(null)
@@ -151,15 +151,15 @@ export default function ComprehensiveUserManagement() {
             from: 'admin'
           }
         }])
-      
+
       // Reset form
       setSupportTicket({ userId: '', issue: '', resolution: '' })
     } catch (error) {
-      console.error('Error solving problem:', error)
+
     }
   }
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.profile?.summoner_name?.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -252,9 +252,9 @@ export default function ComprehensiveUserManagement() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
-                <Badge 
+                <Badge
                   variant={user.app_metadata?.role === 'admin' ? 'default' : 'secondary'}
                   className="flex items-center gap-1"
                 >
@@ -265,11 +265,11 @@ export default function ComprehensiveUserManagement() {
                   )}
                   {user.app_metadata?.role || 'user'}
                 </Badge>
-                
+
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setSelectedUser(user)}
                     >
@@ -308,17 +308,17 @@ export default function ComprehensiveUserManagement() {
                     </div>
                   </DialogContent>
                 </Dialog>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => toggleAdminRole(user.id, user.app_metadata?.role || 'user')}
                   disabled={updating === user.id}
                 >
-                  {updating === user.id ? 'Updating...' : 
-                   user.app_metadata?.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                  {updating === user.id ? 'Updating...' :
+                    user.app_metadata?.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
                 </Button>
-                
+
                 <Button
                   variant="destructive"
                   size="sm"
@@ -334,7 +334,7 @@ export default function ComprehensiveUserManagement() {
               </div>
             </div>
           ))}
-          
+
           {filteredUsers.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No users found matching "{searchTerm}"

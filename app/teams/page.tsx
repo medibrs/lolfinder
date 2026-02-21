@@ -50,16 +50,16 @@ export default function TeamsPage() {
 
   useEffect(() => {
     checkAuthAndFetchTeams()
-    
+
     // Refetch join request status when page becomes visible (no flash)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         refreshJoinRequests()
       }
     }
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
@@ -67,12 +67,12 @@ export default function TeamsPage() {
 
   const checkAuthAndFetchTeams = async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser()
-    
+
     if (!authUser) {
       router.push('/auth')
       return
     }
-    
+
     fetchTeams(1)
   }
 
@@ -87,14 +87,14 @@ export default function TeamsPage() {
         .select('id, team_id')
         .eq('player_id', authUser.id)
         .eq('status', 'pending')
-      
+
       const pendingMap: Record<string, string> = {}
       requests?.forEach(r => {
         pendingMap[r.team_id] = r.id
       })
       setPendingRequests(pendingMap)
     } catch (error) {
-      console.error('Error refreshing join requests:', error)
+
     }
   }
 
@@ -116,15 +116,15 @@ export default function TeamsPage() {
           .select('team_id')
           .eq('id', authUser.id)
           .single()
-        
-        
+
+
         if (playerError) {
           setHasPlayerProfile(false)
           setProfileChecked(true)
         } else {
           setHasPlayerProfile(true)
           setProfileChecked(true)
-          
+
           // If player has a team, fetch the team data
           if (playerData?.team_id) {
             const { data: teamData } = await supabase
@@ -132,7 +132,7 @@ export default function TeamsPage() {
               .select('*')
               .eq('id', playerData.team_id)
               .single()
-            
+
             setUserTeam(teamData)
           }
 
@@ -142,7 +142,7 @@ export default function TeamsPage() {
             .select('id, team_id')
             .eq('player_id', authUser.id)
             .eq('status', 'pending')
-          
+
           const pendingMap: Record<string, string> = {}
           requests?.forEach(r => {
             pendingMap[r.team_id] = r.id
@@ -169,7 +169,7 @@ export default function TeamsPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        console.error('Error fetching teams:', result.error)
+
         return
       }
 
@@ -183,19 +183,19 @@ export default function TeamsPage() {
             .from('players')
             .select('summoner_name, main_role, tier')
             .eq('team_id', team.id)
-          
+
           // Calculate average rank
           const rankOrder = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
           const memberRanks = members?.map(m => {
             const tierBase = m.tier?.split(' ')[0]
             return rankOrder.indexOf(tierBase)
           }).filter(r => r >= 0) || []
-          
-          const avgRankIndex = memberRanks.length > 0 
+
+          const avgRankIndex = memberRanks.length > 0
             ? Math.round(memberRanks.reduce((a, b) => a + b, 0) / memberRanks.length)
             : -1
           const averageRank = avgRankIndex >= 0 ? rankOrder[avgRankIndex] : null
-          
+
           return {
             ...team,
             current_members: members?.length || 0,
@@ -215,7 +215,7 @@ export default function TeamsPage() {
       setHasMore(pagination.hasMore || false)
       setCurrentPage(page)
     } catch (error) {
-      console.error('Error:', error)
+
     } finally {
       setInitialLoad(false)
       setLoadingMore(false)
@@ -274,7 +274,7 @@ export default function TeamsPage() {
       setSendingRequest(teamId)
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch('/api/team-join-requests', {
         method: 'POST',
         headers: {
@@ -291,13 +291,13 @@ export default function TeamsPage() {
         const data = await response.json()
         // Add to pending requests to update UI
         setPendingRequests(prev => ({ ...prev, [teamId]: data.id }))
-        
+
       } else {
         const error = await response.json()
-        console.error('Error sending join request:', error.error)
+
       }
     } catch (error) {
-      console.error('Error sending join request:', error)
+
     } finally {
       setSendingRequest(null)
     }
@@ -311,7 +311,7 @@ export default function TeamsPage() {
       setCancellingRequest(teamId)
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch(`/api/team-join-requests/${requestId}`, {
         method: 'DELETE',
         headers: {
@@ -328,10 +328,10 @@ export default function TeamsPage() {
         })
       } else {
         const error = await response.json()
-        console.error('Error cancelling request:', error.error)
+
       }
     } catch (error) {
-      console.error('Error cancelling request:', error)
+
     } finally {
       setCancellingRequest(null)
     }
@@ -405,10 +405,10 @@ export default function TeamsPage() {
               className="pl-10 bg-input border-border"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setSelectedRole(null)}
               className={selectedRole === null ? 'bg-primary' : ''}
             >
@@ -456,13 +456,13 @@ export default function TeamsPage() {
                   <div className="flex items-start gap-4 mb-4">
                     {/* Team Avatar */}
                     <div className="relative">
-                      <TeamAvatar 
-                        team={team} 
+                      <TeamAvatar
+                        team={team}
                         size="lg"
                         showTooltip={true}
                       />
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <h3 className="text-xl font-bold mb-1 truncate" title={team.name}>
                         {team.name}
@@ -473,7 +473,7 @@ export default function TeamsPage() {
                           Captain: {team.captain?.summoner_name || 'Unknown'}
                         </span>
                       </div>
-                      
+
                       {/* Team Size and Status */}
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium text-muted-foreground">Size:</span>
@@ -484,7 +484,7 @@ export default function TeamsPage() {
                           {team.recruiting_status === 'Open' ? 'Recruiting' : team.recruiting_status}
                         </Badge>
                       </div>
-                      
+
                       {/* Average Rank */}
                       {team.average_rank && (
                         <div className="flex items-center gap-2">
@@ -512,7 +512,7 @@ export default function TeamsPage() {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Team Members Display */}
                   {team.members && team.members.length > 0 && (
                     <div className="mb-4">
@@ -537,7 +537,7 @@ export default function TeamsPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Open Positions */}
                   {team.open_positions.length > 0 && (
                     <div className="mb-4">
@@ -551,49 +551,49 @@ export default function TeamsPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   <div>
-                      {user && team.captain_id === user.id ? (
-                        <Button asChild className="w-full bg-yellow-600 hover:bg-yellow-700" onClick={(e) => e.stopPropagation()}>
-                          <a href="/manage-team">Manage Team</a>
-                        </Button>
-                      ) : user && userTeam?.id === team.id ? (
-                        <Button asChild className="w-full bg-green-600 hover:bg-green-700" onClick={(e) => e.stopPropagation()}>
-                          <a href="/view-team">View Team</a>
-                        </Button>
-                      ) : user && userTeam ? (
-                        <Button disabled className="w-full" onClick={(e) => e.stopPropagation()}>
-                          Already in a team
-                        </Button>
-                      ) : user && !hasPlayerProfile && profileChecked ? (
-                        null
-                      ) : team.current_members >= parseInt(team.team_size) ? (
-                        <Button disabled className="w-full" onClick={(e) => e.stopPropagation()}>
-                          Team is Full
-                        </Button>
-                      ) : user && pendingRequests[team.id] ? (
-                        <Button 
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleCancelRequest(team.id)
-                          }}
-                          disabled={cancellingRequest === team.id}
-                          className="w-full bg-orange-600 hover:bg-orange-700"
-                        >
-                          {cancellingRequest === team.id ? 'Cancelling...' : 'Cancel Request'}
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleRequestToJoin(team.id, team.name)
-                          }}
-                          disabled={sendingRequest === team.id}
-                          className="w-full bg-blue-600 hover:bg-blue-700"
-                        >
-                          {sendingRequest === team.id ? 'Sending...' : 'Request to Join'}
-                        </Button>
-                      )}
+                    {user && team.captain_id === user.id ? (
+                      <Button asChild className="w-full bg-yellow-600 hover:bg-yellow-700" onClick={(e) => e.stopPropagation()}>
+                        <a href="/manage-team">Manage Team</a>
+                      </Button>
+                    ) : user && userTeam?.id === team.id ? (
+                      <Button asChild className="w-full bg-green-600 hover:bg-green-700" onClick={(e) => e.stopPropagation()}>
+                        <a href="/view-team">View Team</a>
+                      </Button>
+                    ) : user && userTeam ? (
+                      <Button disabled className="w-full" onClick={(e) => e.stopPropagation()}>
+                        Already in a team
+                      </Button>
+                    ) : user && !hasPlayerProfile && profileChecked ? (
+                      null
+                    ) : team.current_members >= parseInt(team.team_size) ? (
+                      <Button disabled className="w-full" onClick={(e) => e.stopPropagation()}>
+                        Team is Full
+                      </Button>
+                    ) : user && pendingRequests[team.id] ? (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCancelRequest(team.id)
+                        }}
+                        disabled={cancellingRequest === team.id}
+                        className="w-full bg-orange-600 hover:bg-orange-700"
+                      >
+                        {cancellingRequest === team.id ? 'Cancelling...' : 'Cancel Request'}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRequestToJoin(team.id, team.name)
+                        }}
+                        disabled={sendingRequest === team.id}
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        {sendingRequest === team.id ? 'Sending...' : 'Request to Join'}
+                      </Button>
+                    )}
                   </div>
                 </Card>
               ))
@@ -604,7 +604,7 @@ export default function TeamsPage() {
             )}
           </div>
         )}
-        
+
         {/* Loading more indicator */}
         {loadingMore && (
           <div className="flex justify-center items-center py-8 gap-3">
@@ -612,7 +612,7 @@ export default function TeamsPage() {
             <span className="text-muted-foreground">Loading more teams...</span>
           </div>
         )}
-        
+
         {/* End of list indicator */}
         {!initialLoad && !hasMore && filteredTeams.length > 0 && !loadingMore && (
           <div className="text-center py-8">

@@ -33,15 +33,15 @@ export default function RiotApiStatsCard() {
     setLoading(true)
     try {
       const response = await fetch(`/api/admin/riot-stats?timeWindow=${timeWindow}`)
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch stats: ${response.statusText}`)
       }
-      
+
       const data = await response.json()
       setStats(data)
     } catch (error) {
-      console.error('Error fetching Riot API stats:', error)
+
     } finally {
       setLoading(false)
     }
@@ -91,7 +91,7 @@ export default function RiotApiStatsCard() {
     <Card className="bg-card border-border p-6">
       <div className="text-4xl mb-4">📊</div>
       <h3 className="text-xl font-bold mb-4">Riot API Statistics</h3>
-      
+
       {/* Time Window Selector */}
       <div className="flex gap-2 mb-4">
         {['10s', '1m', '1h', '24h'].map((window) => (
@@ -121,7 +121,7 @@ export default function RiotApiStatsCard() {
       {/* Rate Limit Status */}
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-muted-foreground">Rate Limit Usage</h4>
-        
+
         {/* Account API */}
         <div className={`p-3 rounded ${getRateLimitBg(stats.rateLimitStatus.account.percentage)}`}>
           <div className="flex justify-between items-center mb-2">
@@ -131,11 +131,10 @@ export default function RiotApiStatsCard() {
             </span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
-            <div 
-              className={`h-2 rounded-full transition-all ${
-                stats.rateLimitStatus.account.percentage >= 90 ? 'bg-red-500' :
-                stats.rateLimitStatus.account.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
-              }`}
+            <div
+              className={`h-2 rounded-full transition-all ${stats.rateLimitStatus.account.percentage >= 90 ? 'bg-red-500' :
+                  stats.rateLimitStatus.account.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+                }`}
               style={{ width: `${Math.min(stats.rateLimitStatus.account.percentage, 100)}%` }}
             />
           </div>
@@ -153,11 +152,10 @@ export default function RiotApiStatsCard() {
             </span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
-            <div 
-              className={`h-2 rounded-full transition-all ${
-                stats.rateLimitStatus.summoner.percentage >= 90 ? 'bg-red-500' :
-                stats.rateLimitStatus.summoner.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
-              }`}
+            <div
+              className={`h-2 rounded-full transition-all ${stats.rateLimitStatus.summoner.percentage >= 90 ? 'bg-red-500' :
+                  stats.rateLimitStatus.summoner.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+                }`}
               style={{ width: `${Math.min(stats.rateLimitStatus.summoner.percentage, 100)}%` }}
             />
           </div>
@@ -175,11 +173,10 @@ export default function RiotApiStatsCard() {
             </span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
-            <div 
-              className={`h-2 rounded-full transition-all ${
-                stats.rateLimitStatus.league.percentage >= 90 ? 'bg-red-500' :
-                stats.rateLimitStatus.league.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
-              }`}
+            <div
+              className={`h-2 rounded-full transition-all ${stats.rateLimitStatus.league.percentage >= 90 ? 'bg-red-500' :
+                  stats.rateLimitStatus.league.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+                }`}
               style={{ width: `${Math.min(stats.rateLimitStatus.league.percentage, 100)}%` }}
             />
           </div>
@@ -199,10 +196,10 @@ export default function RiotApiStatsCard() {
         </div>
       )}
 
-      <Button 
-        onClick={fetchStats} 
-        variant="outline" 
-        size="sm" 
+      <Button
+        onClick={fetchStats}
+        variant="outline"
+        size="sm"
         className="w-full mt-4"
       >
         Refresh

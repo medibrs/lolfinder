@@ -22,7 +22,7 @@ export default function NotificationToggle() {
     try {
       const result = await notificationManager.requestPermission()
       setPermission(result)
-      
+
       if (result === 'granted') {
         // Show a test notification
         await notificationManager.showNotification({
@@ -36,7 +36,7 @@ export default function NotificationToggle() {
       } else {
       }
     } catch (error) {
-      console.error('❌ Error requesting notification permission:', error)
+
       // On mobile, sometimes permissions fail but still work
       alert('Unable to enable notifications. You may need to enable them in your browser settings.')
     } finally {

@@ -65,7 +65,7 @@ async function getRegisteredTeams(tournamentId: string) {
     .eq('status', 'approved');
 
   if (regError) {
-    console.error('Error fetching registrations:', regError);
+
     return [];
   }
 
@@ -81,7 +81,7 @@ async function getRegisteredTeams(tournamentId: string) {
     .in('id', teamIds);
 
   if (teamsError) {
-    console.error('Error fetching teams:', teamsError);
+
     return [];
   }
 
@@ -92,7 +92,7 @@ async function getRegisteredTeams(tournamentId: string) {
     .in('team_id', teamIds);
 
   if (membersError) {
-    console.error('Error fetching members:', membersError);
+
   }
 
   // Calculate average rank for each team

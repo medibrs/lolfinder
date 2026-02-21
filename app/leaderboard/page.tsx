@@ -74,29 +74,29 @@ export default function LeaderboardPage() {
 
   const checkAuthAndFetchPlayers = async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser()
-    
+
     if (!authUser) {
       router.push('/auth')
       return
     }
-    
+
     fetchPlayers()
   }
 
   const fetchProfileIconUrls = async (players: Player[]) => {
     const newUrls: Record<string, string> = {}
-    
+
     for (const player of players) {
       if (player.profile_icon_id) {
         try {
           const url = await getProfileIconUrl(player.profile_icon_id)
           newUrls[player.id] = url
         } catch (error) {
-          console.error(`Failed to fetch profile icon for ${player.summoner_name}:`, error)
+
         }
       }
     }
-    
+
     // Merge with existing URLs instead of replacing
     setProfileIconUrls(prev => ({ ...prev, ...newUrls }))
   }
@@ -108,12 +108,12 @@ export default function LeaderboardPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        console.error('Error fetching players:', result.error)
+
         return
       }
 
       const allPlayers = result.data || []
-      
+
       // Filter out test profiles and sort by rank
       const sortedPlayers = allPlayers
         .filter((p: Player) => !p.summoner_name.toLowerCase().includes('test'))
@@ -124,13 +124,13 @@ export default function LeaderboardPage() {
         })
 
       setPlayers(sortedPlayers)
-      
+
       // Fetch profile icons
       if (sortedPlayers.length > 0) {
         await fetchProfileIconUrls(sortedPlayers)
       }
     } catch (error) {
-      console.error('Error:', error)
+
     } finally {
       setLoading(false)
     }
@@ -201,8 +201,8 @@ export default function LeaderboardPage() {
           <div className="space-y-3">
             {players.length > 0 ? (
               players.map((player, index) => (
-                <Card 
-                  key={player.id} 
+                <Card
+                  key={player.id}
                   className={`relative p-4 hover:border-primary transition ${getRowStyle(index)}`}
                 >
                   <div className="flex items-center gap-4">
@@ -210,11 +210,11 @@ export default function LeaderboardPage() {
                     <div className="w-8 flex-shrink-0 flex items-center justify-center">
                       {getRankBadge(index)}
                     </div>
-                    
+
                     {/* Profile Icon */}
                     <div className="relative flex-shrink-0">
                       {player.profile_icon_id && profileIconUrls[player.id] ? (
-                        <Image 
+                        <Image
                           src={profileIconUrls[player.id]}
                           alt="Profile Icon"
                           width={48}
@@ -235,7 +235,7 @@ export default function LeaderboardPage() {
                         />
                       ) : null}
                       {/* Fallback icon - shown when no profile icon or on error */}
-                      <div 
+                      <div
                         className="fallback-icon w-12 h-12 bg-muted rounded-full flex items-center justify-center"
                         style={{ display: player.profile_icon_id && profileIconUrls[player.id] ? 'none' : 'flex' }}
                       >
@@ -243,8 +243,8 @@ export default function LeaderboardPage() {
                       </div>
                       {/* Rank Badge */}
                       <div className="absolute -bottom-1 -right-1">
-                        <Image 
-                          src={getRankImage(player.tier)} 
+                        <Image
+                          src={getRankImage(player.tier)}
                           alt={player.tier}
                           width={20}
                           height={20}
@@ -252,7 +252,7 @@ export default function LeaderboardPage() {
                         />
                       </div>
                     </div>
-                    
+
                     {/* Player Info */}
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold truncate">
@@ -298,7 +298,7 @@ export default function LeaderboardPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Rank Display */}
                     <div className="text-right flex-shrink-0">
                       <div className="font-bold text-sm sm:text-base">
@@ -313,7 +313,7 @@ export default function LeaderboardPage() {
                         </div>
                       )}
                     </div>
-                    
+
                     {/* OP.GG Link */}
                     <div className="hidden sm:block flex-shrink-0">
                       {player.opgg_url && player.opgg_url.trim() !== '' ? (
@@ -338,7 +338,7 @@ export default function LeaderboardPage() {
             )}
           </div>
         )}
-        
+
         {/* Stats summary */}
         {!loading && players.length > 0 && (
           <div className="mt-8 text-center">

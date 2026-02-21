@@ -217,7 +217,7 @@ export function SingleEliminationBracketPreview({ teams, teamCount, matchData }:
                 setBracketData(data)
             }
         } catch (err: any) {
-            console.error('Bracket preview error:', err)
+
             setError(err.message || 'Failed to generate bracket')
             // Fallback to mock
             try {

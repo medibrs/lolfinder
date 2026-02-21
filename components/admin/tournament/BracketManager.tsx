@@ -93,7 +93,7 @@ export default function BracketManager({
         }
       }
     } catch (error) {
-      console.error('Error fetching seeding:', error)
+
     } finally {
       setLoading(false)
     }
@@ -107,7 +107,7 @@ export default function BracketManager({
         setMatchData(data.matches || [])
       }
     } catch (error) {
-      console.error('Error fetching match data:', error)
+
     }
   }
 

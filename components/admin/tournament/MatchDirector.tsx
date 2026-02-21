@@ -50,7 +50,7 @@ export default function MatchDirector({ tournamentId, onStateChanged }: MatchDir
                 setMatches(matchesData.matches || [])
             }
         } catch (error) {
-            console.error('Error fetching match director state:', error)
+
         } finally {
             setLoading(false)
         }
@@ -80,7 +80,7 @@ export default function MatchDirector({ tournamentId, onStateChanged }: MatchDir
                 toast({ title: 'Error', description: errorData.error, variant: 'destructive' })
             }
         } catch (e) {
-            console.error(e)
+
             toast({ title: 'Error', description: 'Failed to update match', variant: 'destructive' })
         }
     }
@@ -101,7 +101,7 @@ export default function MatchDirector({ tournamentId, onStateChanged }: MatchDir
                 toast({ title: 'Cannot Advance', description: errorData.error, variant: 'destructive' })
             }
         } catch (e) {
-            console.error(e)
+
             toast({ title: 'Error', description: 'Failed to advance round', variant: 'destructive' })
         } finally {
             setAdvancing(false)

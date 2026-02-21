@@ -38,7 +38,7 @@ export default function CreateTournamentCard() {
       // Validate dates
       const startDate = new Date(formData.start_date)
       const endDate = new Date(formData.end_date)
-      
+
       if (startDate >= endDate) {
         throw new Error('End date must be after start date')
       }
@@ -56,7 +56,7 @@ export default function CreateTournamentCard() {
       const { error } = await supabase.from('tournaments').insert(tournamentData)
 
       if (error) {
-        console.error('Supabase error:', error)
+
         throw error
       }
 
@@ -78,8 +78,8 @@ export default function CreateTournamentCard() {
         rules: ''
       })
     } catch (error: any) {
-      console.error('Error creating tournament:', error)
-      
+
+
       // Show error toast
       toast({
         title: "Failed to Create Tournament",
@@ -104,7 +104,7 @@ export default function CreateTournamentCard() {
           Create a new tournament for your community
         </CardDescription>
       </CardHeader>
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label htmlFor="name">Tournament Name</Label>
@@ -141,7 +141,7 @@ export default function CreateTournamentCard() {
               required
             />
           </div>
-          
+
           <div>
             <Label htmlFor="prize_pool">Prize Pool</Label>
             <Input
@@ -164,7 +164,7 @@ export default function CreateTournamentCard() {
               required
             />
           </div>
-          
+
           <div>
             <Label htmlFor="end_date">End Date</Label>
             <Input

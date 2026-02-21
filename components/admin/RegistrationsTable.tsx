@@ -44,57 +44,57 @@ export default function RegistrationsTable() {
       // Fetch all tournaments to get their registrations
       const tournamentsResponse = await fetch('/api/tournaments')
       const tournaments = await tournamentsResponse.json()
-      
+
       const allRegistrations: Registration[] = []
-      
+
       for (const tournament of tournaments) {
         try {
           const regResponse = await fetch(`/api/tournaments/${tournament.id}/registrations`)
           const tournamentRegistrations = await regResponse.json()
-          
+
           const enrichedRegistrations = tournamentRegistrations.map((reg: any) => ({
             ...reg,
             tournament_name: tournament.name,
             team_name: reg.team?.name || 'Unknown Team',
             captain_name: reg.team?.captain?.summoner_name || 'Unknown Captain'
           }))
-          
+
           allRegistrations.push(...enrichedRegistrations)
         } catch (error) {
-          console.error(`Error fetching registrations for tournament ${tournament.id}:`, error)
+
         }
       }
-      
+
       // Sort by registration date (newest first)
-      allRegistrations.sort((a, b) => 
+      allRegistrations.sort((a, b) =>
         new Date(b.registered_at).getTime() - new Date(a.registered_at).getTime()
       )
-      
+
       setRegistrations(allRegistrations)
     } catch (error) {
-      console.error('Error fetching registrations:', error)
+
     } finally {
       setLoading(false)
     }
   }
 
   const filteredRegistrations = registrations.filter(registration => {
-    const matchesSearch = 
+    const matchesSearch =
       registration.tournament_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       registration.team_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       registration.captain_name?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || registration.status === statusFilter
-    
+
     return matchesSearch && matchesStatus
   })
 
   const updateRegistrationStatus = async (registrationId: string, newStatus: 'approved' | 'rejected' | 'pending') => {
     try {
       const supabase = createClient()
-      
+
       // Find the registration details from state (since it has tournament name and captain info joined already)
       const registration = registrations.find(r => r.id === registrationId)
-      
+
       // Update status
       const { error } = await supabase
         .from('tournament_registrations')
@@ -109,7 +109,7 @@ export default function RegistrationsTable() {
           .select('*, team:teams(*)')
           .eq('id', registrationId)
           .single()
-          
+
         if (regData?.team?.captain_id) {
           if (newStatus === 'approved') {
             await supabase
@@ -144,12 +144,12 @@ export default function RegistrationsTable() {
           }
         }
       }
-      
-      setRegistrations(registrations.map(reg => 
+
+      setRegistrations(registrations.map(reg =>
         reg.id === registrationId ? { ...reg, status: newStatus } : reg
       ))
     } catch (error) {
-      console.error('Error updating registration status:', error)
+
     }
   }
 
@@ -221,7 +221,7 @@ export default function RegistrationsTable() {
               className="pl-10"
             />
           </div>
-          
+
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />
@@ -288,18 +288,18 @@ export default function RegistrationsTable() {
                           <Eye className="mr-2 h-4 w-4" />
                           View Details
                         </DropdownMenuItem>
-                        
+
                         {registration.status === 'pending' && (
                           <>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-green-600"
                               onClick={() => updateRegistrationStatus(registration.id, 'approved')}
                             >
                               <CheckCircle className="mr-2 h-4 w-4" />
                               Approve Registration
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => updateRegistrationStatus(registration.id, 'rejected')}
                             >
@@ -308,11 +308,11 @@ export default function RegistrationsTable() {
                             </DropdownMenuItem>
                           </>
                         )}
-                        
+
                         {registration.status !== 'pending' && (
                           <>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-yellow-600"
                               onClick={() => updateRegistrationStatus(registration.id, 'pending')}
                             >

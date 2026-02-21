@@ -21,11 +21,11 @@ export const RIOT_RATE_LIMITS = {
 };
 
 export async function logRiotRequest(data: RiotLogData) {
-  
+
   try {
     // Use regular client-side supabase client
     const supabaseClient = createClient();
-    
+
     const insertData = {
       user_id: data.userId || null,
       endpoint: data.endpoint,
@@ -37,8 +37,8 @@ export async function logRiotRequest(data: RiotLogData) {
       ip_address: data.ipAddress,
       user_agent: data.userAgent,
     };
-    
-    
+
+
     const { data: result, error } = await supabaseClient
       .from('riot_request_logs')
       .insert(insertData)
@@ -46,17 +46,17 @@ export async function logRiotRequest(data: RiotLogData) {
 
 
     if (error) {
-      console.error('❌ Failed to log Riot request:', error);
+
       return;
     }
-    
+
   } catch (error) {
-    console.error('❌ Error in logRiotRequest:', error);
+
   }
 }
 
 export async function getRiotApiUsageStats(timeWindow: string = '1h') {
-  
+
   try {
     // Use server-side client to bypass RLS issues
     const { createClient } = await import('@supabase/supabase-js');
@@ -70,9 +70,9 @@ export async function getRiotApiUsageStats(timeWindow: string = '1h') {
         }
       }
     );
-    
+
     const timeAgo = new Date(Date.now() - parseTimeWindow(timeWindow)).toISOString();
-    
+
     const { data, error } = await supabaseAdmin
       .from('riot_request_logs')
       .select('*')
@@ -80,7 +80,7 @@ export async function getRiotApiUsageStats(timeWindow: string = '1h') {
 
 
     if (error) {
-      console.error('❌ Error fetching Riot API stats:', error);
+
       throw error;
     }
 
@@ -102,7 +102,7 @@ export async function getRiotApiUsageStats(timeWindow: string = '1h') {
 
     // Calculate endpoint-specific stats
     data.forEach(log => {
-      
+
       if (log.riot_api_endpoint.includes('account/v1')) {
         stats.account++;
       } else if (log.riot_api_endpoint.includes('summoner/v4')) {
@@ -123,7 +123,7 @@ export async function getRiotApiUsageStats(timeWindow: string = '1h') {
 
     // Calculate rate limit status
     const timeMultiplier = timeWindow === '1m' ? 1 : timeWindow === '10s' ? 0.167 : 1;
-    
+
     stats.rateLimitStatus = {
       account: {
         used: stats.account,
@@ -148,7 +148,7 @@ export async function getRiotApiUsageStats(timeWindow: string = '1h') {
 
     return stats;
   } catch (error) {
-    console.error('❌ Error fetching Riot API stats:', error);
+
     return {
       total: 0,
       account: 0,

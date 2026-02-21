@@ -57,21 +57,21 @@ export default function TournamentsPage() {
 
   useEffect(() => {
     fetchData()
-    
+
     // Refetch data when page becomes visible
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchData()
       }
     }
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    
+
     // Also refetch every 60 seconds to keep data fresh
     const interval = setInterval(() => {
       fetchData()
     }, 60000)
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       clearInterval(interval)
@@ -92,16 +92,15 @@ export default function TournamentsPage() {
           .select('team_id')
           .eq('id', authUser.id)
           .single()
-        
-        console.log('Tournaments page - Player data:', playerData)
-        console.log('Tournaments page - Player error:', playerError)
-        
+
+
+
         if (playerError) {
-          console.log('Tournaments page - User does not have a player profile')
+
           setHasPlayerProfile(false)
           setProfileChecked(true)
         } else {
-          console.log('Tournaments page - User has a player profile')
+
           setHasPlayerProfile(true)
           setProfileChecked(true)
         }
@@ -111,7 +110,7 @@ export default function TournamentsPage() {
           .select('*')
           .eq('captain_id', authUser.id)
           .single()
-        
+
         setUserTeam(teamData)
 
         // Get registered tournaments for this team with status
@@ -120,7 +119,7 @@ export default function TournamentsPage() {
             .from('tournament_registrations')
             .select('tournament_id, status')
             .eq('team_id', teamData.id)
-          
+
           const statusMap: Record<string, string> = {}
           registrations?.forEach(reg => {
             // Normalize status to lowercase and map 'confirmed' to 'approved' for consistency
@@ -142,13 +141,13 @@ export default function TournamentsPage() {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching tournaments:', error)
+
         return
       }
 
       setTournaments(data || [])
     } catch (error) {
-      console.error('Error:', error)
+
     } finally {
       setInitialLoad(false) // Mark initial load as complete
     }
@@ -183,22 +182,22 @@ export default function TournamentsPage() {
         // Add to registration statuses as pending
         setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
         setSuccessMessage('Registration submitted! Your team registration is pending admin approval.')
-        
+
         // Clear success message after 5 seconds
         setTimeout(() => setSuccessMessage(''), 5000)
       } else {
         const error = await response.json()
-        console.error('Error registering for tournament:', error.error)
-        
+
+
         // If it's a duplicate registration error, update the status to pending
         if (error.error?.includes('pending') || error.error?.includes('already')) {
           setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
         }
-        
+
         setErrorMessage(error.error || "Failed to register for tournament.")
       }
     } catch (error: any) {
-      console.error('Error registering for tournament:', error)
+
       setErrorMessage(error.message || "An unexpected error occurred.")
     } finally {
       setRegistering(null)
@@ -209,7 +208,7 @@ export default function TournamentsPage() {
     const now = new Date()
     const start = new Date(startDate)
     const end = new Date(endDate)
-    
+
     if (now < start) {
       return { status: 'upcoming', color: 'bg-accent text-accent-foreground' }
     } else if (now >= start && now <= end) {
@@ -276,7 +275,7 @@ export default function TournamentsPage() {
                 <div className="absolute inset-0 bg-cover bg-top opacity-50">
                   <Skeleton className="w-full h-full" />
                 </div>
-                
+
                 {/* Tournament Header - matching h-28 md:h-32 */}
                 <div className="relative h-28 md:h-32">
                   <div className="relative h-full flex flex-col justify-end p-4 md:p-6">
@@ -321,22 +320,22 @@ export default function TournamentsPage() {
                 const startDate = new Date(tournament.start_date)
                 const endDate = new Date(tournament.end_date)
                 const dateRange = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                
+
                 return (
-                  <Card 
-                    key={tournament.id} 
+                  <Card
+                    key={tournament.id}
                     className="relative border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-300 group p-0 cursor-pointer"
                     onClick={() => handleTournamentClick(tournament)}
                   >
                     {/* Full Card Background Image */}
-                    <div 
+                    <div
                       className="absolute inset-0 bg-cover bg-top pointer-events-none"
                       style={{
                         backgroundImage: 'url(/leet_lol_header.jpg)',
                         filter: 'brightness(0.6)'
                       }}
                     />
-                    
+
                     {/* Tournament Header */}
                     <div className="relative h-28 md:h-32 pointer-events-none">
                       <div className="relative h-full flex flex-col justify-end p-4 md:p-6">
@@ -400,7 +399,7 @@ export default function TournamentsPage() {
                             Registration Declined
                           </div>
                         ) : tournamentStatus.status === 'upcoming' ? (
-                          <Button 
+                          <Button
                             onClick={(e) => {
                               e.stopPropagation()
                               handleRegister(tournament.id)

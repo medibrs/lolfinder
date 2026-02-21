@@ -12,38 +12,38 @@ export async function getLatestDDragonVersion(): Promise<string> {
 
   try {
     const response = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch DDragon versions: ${response.statusText}`);
     }
-    
+
     const versions: string[] = await response.json();
-    
+
     if (!versions || versions.length === 0) {
       throw new Error('No versions found in DDragon API response');
     }
-    
+
     // The first version in the array is always the latest
     const latestVersion = versions[0];
-    
+
     // Cache the result
     cachedVersion = latestVersion;
     versionCacheTime = Date.now();
-    
-    console.log(`Fetched latest DDragon version: ${latestVersion}`);
+
+
     return latestVersion;
-    
+
   } catch (error) {
-    console.error('Error fetching DDragon version:', error);
-    
+
+
     // Fallback to a known recent version if caching fails
     if (cachedVersion) {
-      console.log('Using cached DDragon version as fallback');
+
       return cachedVersion;
     }
-    
+
     // Final fallback to a hardcoded recent version
-    console.log('Using fallback DDragon version: 15.23.1');
+
     return '15.23.1';
   }
 }

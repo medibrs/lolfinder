@@ -33,7 +33,7 @@ export default function TeamChatPage() {
     const loadTeamAndUser = async () => {
       try {
         const supabase = createClient()
-        
+
         // Get current user
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUser(user)
@@ -63,7 +63,7 @@ export default function TeamChatPage() {
           .single()
 
         if (error) {
-          console.error('Error loading team:', error)
+
           setLoading(false)
           return
         }
@@ -73,7 +73,7 @@ export default function TeamChatPage() {
         setIsMember(true) // If they have a team_id, they're a member
 
       } catch (error) {
-        console.error('Error loading team chat:', error)
+
       } finally {
         setLoading(false)
       }

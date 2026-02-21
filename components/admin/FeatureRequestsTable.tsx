@@ -34,7 +34,7 @@ interface FeatureRequest {
 
 const STATUS_COLORS = {
   'Submitted': 'bg-blue-500',
-  'Under Review': 'bg-yellow-500', 
+  'Under Review': 'bg-yellow-500',
   'Planned': 'bg-purple-500',
   'In Progress': 'bg-orange-500',
   'Completed': 'bg-green-500',
@@ -83,14 +83,14 @@ export default function FeatureRequestsTable() {
       setLoading(true)
       const response = await fetch('/api/feature-requests')
       const data = await response.json()
-      
+
       if (response.ok) {
         setRequests(data.feature_requests || [])
       } else {
-        console.error('Failed to fetch feature requests:', data.error)
+
       }
     } catch (error) {
-      console.error('Error fetching feature requests:', error)
+
     } finally {
       setLoading(false)
     }
@@ -103,27 +103,27 @@ export default function FeatureRequestsTable() {
   const updateRequestStatus = async (requestId: string, newStatus: string, response?: string) => {
     try {
       setUpdatingStatus(requestId)
-      
+
       const { data: { session } } = await supabase.auth.getSession()
-      
-      const response = await fetch(`/api/feature-requests/${requestId}`, {
+
+      const res = await fetch(`/api/feature-requests/${requestId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           status: newStatus,
-          admin_response: response 
+          admin_response: response
         }),
       })
 
-      if (response.ok) {
+      if (res.ok) {
         await fetchRequests() // Refresh the list
         setSelectedRequest(null)
         setResponseText('')
       } else {
-        const errorData = await response.json()
+        const errorData = await res.json()
         alert(`Failed to update: ${errorData.error}`)
       }
     } catch (error) {
@@ -135,16 +135,16 @@ export default function FeatureRequestsTable() {
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.description.toLowerCase().includes(searchTerm.toLowerCase())
+      request.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter
     const matchesCategory = categoryFilter === 'all' || request.category === categoryFilter
     const matchesPriority = priorityFilter === 'all' || request.priority === priorityFilter
-    
+
     return matchesSearch && matchesStatus && matchesCategory && matchesPriority
   })
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
   if (loading) {
@@ -168,7 +168,7 @@ export default function FeatureRequestsTable() {
             className="pl-10"
           />
         </div>
-        
+
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
@@ -221,7 +221,7 @@ export default function FeatureRequestsTable() {
           filteredRequests.map((request) => {
             const StatusIcon = STATUS_ICONS[request.status]
             const categoryInfo = CATEGORIES[request.category as keyof typeof CATEGORIES]
-            
+
             return (
               <Card key={request.id} className="p-4 hover:shadow-md transition-shadow">
                 <div className="space-y-3">
@@ -235,7 +235,7 @@ export default function FeatureRequestsTable() {
                           {request.priority}
                         </Badge>
                       </div>
-                      
+
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <User className="h-4 w-4" />
@@ -251,7 +251,7 @@ export default function FeatureRequestsTable() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <Badge className={`${STATUS_COLORS[request.status]} text-white flex items-center gap-1`}>
                         <StatusIcon className="h-3 w-3" />
@@ -287,8 +287,8 @@ export default function FeatureRequestsTable() {
                     <div className="flex items-center gap-2">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               setSelectedRequest(request)
@@ -309,7 +309,7 @@ export default function FeatureRequestsTable() {
                               Feature request details and management
                             </DialogDescription>
                           </DialogHeader>
-                          
+
                           <div className="space-y-4">
                             {/* Request Info */}
                             <div className="grid grid-cols-2 gap-4">

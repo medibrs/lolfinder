@@ -154,7 +154,7 @@ export default function TournamentsTable() {
 
       setTournaments(tournamentsWithDetails)
     } catch (error) {
-      console.error('Error fetching tournaments:', error)
+
     } finally {
       setLoading(false)
     }
@@ -208,7 +208,7 @@ export default function TournamentsTable() {
         })
       } else {
         const error = await response.json()
-        console.error('Failed to update tournament:', response.status, error)
+
         toast({
           title: "Update Failed",
           description: error.message || "Failed to update tournament settings.",
@@ -216,7 +216,7 @@ export default function TournamentsTable() {
         })
       }
     } catch (error) {
-      console.error('Error updating tournament:', error)
+
     } finally {
       setSaving(false)
     }
@@ -245,7 +245,7 @@ export default function TournamentsTable() {
           })
         }
       } catch (error) {
-        console.error('Error deleting tournament:', error)
+
         toast({
           title: "Error",
           description: "An unexpected error occurred while deleting.",
@@ -288,7 +288,7 @@ export default function TournamentsTable() {
         })
       }
     } catch (error) {
-      console.error('Error duplicating tournament:', error)
+
       toast({
         title: "Error",
         description: "An unexpected error occurred while duplicating.",

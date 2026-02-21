@@ -76,7 +76,7 @@ export default function TeamsTable() {
       const data = await response.json()
       setTournaments(data)
     } catch (error) {
-      console.error('Error fetching tournaments:', error)
+
     }
   }
 
@@ -97,7 +97,7 @@ export default function TeamsTable() {
 
       setTeamTournaments(data?.map(r => r.tournament_id) || [])
     } catch (error) {
-      console.error('Error fetching team tournaments:', error)
+
     } finally {
       setLoadingTournaments(false)
     }
@@ -119,7 +119,7 @@ export default function TeamsTable() {
         .single()
 
       if (existing) {
-        console.error('Team is already registered for this tournament')
+
         setAddingToTournament(false)
         return
       }
@@ -156,7 +156,7 @@ export default function TeamsTable() {
           description: `"${selectedTeam.name}" has been added to the tournament.`,
         })
       } else {
-        console.error('Error adding team to tournament:', error)
+
         toast({
           title: "Registration Failed",
           description: "Failed to add team to tournament.",
@@ -164,7 +164,7 @@ export default function TeamsTable() {
         })
       }
     } catch (error) {
-      console.error('Error adding team to tournament:', error)
+
     } finally {
       setAddingToTournament(false)
     }
@@ -187,7 +187,7 @@ export default function TeamsTable() {
         description: "The team has been removed from the tournament.",
       })
     } catch (error) {
-      console.error('Error removing team from tournament:', error)
+
       toast({
         title: "Removal Failed",
         description: "Failed to remove team from tournament.",
@@ -227,7 +227,7 @@ export default function TeamsTable() {
 
       setTeams(teamsWithDetails)
     } catch (error) {
-      console.error('Error fetching teams:', error)
+
     } finally {
       setLoading(false)
     }
@@ -251,7 +251,7 @@ export default function TeamsTable() {
           description: "The team and its members have been removed.",
         })
       } catch (error) {
-        console.error('Error deleting team:', error)
+
         toast({
           title: "Delete Failed",
           description: "Failed to delete the team.",
@@ -292,7 +292,7 @@ export default function TeamsTable() {
         }])
 
       if (error) {
-        console.error('Error sending message:', error)
+
         toast({
           title: "Message Failed",
           description: "Failed to send notification to team captain.",
@@ -309,7 +309,7 @@ export default function TeamsTable() {
         setMessageContent('')
       }
     } catch (error) {
-      console.error('Error sending message:', error)
+
       toast({
         title: "Error",
         description: "An unexpected error occurred.",

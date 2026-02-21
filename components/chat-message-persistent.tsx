@@ -15,13 +15,13 @@ interface ChatMessageItemProps {
   onDelete?: () => void
 }
 
-export const ChatMessageItem = ({ 
-  message, 
-  isOwn = false, 
+export const ChatMessageItem = ({
+  message,
+  isOwn = false,
   showHeader = true,
   showAvatar = true,
   canDelete = false,
-  onDelete 
+  onDelete
 }: ChatMessageItemProps) => {
   const [avatarUrl, setAvatarUrl] = useState<string>('/default-avatar.svg')
   const [showDeleteButton, setShowDeleteButton] = useState(false)
@@ -35,7 +35,7 @@ export const ChatMessageItem = ({
           const url = await getProfileIconUrl(message.user.profileIconId)
           setAvatarUrl(url)
         } catch (error) {
-          console.error('Error loading profile icon:', error)
+
         }
       }
     }
@@ -91,7 +91,7 @@ export const ChatMessageItem = ({
   }, [])
 
   return (
-    <div 
+    <div
       className={`flex ${showAvatar ? 'mt-4' : 'mt-1'} gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}
       onClick={handleClickOutside}
     >
@@ -112,7 +112,7 @@ export const ChatMessageItem = ({
           )}
         </div>
       )}
-      
+
       <div className="flex flex-col gap-1 max-w-[75%]">
         {showHeader && (
           <div
@@ -141,10 +141,10 @@ export const ChatMessageItem = ({
           onTouchMove={handleTouchMove}
         >
           {message.content}
-          
+
           {/* Delete button - shows on hover (desktop) or long press (mobile) */}
           {canDelete && isOwn && !isDeleted && (
-            <div 
+            <div
               className={cn(
                 'absolute -top-2 -right-2 transition-opacity',
                 // Desktop: show on hover

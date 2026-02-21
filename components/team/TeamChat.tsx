@@ -14,12 +14,12 @@ interface TeamChatProps {
   compact?: boolean
 }
 
-export function TeamChat({ 
-  teamId, 
-  teamName, 
-  isCaptain = false, 
+export function TeamChat({
+  teamId,
+  teamName,
+  isCaptain = false,
   isMember = false,
-  compact = false 
+  compact = false
 }: TeamChatProps) {
   const [summonerName, setSummonerName] = useState<string>('Player')
 
@@ -29,20 +29,20 @@ export function TeamChat({
       try {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
-        
+
         if (user) {
           const { data: playerData } = await supabase
             .from('players')
             .select('summoner_name')
             .eq('id', user.id)
             .single()
-          
+
           if (playerData?.summoner_name) {
             setSummonerName(playerData.summoner_name)
           }
         }
       } catch (error) {
-        console.error('Error loading summoner name:', error)
+
       }
     }
     loadSummonerName()

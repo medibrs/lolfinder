@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { 
-  Trophy, Users, Calendar, Settings, Shield, Activity, 
-  Play, Pause, CheckCircle, XCircle, AlertTriangle, 
+import {
+  Trophy, Users, Calendar, Settings, Shield, Activity,
+  Play, Pause, CheckCircle, XCircle, AlertTriangle,
   ChevronRight, Search, Filter, MoreHorizontal, RefreshCw,
   Swords, Medal, History, FileText, Gavel
 } from 'lucide-react'
-import { 
-  Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter 
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -52,7 +52,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
   const [addParticipantOpen, setAddParticipantOpen] = useState(false)
   const [allTeams, setAllTeams] = useState<any[]>([])
   const [selectedTeamToAdd, setSelectedTeamToAdd] = useState<string>('')
-  
+
   // Promote Stage State
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false)
   const [promoteTarget, setPromoteTarget] = useState('')
@@ -106,7 +106,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
     try {
       // In a real app, we would call the promote_teams RPC function
       // For now, we'll do a client-side promotion simulation since we can't easily add RPCs
-      
+
       // 1. Get top N teams
       const topTeams = [...participants]
         .sort((a, b) => (b.swiss_score || 0) - (a.swiss_score || 0))
@@ -149,7 +149,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
       // Also add to registrations table for compatibility if needed, or just rely on participants
       // The system seems to use tournament_registrations for the sign-up process
       // and tournament_participants for the actual event. I should probably add to both to be safe.
-      
+
       await supabase.from('tournament_registrations').insert({
         tournament_id: tournamentId,
         team_id: selectedTeamToAdd,
@@ -161,10 +161,10 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
       setSelectedTeamToAdd('')
       fetchTournamentData()
     } catch (error) {
-      toast({ 
-        title: "Failed to add participant", 
-        description: error.message, 
-        variant: "destructive" 
+      toast({
+        title: "Failed to add participant",
+        description: error.message,
+        variant: "destructive"
       })
     }
   }
@@ -240,7 +240,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
           .single()
         parentData = pData
       }
-      
+
       // Combine into a flat list for the UI, marking relationships
       const linked = []
       if (parentData) linked.push({ ...parentData, relation: 'Parent' })
@@ -250,9 +250,9 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
       // Calculate/Fetch standings if available
       // This would typically come from a view or a calculation function
       // For now we'll assume a basic fetch or local calc
-      
+
     } catch (error) {
-      console.error('Error fetching tournament data:', error)
+
       toast({
         title: "Error loading tournament",
         description: "Could not load tournament details. Please try again.",
@@ -275,10 +275,10 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
       toast({ title: "Match updated successfully" })
       fetchTournamentData()
     } catch (error) {
-      toast({ 
-        title: "Update failed", 
-        description: error.message, 
-        variant: "destructive" 
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive"
       })
     }
   }
@@ -291,14 +291,14 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
         method: 'POST'
       })
       if (!response.ok) throw new Error('Failed to generate pairings')
-      
+
       toast({ title: "Pairings generated for next round" })
       fetchTournamentData()
     } catch (error) {
-      toast({ 
-        title: "Pairing generation failed", 
-        description: "Could not generate pairings. Ensure previous round is complete.", 
-        variant: "destructive" 
+      toast({
+        title: "Pairing generation failed",
+        description: "Could not generate pairings. Ensure previous round is complete.",
+        variant: "destructive"
       })
     }
   }
@@ -313,7 +313,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
       if (error) throw error
       fetchTournamentData()
     } catch (error) {
-      console.error('Error updating seed:', error)
+
     }
   }
 
@@ -362,12 +362,12 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
         <div className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Close</Button>
           {tournament.status === 'Registration' && (
-            <Button onClick={() => {/* Start tournament logic */}} className="w-full sm:w-auto">
+            <Button onClick={() => {/* Start tournament logic */ }} className="w-full sm:w-auto">
               <Play className="h-4 w-4 mr-2" /> Start Tournament
             </Button>
           )}
           {tournament.status === 'In_Progress' && (
-            <Button variant="destructive" onClick={() => {/* End tournament logic */}} className="w-full sm:w-auto">
+            <Button variant="destructive" onClick={() => {/* End tournament logic */ }} className="w-full sm:w-auto">
               <CheckCircle className="h-4 w-4 mr-2" /> Complete Tournament
             </Button>
           )}
@@ -402,14 +402,14 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
                       Round {tournament.current_round} <span className="text-muted-foreground text-lg font-normal">/ {tournament.total_rounds}</span>
                     </div>
                     <div className="h-2 w-full bg-secondary mt-2 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary" 
-                        style={{ width: `${(tournament.current_round / tournament.total_rounds) * 100}%` }} 
+                      <div
+                        className="h-full bg-primary"
+                        style={{ width: `${(tournament.current_round / tournament.total_rounds) * 100}%` }}
                       />
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">Matches</CardTitle>
@@ -455,9 +455,9 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
                         <div key={log.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
                           <div className={`
                             mt-1 h-2 w-2 rounded-full 
-                            ${log.impact_level === 'critical' ? 'bg-red-500' : 
-                              log.impact_level === 'high' ? 'bg-orange-500' : 
-                              log.impact_level === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'}
+                            ${log.impact_level === 'critical' ? 'bg-red-500' :
+                              log.impact_level === 'high' ? 'bg-orange-500' :
+                                log.impact_level === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'}
                           `} />
                           <div>
                             <p className="text-sm font-medium">{log.action.replace(/_/g, ' ')}</p>
@@ -481,7 +481,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
                   <p className="text-sm text-muted-foreground">Manage linked stages (Qualifiers → Groups → Playoffs).</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                   <Button onClick={handleCreateNextStage} className="w-full sm:w-auto">
+                  <Button onClick={handleCreateNextStage} className="w-full sm:w-auto">
                     <Play className="h-4 w-4 mr-2" /> Create Next Stage
                   </Button>
                   <Dialog open={promoteDialogOpen} onOpenChange={setPromoteDialogOpen}>
@@ -512,10 +512,10 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
                         </div>
                         <div className="space-y-2">
                           <Label>Teams to Promote (Top N)</Label>
-                          <Input 
-                            type="number" 
-                            value={promoteCount} 
-                            onChange={e => setPromoteCount(parseInt(e.target.value))} 
+                          <Input
+                            type="number"
+                            value={promoteCount}
+                            onChange={e => setPromoteCount(parseInt(e.target.value))}
                           />
                           <p className="text-xs text-muted-foreground">
                             Will select top {promoteCount} teams based on current standings.
@@ -533,67 +533,67 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
               <div className="space-y-6">
                 {/* Tree Visualization */}
                 <div className="relative pl-8 border-l-2 border-muted space-y-8">
-                   {/* Current Node Context */}
-                   <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary" />
-                   
-                   {linkedTournaments.filter(t => t.relation === 'Parent').map(parent => (
-                      <div key={parent.id} className="relative">
-                        <div className="absolute -left-[41px] top-1/2 w-8 h-0.5 bg-muted" />
-                        <Card className="border-l-4 border-l-blue-500">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              {parent.name} <Badge variant="secondary">Parent</Badge>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="pb-3">
-                            <p className="text-sm text-muted-foreground">Format: {parent.format}</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                   ))}
+                  {/* Current Node Context */}
+                  <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary" />
 
-                   <div className="relative">
-                      <div className="absolute -left-[41px] top-1/2 w-8 h-0.5 bg-primary" />
-                      <Card className="border-primary bg-primary/5">
+                  {linkedTournaments.filter(t => t.relation === 'Parent').map(parent => (
+                    <div key={parent.id} className="relative">
+                      <div className="absolute -left-[41px] top-1/2 w-8 h-0.5 bg-muted" />
+                      <Card className="border-l-4 border-l-blue-500">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-base flex items-center gap-2">
-                            {tournament.name} <Badge>Current</Badge>
+                            {parent.name} <Badge variant="secondary">Parent</Badge>
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="pb-3">
-                          <p className="text-sm text-muted-foreground">Format: {tournament.format}</p>
-                          <div className="flex items-center gap-4 mt-2 text-xs">
-                            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {participants.length} Teams</span>
-                            <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(tournament.start_date).toLocaleDateString()}</span>
-                          </div>
+                          <p className="text-sm text-muted-foreground">Format: {parent.format}</p>
                         </CardContent>
                       </Card>
-                   </div>
+                    </div>
+                  ))}
 
-                   {linkedTournaments.filter(t => t.relation === 'Child').map(child => (
-                      <div key={child.id} className="relative">
-                        <div className="absolute -left-[41px] top-1/2 w-8 h-0.5 bg-muted" />
-                        <Card className="opacity-80 hover:opacity-100 transition-opacity cursor-pointer" onClick={() => window.location.search = `?tab=tournaments&id=${child.id}`}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              {child.name} <Badge variant="outline">Stage {child.stage_order}</Badge>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="pb-3">
-                            <p className="text-sm text-muted-foreground">Format: {child.format}</p>
-                            <Badge variant={child.status === 'Registration' ? 'secondary' : 'default'} className="mt-2">
-                              {child.status}
-                            </Badge>
-                          </CardContent>
-                        </Card>
-                      </div>
-                   ))}
+                  <div className="relative">
+                    <div className="absolute -left-[41px] top-1/2 w-8 h-0.5 bg-primary" />
+                    <Card className="border-primary bg-primary/5">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          {tournament.name} <Badge>Current</Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pb-3">
+                        <p className="text-sm text-muted-foreground">Format: {tournament.format}</p>
+                        <div className="flex items-center gap-4 mt-2 text-xs">
+                          <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {participants.length} Teams</span>
+                          <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(tournament.start_date).toLocaleDateString()}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {linkedTournaments.filter(t => t.relation === 'Child').map(child => (
+                    <div key={child.id} className="relative">
+                      <div className="absolute -left-[41px] top-1/2 w-8 h-0.5 bg-muted" />
+                      <Card className="opacity-80 hover:opacity-100 transition-opacity cursor-pointer" onClick={() => window.location.search = `?tab=tournaments&id=${child.id}`}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            {child.name} <Badge variant="outline">Stage {child.stage_order}</Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pb-3">
+                          <p className="text-sm text-muted-foreground">Format: {child.format}</p>
+                          <Badge variant={child.status === 'Registration' ? 'secondary' : 'default'} className="mt-2">
+                            {child.status}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ))}
                 </div>
 
                 {linkedTournaments.length === 0 && (
-                   <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                     <p>This tournament is standalone. Create a next stage to build a series.</p>
-                   </div>
+                  <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                    <p>This tournament is standalone. Create a next stage to build a series.</p>
+                  </div>
                 )}
               </div>
             </TabsContent>
@@ -637,60 +637,60 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
 
               <Card>
                 <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[100px]">Seed</TableHead>
-                        <TableHead className="min-w-[150px]">Team</TableHead>
-                        <TableHead className="min-w-[100px]">Status</TableHead>
-                        <TableHead className="min-w-[100px]">Stats (W-L)</TableHead>
-                        <TableHead className="w-[80px] text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                  <TableBody>
-                    {participants.map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell>
-                          <Input 
-                            type="number" 
-                            value={p.seed_number} 
-                            className="w-16 h-8"
-                            onChange={(e) => handleSeedUpdate(p.id, parseInt(e.target.value))}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{p.team?.name}</div>
-                          {tournament.format === 'Swiss' && (
-                            <div className="text-xs text-muted-foreground">
-                              Swiss Score: {p.swiss_score} | TB: {p.tiebreaker_points}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={p.is_active ? "default" : "destructive"}>
-                            {p.is_active ? "Active" : "Dropped"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {/* This would be populated from performance stats */}
-                          <span className="text-sm">0 - 0</span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">Seed</TableHead>
+                          <TableHead className="min-w-[150px]">Team</TableHead>
+                          <TableHead className="min-w-[100px]">Status</TableHead>
+                          <TableHead className="min-w-[100px]">Stats (W-L)</TableHead>
+                          <TableHead className="w-[80px] text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {participants.map((p) => (
+                          <TableRow key={p.id}>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                value={p.seed_number}
+                                className="w-16 h-8"
+                                onChange={(e) => handleSeedUpdate(p.id, parseInt(e.target.value))}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium">{p.team?.name}</div>
+                              {tournament.format === 'Swiss' && (
+                                <div className="text-xs text-muted-foreground">
+                                  Swiss Score: {p.swiss_score} | TB: {p.tiebreaker_points}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={p.is_active ? "default" : "destructive"}>
+                                {p.is_active ? "Active" : "Dropped"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {/* This would be populated from performance stats */}
+                              <span className="text-sm">0 - 0</span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="matches" className="space-y-4 m-0 pb-10">
+            <TabsContent value="matches" className="space-y-4 m-0 pb-10">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                 <h3 className="text-lg font-semibold">Match Management</h3>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -715,52 +715,52 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
                     <div className="overflow-x-auto">
                       <Table>
                         <TableBody>
-                        {matches.filter(m => m.round_number === round).map(match => (
-                          <TableRow key={match.id}>
-                            <TableCell className="w-[50px] text-muted-foreground">
-                              #{match.match_number}
-                            </TableCell>
-                            <TableCell className="w-[40%]">
-                              <div className="flex items-center justify-between">
-                                <span className={match.winner_id === match.team1_id ? "font-bold text-green-600" : ""}>
-                                  {match.team1?.name || "TBD"}
-                                </span>
-                                <span className="font-mono bg-muted px-2 py-1 rounded">
-                                  {match.team1_score}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="w-[20px] text-center text-muted-foreground">vs</TableCell>
-                            <TableCell className="w-[40%]">
-                              <div className="flex items-center justify-between">
-                                <span className="font-mono bg-muted px-2 py-1 rounded">
-                                  {match.team2_score}
-                                </span>
-                                <span className={match.winner_id === match.team2_id ? "font-bold text-green-600" : ""}>
-                                  {match.team2?.name || "TBD"}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="w-[150px]">
-                              <Badge variant={
-                                match.status === 'Completed' ? 'secondary' :
-                                match.status === 'In_Progress' ? 'default' : 'outline'
-                              }>
-                                {match.status.replace('_', ' ')}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <MatchEditDialog match={match} onUpdate={fetchTournamentData} />
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                          {matches.filter(m => m.round_number === round).map(match => (
+                            <TableRow key={match.id}>
+                              <TableCell className="w-[50px] text-muted-foreground">
+                                #{match.match_number}
+                              </TableCell>
+                              <TableCell className="w-[40%]">
+                                <div className="flex items-center justify-between">
+                                  <span className={match.winner_id === match.team1_id ? "font-bold text-green-600" : ""}>
+                                    {match.team1?.name || "TBD"}
+                                  </span>
+                                  <span className="font-mono bg-muted px-2 py-1 rounded">
+                                    {match.team1_score}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="w-[20px] text-center text-muted-foreground">vs</TableCell>
+                              <TableCell className="w-[40%]">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-mono bg-muted px-2 py-1 rounded">
+                                    {match.team2_score}
+                                  </span>
+                                  <span className={match.winner_id === match.team2_id ? "font-bold text-green-600" : ""}>
+                                    {match.team2?.name || "TBD"}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="w-[150px]">
+                                <Badge variant={
+                                  match.status === 'Completed' ? 'secondary' :
+                                    match.status === 'In_Progress' ? 'default' : 'outline'
+                                }>
+                                  {match.status.replace('_', ' ')}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <MatchEditDialog match={match} onUpdate={fetchTournamentData} />
+                              </TableCell>
+                            </TableRow>
+                          ))}
                         </TableBody>
                       </Table>
                     </div>
                   </CardContent>
                 </Card>
               ))}
-              
+
               {matches.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-lg border border-dashed">
                   <Swords className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -781,57 +781,57 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
 
               <Card>
                 <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-[150px]">User</TableHead>
-                        <TableHead className="min-w-[100px]">Role</TableHead>
-                        <TableHead className="min-w-[200px]">Permissions</TableHead>
-                        <TableHead className="w-[80px] text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                  <TableBody>
-                    {admins.map((admin) => (
-                      <TableRow key={admin.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Shield className="h-4 w-4 text-muted-foreground" />
-                            <span>{admin.user?.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="uppercase">
-                            {admin.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-xs text-muted-foreground font-mono">
-                            {admin.permissions ? JSON.stringify(JSON.parse(admin.permissions), null, 0).slice(0, 30) + '...' : 'Default'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {admins.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                          No admins assigned specifically to this tournament. Global admins have access.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[150px]">User</TableHead>
+                          <TableHead className="min-w-[100px]">Role</TableHead>
+                          <TableHead className="min-w-[200px]">Permissions</TableHead>
+                          <TableHead className="w-[80px] text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {admins.map((admin) => (
+                          <TableRow key={admin.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Shield className="h-4 w-4 text-muted-foreground" />
+                                <span>{admin.user?.email}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="uppercase">
+                                {admin.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {admin.permissions ? JSON.stringify(JSON.parse(admin.permissions), null, 0).slice(0, 30) + '...' : 'Default'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="sm">
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {admins.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                              No admins assigned specifically to this tournament. Global admins have access.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="logs" className="space-y-4 m-0 pb-10">
+            <TabsContent value="logs" className="space-y-4 m-0 pb-10">
               <Card>
                 <CardHeader>
                   <CardTitle>Audit Log</CardTitle>
@@ -849,26 +849,26 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
                           <TableHead className="min-w-[100px]">Admin</TableHead>
                         </TableRow>
                       </TableHeader>
-                    <TableBody>
-                      {logs.map(log => (
-                        <TableRow key={log.id}>
-                          <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                            {new Date(log.created_at).toLocaleString()}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{log.action}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-xs">{log.event_category}</Badge>
-                          </TableCell>
-                          <TableCell className="max-w-[400px] truncate" title={log.details}>
-                            {log.details}
-                          </TableCell>
-                          <TableCell className="text-xs">
-                            {log.user_id ? 'Admin' : 'System'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      <TableBody>
+                        {logs.map(log => (
+                          <TableRow key={log.id}>
+                            <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                              {new Date(log.created_at).toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{log.action}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">{log.event_category}</Badge>
+                            </TableCell>
+                            <TableCell className="max-w-[400px] truncate" title={log.details}>
+                              {log.details}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {log.user_id ? 'Admin' : 'System'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -876,7 +876,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
               </Card>
             </TabsContent>
 
-          <TabsContent value="settings" className="space-y-4 m-0 pb-10">
+            <TabsContent value="settings" className="space-y-4 m-0 pb-10">
               <Card>
                 <CardHeader>
                   <CardTitle>Danger Zone</CardTitle>
@@ -973,18 +973,18 @@ function MatchEditDialog({ match, onUpdate }: { match: any, onUpdate: () => void
             <div className="text-xs text-muted-foreground">vs</div>
             <div className="font-medium">{match.team2?.name || 'TBD'}</div>
           </div>
-          
+
           <div className="grid grid-cols-3 items-center gap-4">
-            <Input 
-              type="number" 
-              value={scores.t1} 
+            <Input
+              type="number"
+              value={scores.t1}
               onChange={e => setScores({ ...scores, t1: parseInt(e.target.value) })}
               className="text-center"
             />
             <div className="text-center text-sm font-medium">Score</div>
-            <Input 
-              type="number" 
-              value={scores.t2} 
+            <Input
+              type="number"
+              value={scores.t2}
               onChange={e => setScores({ ...scores, t2: parseInt(e.target.value) })}
               className="text-center"
             />

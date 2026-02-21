@@ -117,7 +117,7 @@ export default function Navigation() {
         }
       }
     } catch (error) {
-      console.error('Error fetching user team:', error)
+
     }
   }
 
@@ -131,13 +131,13 @@ export default function Navigation() {
         // Clear any local state and redirect
         window.location.href = '/auth'
       } else {
-        console.error('Signout failed:', data.error)
+
         // Still redirect even if server signout fails
         await supabase.auth.signOut()
         window.location.href = '/auth'
       }
     } catch (error) {
-      console.error('Error signing out:', error)
+
       // Fallback to client-side signout if server fails
       await supabase.auth.signOut()
       window.location.href = '/auth'

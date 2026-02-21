@@ -3,8 +3,8 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { 
-  ArrowLeft, Save, Trophy, Calendar, Users, Settings, 
+import {
+  ArrowLeft, Save, Trophy, Calendar, Users, Settings,
   BarChart3, Copy, Trash2, AlertTriangle, GitBranch
 } from 'lucide-react'
 import BracketManager from '@/components/admin/tournament/BracketManager'
@@ -51,7 +51,7 @@ export default function TournamentManagePage() {
   const router = useRouter()
   const { toast } = useToast()
   const tournamentId = params.id as string
-  
+
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -63,14 +63,14 @@ export default function TournamentManagePage() {
       try {
         const response = await fetch(`/api/tournaments/${tournamentId}`)
         const data = await response.json()
-        
+
         if (!response.ok) {
-          console.error('Failed to fetch tournament:', data.error)
+
           return
         }
-          
-        console.log('Fetched tournament:', data.id, data.name, 'Count:', data.registered_teams_count)
-        
+
+
+
         setTournament({
           ...data,
           description: data.description || '',
@@ -86,7 +86,7 @@ export default function TournamentManagePage() {
           registration_count: data.registered_teams_count || 0,
         })
       } catch (error) {
-        console.error('Failed to fetch tournament:', error)
+
       } finally {
         setLoading(false)
       }
@@ -125,7 +125,7 @@ export default function TournamentManagePage() {
         elimination_best_of: tournament.elimination_best_of,
         finals_best_of: tournament.finals_best_of,
       }
-      
+
       const response = await fetch(`/api/tournaments/${tournament.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -136,11 +136,11 @@ export default function TournamentManagePage() {
         toast({ title: "Success", description: "Tournament settings saved." })
       } else {
         const error = await response.json()
-        console.error('Save error:', error)
+
         toast({ title: "Error", description: error.error || "Failed to save.", variant: "destructive" })
       }
     } catch (error) {
-      console.error('Save error:', error)
+
       toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" })
     } finally {
       setSaving(false)
@@ -233,7 +233,7 @@ export default function TournamentManagePage() {
     <main className="pt-20 pb-20">
       <section className="px-4 py-6 min-h-screen bg-muted/10">
         <div className="max-w-6xl mx-auto w-full space-y-6">
-          
+
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -277,10 +277,10 @@ export default function TournamentManagePage() {
               <TabsTrigger value="bracket">Bracket</TabsTrigger>
               <TabsTrigger value="advanced">Advanced</TabsTrigger>
             </TabsList>
-            
+
             <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                
+
                 {/* Basic Info Tab */}
                 <TabsContent value="basic" className="mt-0 space-y-6">
                   <Card>
@@ -334,7 +334,7 @@ export default function TournamentManagePage() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
+
                 {/* Format Tab */}
                 <TabsContent value="format" className="mt-0 space-y-6">
                   <Card>
@@ -439,10 +439,10 @@ export default function TournamentManagePage() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
+
                 {/* Bracket Tab */}
                 <TabsContent value="bracket" className="mt-0 space-y-6">
-                  <BracketManager 
+                  <BracketManager
                     tournamentId={tournament.id}
                     tournamentStatus={tournament.status}
                     tournamentFormat={tournament.format}
@@ -503,20 +503,20 @@ export default function TournamentManagePage() {
                     </Button>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
                   <CardContent className="space-y-2">
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       className="w-full justify-start"
                       onClick={() => setActiveTab('bracket')}
                     >
                       <GitBranch className="mr-2 h-4 w-4" />
                       Manage Bracket
                     </Button>
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       className="w-full justify-start"
                       onClick={() => setActiveTab('format')}
                     >

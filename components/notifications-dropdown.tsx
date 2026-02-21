@@ -36,7 +36,7 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
 
   useEffect(() => {
     fetchNotifications()
-    
+
     // Set up real-time subscription - no polling, instant updates via WebSocket
     const channel = supabase
       .channel(`notifications-dropdown-${userId}`)
@@ -66,7 +66,7 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
         (payload) => {
           // Update notification in state directly
           const updatedNotification = payload.new as Notification
-          setNotifications(prev => 
+          setNotifications(prev =>
             prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
           )
           // Recalculate unread count
@@ -108,14 +108,14 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         setNotifications(data)
         setUnreadCount(data.filter((n: Notification) => !n.read).length)
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error)
+
     }
   }
 
@@ -131,10 +131,10 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
           notificationIds: notificationIds || notifications.map(n => n.id).filter(n => !notifications.find(notif => notif.id === n)?.read)
         })
       })
-      
+
       await fetchNotifications()
     } catch (error) {
-      console.error('Error marking notifications as read:', error)
+
     }
   }
 
@@ -155,7 +155,7 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
         await fetchNotifications()
       }
     } catch (error) {
-      console.error('Error responding to invitation:', error)
+
     } finally {
       setLoading(false)
     }
@@ -179,7 +179,7 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
     const date = new Date(dateString)
     const now = new Date()
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
-    
+
     if (diffInMinutes < 1) return 'Just now'
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
@@ -230,9 +230,8 @@ export default function NotificationsDropdown({ userId }: NotificationsDropdownP
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 border-b border-border last:border-b-0 ${
-                    !notification.read ? 'bg-accent/20' : ''
-                  }`}
+                  className={`p-4 border-b border-border last:border-b-0 ${!notification.read ? 'bg-accent/20' : ''
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     {getNotificationIcon(notification.type)}

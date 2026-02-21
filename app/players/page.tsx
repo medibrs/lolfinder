@@ -62,7 +62,7 @@ export default function PlayersPage() {
 
   useEffect(() => {
     checkAuthAndFetchPlayers()
-    
+
     // Refetch invitations when page becomes visible (to catch rejected/accepted invites)
     const handleVisibilityChange = async () => {
       if (!document.hidden) {
@@ -70,9 +70,9 @@ export default function PlayersPage() {
         refreshInvitations()
       }
     }
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
@@ -80,32 +80,32 @@ export default function PlayersPage() {
 
   const checkAuthAndFetchPlayers = async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser()
-    
+
     if (!authUser) {
       router.push('/auth')
       return
     }
-    
+
     fetchPlayers(1)
   }
 
   const fetchProfileIconUrls = async (players: Player[]) => {
-  const newUrls: Record<string, string> = {};
-  
-  for (const player of players) {
-    if (player.profile_icon_id) {
-      try {
-        const url = await getProfileIconUrl(player.profile_icon_id);
-        newUrls[player.id] = url;
-      } catch (error) {
-        console.error(`Failed to fetch profile icon for ${player.summoner_name}:`, error);
+    const newUrls: Record<string, string> = {};
+
+    for (const player of players) {
+      if (player.profile_icon_id) {
+        try {
+          const url = await getProfileIconUrl(player.profile_icon_id);
+          newUrls[player.id] = url;
+        } catch (error) {
+
+        }
       }
     }
-  }
-  
-  // Merge with existing URLs instead of replacing
-  setProfileIconUrls(prev => ({ ...prev, ...newUrls }));
-};
+
+    // Merge with existing URLs instead of replacing
+    setProfileIconUrls(prev => ({ ...prev, ...newUrls }));
+  };
 
   // Silently refresh invitation status without clearing players
   const refreshInvitations = async () => {
@@ -125,7 +125,7 @@ export default function PlayersPage() {
           .select('id, invited_player_id')
           .eq('team_id', teamData.id)
           .eq('status', 'pending')
-        
+
         const inviteMap: Record<string, string> = {}
         invitations?.forEach(inv => {
           inviteMap[inv.invited_player_id] = inv.id
@@ -133,11 +133,11 @@ export default function PlayersPage() {
         setSentInvites(inviteMap)
       }
     } catch (error) {
-      console.error('Error refreshing invitations:', error)
+
     }
   }
 
-const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
+  const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
     try {
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -151,16 +151,15 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
           .select('team_id')
           .eq('id', authUser.id)
           .single()
-        
-        console.log('Players page - Player data:', playerData)
-        console.log('Players page - Player error:', playerError)
-        
+
+
+
         if (playerError) {
-          console.log('Players page - User does not have a player profile')
+
           setHasPlayerProfile(false)
           setProfileChecked(true)
         } else {
-          console.log('Players page - User has a player profile')
+
           setHasPlayerProfile(true)
           setProfileChecked(true)
         }
@@ -170,7 +169,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
           .select('*')
           .eq('captain_id', authUser.id)
           .single()
-        
+
         setUserTeam(teamData)
 
         // Fetch pending invitations sent by this team
@@ -180,7 +179,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
             .select('id, invited_player_id')
             .eq('team_id', teamData.id)
             .eq('status', 'pending')
-          
+
           const inviteMap: Record<string, string> = {}
           invitations?.forEach(inv => {
             inviteMap[inv.invited_player_id] = inv.id
@@ -210,7 +209,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
       const result = await response.json()
 
       if (!response.ok) {
-        console.error('Error fetching players:', result.error)
+
         return
       }
 
@@ -232,7 +231,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
         await fetchProfileIconUrls(newPlayers)
       }
     } catch (error) {
-      console.error('Error:', error)
+
     } finally {
       setLoading(false)
       setLoadingMore(false)
@@ -286,7 +285,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
       setSendingInvite(playerId)
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch('/api/team-invitations', {
         method: 'POST',
         headers: {
@@ -304,15 +303,15 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
         const data = await response.json()
         // Add to sent invites immediately
         setSentInvites(prev => ({ ...prev, [playerId]: data.id }))
-        
+
         // Refresh players data after invite
         fetchPlayers(1, true)
       } else {
         const error = await response.json()
-        console.error('Error sending invitation:', error.error)
+
       }
     } catch (error) {
-      console.error('Error sending invitation:', error)
+
     } finally {
       setSendingInvite(null)
     }
@@ -328,8 +327,8 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
       setCancellingInvite(playerId)
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
-      
-      
+
+
       const response = await fetch(`/api/team-invitations/${inviteId}`, {
         method: 'DELETE',
         headers: {
@@ -344,15 +343,15 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
           delete updated[playerId]
           return updated
         })
-        
+
         // Refresh players data after invite
         fetchPlayers(1, true)
       } else {
         const error = await response.json()
-        console.error('Error cancelling invite:', error.error)
+
       }
     } catch (error) {
-      console.error('Error cancelling invite:', error)
+
     } finally {
       setCancellingInvite(null)
     }
@@ -364,15 +363,15 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
     // Test profiles have "test" in their summoner names
     // Once we launch publicly, delete test profiles from DB and remove this entire filter block
     const isTestProfile = player.summoner_name.toLowerCase().includes('test');
-    
+
     const matchesRole = !selectedRole || player.main_role === selectedRole || player.secondary_role === selectedRole
     const matchesSearch = player.summoner_name.toLowerCase().includes(searchQuery.toLowerCase())
     const notCurrentUser = player.id !== user?.id
     const matchesLFT = !showLFTOnly || (player.looking_for_team && !player.team_id)
-    
+
     // END OF TEMPORARY TEST PROFILE FILTER - REMOVE ABOVE LOGIC WHEN GOING PUBLIC
     const isRealProfile = !isTestProfile;
-    
+
     return matchesRole && matchesSearch && notCurrentUser && matchesLFT && isRealProfile
   })
 
@@ -411,11 +410,11 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-input border-border"
           />
-          
+
           <div className="space-y-3">
             <div className="flex flex-wrap gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setSelectedRole(null)}
                 className={selectedRole === null ? 'bg-primary' : ''}
               >
@@ -432,7 +431,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                 </Button>
               ))}
             </div>
-            
+
             <Button
               variant={showLFTOnly ? 'default' : 'outline'}
               onClick={() => setShowLFTOnly(!showLFTOnly)}
@@ -473,7 +472,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                     {/* Profile Icon */}
                     <div className="relative">
                       {player.profile_icon_id ? (
-                        <Image 
+                        <Image
                           src={profileIconUrls[player.id] || ''}
                           alt="Profile Icon"
                           width={64}
@@ -503,8 +502,8 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                       </div>
                       {/* Rank Badge */}
                       <div className="absolute -bottom-1 -right-1">
-                        <Image 
-                          src={getRankImage(player.tier)} 
+                        <Image
+                          src={getRankImage(player.tier)}
                           alt={player.tier}
                           width={24}
                           height={24}
@@ -512,7 +511,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <h3 className="text-xl font-bold mb-1 truncate" title={player.summoner_name}>
                         {player.summoner_name.split('#')[0]}
@@ -549,7 +548,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                           </div>
                         </TooltipProvider>
                       </div>
-                      
+
                       {/* Enhanced Rank Display */}
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium text-muted-foreground">Rank:</span>
@@ -565,7 +564,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                           </span>
                         )}
                       </div>
-                      
+
                       {/* Summoner Level */}
                       {player.summoner_level && (
                         <div className="flex items-center gap-2">
@@ -575,7 +574,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Win/Loss Stats */}
                   {(player.wins !== undefined || player.losses !== undefined) && (
                     <div className="flex items-center justify-center gap-4 mb-4 p-2 bg-muted/50 rounded">
@@ -604,7 +603,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                       )}
                     </div>
                   )}
-                  
+
                   {user && userTeam && player.id !== user.id ? (
                     <div className="space-y-2">
                       {player.team_id ? (
@@ -612,7 +611,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                           Already in a Team
                         </Button>
                       ) : sentInvites[player.id] ? (
-                        <Button 
+                        <Button
                           onClick={() => handleCancelInvite(player.id)}
                           disabled={cancellingInvite === player.id}
                           className="w-full bg-orange-600 hover:bg-orange-700"
@@ -620,7 +619,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
                           {cancellingInvite === player.id ? 'Cancelling...' : 'Cancel Invite'}
                         </Button>
                       ) : (
-                        <Button 
+                        <Button
                           onClick={() => handleInvitePlayer(player.id)}
                           disabled={sendingInvite === player.id}
                           className="w-full bg-yellow-600 hover:bg-yellow-700"
@@ -660,7 +659,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
             )}
           </div>
         )}
-        
+
         {/* Loading more indicator */}
         {loadingMore && (
           <div className="flex justify-center items-center py-8 gap-3">
@@ -668,7 +667,7 @@ const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
             <span className="text-muted-foreground">Loading more players...</span>
           </div>
         )}
-        
+
         {/* End of list indicator */}
         {!initialLoad && !hasMore && filteredPlayers.length > 0 && !loadingMore && (
           <div className="text-center py-8">

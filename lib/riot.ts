@@ -2,9 +2,7 @@ const RIOT_API_KEY = process.env.RIOT_API_KEY;
 const REGION_ROUTING = 'europe';
 const PLATFORM_ROUTING = 'euw1';
 
-if (!RIOT_API_KEY) {
-  console.warn('RIOT_API_KEY is not set in environment variables');
-}
+
 
 import { logRiotRequest } from './riot-logging';
 
@@ -39,11 +37,11 @@ interface LeagueEntry {
 export async function getRiotAccount(gameName: string, tagLine: string, userId?: string): Promise<RiotAccount | null> {
   const startTime = Date.now();
   const url = `https://${REGION_ROUTING}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${RIOT_API_KEY}`;
-  
+
   try {
     const response = await fetch(url);
     const responseTime = Date.now() - startTime;
-    
+
     // Log the request
     await logRiotRequest({
       userId,
@@ -53,18 +51,18 @@ export async function getRiotAccount(gameName: string, tagLine: string, userId?:
       riotApiEndpoint: `https://${REGION_ROUTING}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}`,
       summonerName: `${gameName}#${tagLine}`
     });
-    
+
     if (!response.ok) {
       if (response.status === 404) return null;
-      console.error(`Riot API Error (Account): ${response.status} ${response.statusText}`);
+
       throw new Error(`Riot API Error: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    
+
     // Log failed requests too
     await logRiotRequest({
       userId,
@@ -74,8 +72,8 @@ export async function getRiotAccount(gameName: string, tagLine: string, userId?:
       riotApiEndpoint: `https://${REGION_ROUTING}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}`,
       summonerName: `${gameName}#${tagLine}`
     });
-    
-    console.error('Error fetching Riot Account:', error);
+
+
     throw error;
   }
 }
@@ -83,11 +81,11 @@ export async function getRiotAccount(gameName: string, tagLine: string, userId?:
 export async function getSummonerByPuuid(puuid: string, userId?: string): Promise<SummonerInfo | null> {
   const startTime = Date.now();
   const url = `https://${PLATFORM_ROUTING}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}?api_key=${RIOT_API_KEY}`;
-  
+
   try {
     const response = await fetch(url);
     const responseTime = Date.now() - startTime;
-    
+
     // Log the request
     await logRiotRequest({
       userId,
@@ -96,17 +94,17 @@ export async function getSummonerByPuuid(puuid: string, userId?: string): Promis
       responseTimeMs: responseTime,
       riotApiEndpoint: `https://${PLATFORM_ROUTING}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{encryptedPUUID}`
     });
-    
+
     if (!response.ok) {
-      console.error(`Riot API Error (Summoner): ${response.status} ${response.statusText}`);
+
       throw new Error(`Riot API Error: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    
+
     // Log failed requests too
     await logRiotRequest({
       userId,
@@ -115,8 +113,8 @@ export async function getSummonerByPuuid(puuid: string, userId?: string): Promis
       responseTimeMs: responseTime,
       riotApiEndpoint: `https://${PLATFORM_ROUTING}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{encryptedPUUID}`
     });
-    
-    console.error('Error fetching Summoner:', error);
+
+
     throw error;
   }
 }
@@ -124,11 +122,11 @@ export async function getSummonerByPuuid(puuid: string, userId?: string): Promis
 export async function getLeagueEntries(puuid: string, userId?: string): Promise<LeagueEntry[]> {
   const startTime = Date.now();
   const url = `https://${PLATFORM_ROUTING}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}?api_key=${RIOT_API_KEY}`;
-  
+
   try {
     const response = await fetch(url);
     const responseTime = Date.now() - startTime;
-    
+
     // Log the request
     await logRiotRequest({
       userId,
@@ -137,17 +135,17 @@ export async function getLeagueEntries(puuid: string, userId?: string): Promise<
       responseTimeMs: responseTime,
       riotApiEndpoint: `https://${PLATFORM_ROUTING}.api.riotgames.com/lol/league/v4/entries/by-puuid/{encryptedPUUID}`
     });
-    
+
     if (!response.ok) {
-      console.error(`Riot API Error (League): ${response.status} ${response.statusText}`);
+
       throw new Error(`Riot API Error: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    
+
     // Log failed requests too
     await logRiotRequest({
       userId,
@@ -156,8 +154,8 @@ export async function getLeagueEntries(puuid: string, userId?: string): Promise<
       responseTimeMs: responseTime,
       riotApiEndpoint: `https://${PLATFORM_ROUTING}.api.riotgames.com/lol/league/v4/entries/by-puuid/{encryptedPUUID}`
     });
-    
-    console.error('Error fetching League Entries:', error);
+
+
     throw error;
   }
 }
@@ -193,13 +191,13 @@ export async function validateAndFetchRiotData(summonerName: string, userId?: st
   // 3. Get Ranked Info
   const entries = await getLeagueEntries(account.puuid, userId);
   const soloQueue = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
-  
+
   let tier = 'Unranked';
   let rank = null;
   let leaguePoints = 0;
   let wins = 0;
   let losses = 0;
-  
+
   if (soloQueue && soloQueue.tier) {
     // Normalize to Title Case (e.g. "EMERALD" -> "Emerald") to match app conventions
     tier = soloQueue.tier.charAt(0) + soloQueue.tier.slice(1).toLowerCase();
@@ -250,13 +248,13 @@ export async function updateExistingPlayerData(puuid: string, userId?: string) {
     // 2. Get Ranked Info (Tier, Rank, LP, Wins, Losses) - using stored PUUID
     const entries = await getLeagueEntries(puuid, userId);
     const soloQueue = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
-    
+
     let tier = 'Unranked';
     let rank = null;
     let leaguePoints = 0;
     let wins = 0;
     let losses = 0;
-    
+
     if (soloQueue && soloQueue.tier) {
       // Normalize to Title Case (e.g. "EMERALD" -> "Emerald") to match app conventions
       tier = soloQueue.tier.charAt(0) + soloQueue.tier.slice(1).toLowerCase();

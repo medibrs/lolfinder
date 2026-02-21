@@ -28,25 +28,25 @@ export default function ViewTeamPage() {
 
   const fetchProfileIconUrls = async (members: any[]) => {
     const urls: Record<string, string> = {}
-    
+
     for (const member of members) {
       if (member.profile_icon_id) {
         try {
           const url = await getProfileIconUrl(member.profile_icon_id)
           urls[member.id] = url
         } catch (error) {
-          console.error(`Failed to fetch profile icon for ${member.summoner_name}:`, error)
+
         }
       }
     }
-    
+
     setProfileIconUrls(urls)
   }
 
   const loadTeamData = async () => {
     try {
       const supabase = createClient()
-      
+
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (!authUser) {
@@ -65,7 +65,7 @@ export default function ViewTeamPage() {
         router.push('/teams')
         return
       }
-      
+
       setUser({ ...authUser, summoner_name: playerData.summoner_name })
 
       // Get team data using the view
@@ -87,9 +87,9 @@ export default function ViewTeamPage() {
         .from('players')
         .select('*')
         .eq('team_id', playerData.team_id)
-      
+
       setTeamMembers(membersData || [])
-      
+
       // Fetch profile icon URLs for team members
       if (membersData && membersData.length > 0) {
         await fetchProfileIconUrls(membersData)
@@ -129,7 +129,7 @@ export default function ViewTeamPage() {
         .eq('id', user.id)
 
       if (updateError) {
-          return
+        return
       }
 
       // Send notification to captain
@@ -148,13 +148,13 @@ export default function ViewTeamPage() {
         })
 
       if (notificationError) {
-        console.error('Error sending notification:', notificationError)
+
       }
 
       // Redirect to teams page
       router.push('/teams')
     } catch (error) {
-      console.error('Error leaving team:', error)
+
     } finally {
       setLeaving(false)
     }
@@ -226,7 +226,7 @@ export default function ViewTeamPage() {
                   <div>
                     <h3 className="text-xl font-semibold">{team.name}</h3>
                   </div>
-                  
+
                   <div>
                     <p className="text-sm font-medium mb-2">Looking For:</p>
                     <div className="flex flex-wrap gap-2">
@@ -244,8 +244,8 @@ export default function ViewTeamPage() {
                     <p className="text-sm font-medium">Status:</p>
                     <Badge className={
                       team.recruiting_status === 'Open' ? 'bg-green-600' :
-                      team.recruiting_status === 'Closed' ? 'bg-red-600' :
-                      'bg-gray-600'
+                        team.recruiting_status === 'Closed' ? 'bg-red-600' :
+                          'bg-gray-600'
                     }>
                       {team.recruiting_status}
                     </Badge>
@@ -270,7 +270,7 @@ export default function ViewTeamPage() {
                         {/* Profile Icon with Rank Badge */}
                         <div className="relative">
                           {member.profile_icon_id ? (
-                            <Image 
+                            <Image
                               src={profileIconUrls[member.id] || ''}
                               alt="Profile Icon"
                               width={48}
@@ -300,8 +300,8 @@ export default function ViewTeamPage() {
                           </div>
                           {/* Rank Badge */}
                           <div className="absolute -bottom-1 -right-1">
-                            <Image 
-                              src={getRankImage(member.tier)} 
+                            <Image
+                              src={getRankImage(member.tier)}
                               alt={member.tier}
                               width={20}
                               height={20}
@@ -309,7 +309,7 @@ export default function ViewTeamPage() {
                             />
                           </div>
                         </div>
-                        
+
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className="font-medium truncate" title={member.summoner_name}>
@@ -334,7 +334,7 @@ export default function ViewTeamPage() {
                       </div>
                     </div>
                   ))}
-                  
+
                   {teamMembers.length === 0 && (
                     <p className="text-center text-muted-foreground py-8">
                       No team members yet.
@@ -421,7 +421,7 @@ export default function ViewTeamPage() {
                   <CardTitle>Team Actions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Button 
+                  <Button
                     onClick={handleLeaveTeam}
                     disabled={leaving}
                     variant="destructive"
@@ -451,10 +451,10 @@ export default function ViewTeamPage() {
                       const tournament = reg.tournament
                       const slug = tournament?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'tournament'
                       const tournamentUrl = `/tournaments/${tournament?.tournament_number}/${slug}`
-                      
+
                       return (
-                        <Link 
-                          key={reg.id} 
+                        <Link
+                          key={reg.id}
                           href={tournamentUrl}
                           className="block p-3 border rounded-lg hover:border-primary/50 hover:bg-secondary/20 transition-all"
                         >

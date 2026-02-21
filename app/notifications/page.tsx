@@ -38,15 +38,15 @@ export default function NotificationsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const debouncedSearchTerm = useDebounce(searchTerm, 300) // 300ms debounce
   const supabase = createClient()
-  
+
   // Use the shared notifications hook with pagination and filters
-  const { 
-    notifications, 
-    unreadCount, 
+  const {
+    notifications,
+    unreadCount,
     loading: notificationsLoading,
     loadingMore,
     hasMore,
-    markAsRead: markNotificationAsRead, 
+    markAsRead: markNotificationAsRead,
     markAllAsRead: markAllNotificationsAsRead,
     deleteNotification: deleteNotificationFromHook,
     loadNotifications: refreshNotifications,
@@ -59,7 +59,7 @@ export default function NotificationsPage() {
       setUser(authUser)
       setLoading(false)
     }
-    
+
     initializePage()
   }, [])
 
@@ -76,14 +76,14 @@ export default function NotificationsPage() {
     if (notification.type === 'team_join_request') {
       // Get player ID from either player_id or player.id
       const playerId = notification.data?.player_id || notification.data?.player?.id
-      
+
       if (playerId) {
         const { data: playerData } = await supabase
           .from('players')
           .select('id, summoner_name, tier, main_role, secondary_role, opgg_link, team_id, team_name')
           .eq('id', playerId)
           .single()
-        
+
         if (playerData) {
           // Check if player is already on a team
           if (playerData.team_id) {
@@ -101,11 +101,11 @@ export default function NotificationsPage() {
         }
       }
     }
-    
+
     // For invitations - fetch inviter and team info if not already present
     if (notification.type === 'team_invitation') {
       const teamId = notification.data?.team_id
-      
+
       // Fetch inviter info if missing
       if (!notification.data?.inviter && notification.data?.invitation_id) {
         const { data: invitationData } = await supabase
@@ -113,20 +113,20 @@ export default function NotificationsPage() {
           .select('invited_by')
           .eq('id', notification.data.invitation_id)
           .single()
-        
+
         if (invitationData?.invited_by) {
           const { data: inviterData } = await supabase
             .from('players')
             .select('id, summoner_name, tier, main_role, secondary_role, opgg_link')
             .eq('id', invitationData.invited_by)
             .single()
-          
+
           if (inviterData) {
             notification.data.inviter = inviterData
           }
         }
       }
-      
+
       // Fetch team info if missing
       if (!notification.data?.team && teamId) {
         const { data: teamData } = await supabase
@@ -134,27 +134,27 @@ export default function NotificationsPage() {
           .select('id, name, team_size, open_positions')
           .eq('id', teamId)
           .single()
-        
+
         const { data: teamMembers } = await supabase
           .from('players')
           .select('summoner_name, main_role, tier')
           .eq('team_id', teamId)
-        
+
         if (teamData) {
           const memberCount = teamMembers?.length || 0
           const filledRoles = teamMembers?.map(m => m.main_role).filter(Boolean) || []
-          
+
           const rankOrder = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
           const memberRanks = teamMembers?.map(m => {
             const tierBase = m.tier?.split(' ')[0]
             return rankOrder.indexOf(tierBase)
           }).filter(r => r >= 0) || []
-          
-          const avgRankIndex = memberRanks.length > 0 
+
+          const avgRankIndex = memberRanks.length > 0
             ? Math.round(memberRanks.reduce((a, b) => a + b, 0) / memberRanks.length)
             : -1
           const averageRank = avgRankIndex >= 0 ? rankOrder[avgRankIndex] : 'Unknown'
-          
+
           notification.data.team = {
             member_count: memberCount,
             max_size: teamData.team_size || 6,
@@ -166,14 +166,14 @@ export default function NotificationsPage() {
         }
       }
     }
-    
+
     return notification
   }
 
   const markAsRead = async (notificationId: string) => {
     const success = await markNotificationAsRead(notificationId)
     if (!success) {
-      console.error('Error marking notification as read')
+
     }
   }
 
@@ -222,7 +222,7 @@ export default function NotificationsPage() {
       setProcessingAction(notification.id)
       setErrorMessage(null)
       const invitationData = notification.data
-      
+
       if (!invitationData?.invitation_id) {
         setErrorMessage('Invalid invitation data')
         return
@@ -245,18 +245,18 @@ export default function NotificationsPage() {
       if (response.ok) {
         // Remove notification from UI immediately using hook
         await deleteNotificationFromHook(notification.id)
-        
+
         // Reload page to update team status
         setTimeout(() => window.location.reload(), 500)
       } else {
         // Show error message to user
         setErrorMessage(responseData.error || 'Failed to process invitation')
-        
+
         // Auto-clear error after 5 seconds
         setTimeout(() => setErrorMessage(null), 5000)
       }
     } catch (error) {
-      console.error(`Error ${action}ing invitation:`, error)
+
       setErrorMessage('An unexpected error occurred')
       setTimeout(() => setErrorMessage(null), 5000)
     } finally {
@@ -271,7 +271,7 @@ export default function NotificationsPage() {
       setProcessingAction(notification.id)
       setErrorMessage(null)
       const requestData = notification.data
-      
+
       if (!requestData?.request_id) {
         setErrorMessage('Invalid request data')
         return
@@ -294,18 +294,18 @@ export default function NotificationsPage() {
       if (response.ok) {
         // Remove notification from UI immediately using hook
         await deleteNotificationFromHook(notification.id)
-        
+
         // Reload page to update team status
         setTimeout(() => window.location.reload(), 500)
       } else {
         // Show error message to user
         setErrorMessage(responseData.error || 'Failed to process request')
-        
+
         // Auto-clear error after 5 seconds
         setTimeout(() => setErrorMessage(null), 5000)
       }
     } catch (error) {
-      console.error(`Error ${action}ing join request:`, error)
+
       setErrorMessage('An unexpected error occurred')
       setTimeout(() => setErrorMessage(null), 5000)
     } finally {
@@ -337,8 +337,8 @@ export default function NotificationsPage() {
               Notifications
             </h1>
             <div className="flex items-center gap-2 sm:gap-3">
-              <Button 
-                onClick={() => refreshNotifications()} 
+              <Button
+                onClick={() => refreshNotifications()}
                 variant="outline"
                 size="sm"
               >
@@ -353,7 +353,7 @@ export default function NotificationsPage() {
           <p className="text-muted-foreground">
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
           </p>
-          
+
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3 mt-4">
             <div className="flex items-center gap-2 flex-1">
@@ -384,7 +384,7 @@ export default function NotificationsPage() {
               </Select>
             </div>
           </div>
-          
+
           {/* Filter summary */}
           {(filterType !== 'all' || searchTerm) && (
             <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
@@ -419,9 +419,9 @@ export default function NotificationsPage() {
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
             <p className="text-red-500 font-medium">{errorMessage}</p>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="ml-auto"
               onClick={() => setErrorMessage(null)}
             >
@@ -434,15 +434,13 @@ export default function NotificationsPage() {
         <div className="space-y-4">
           {notifications.length > 0 ? (
             notifications.map(notification => (
-              <Card 
-                key={notification.id} 
-                className={`bg-card border-border ${
-                  !notification.read ? 'border-primary/50' : ''
-                } ${
-                  notification.type === 'admin_message' || ((notification.type === 'tournament_approved' || notification.type === 'tournament_rejected') && notification.data?.from === 'admin') 
-                    ? 'border-purple-500/50 bg-purple-500/5' 
+              <Card
+                key={notification.id}
+                className={`bg-card border-border ${!notification.read ? 'border-primary/50' : ''
+                  } ${notification.type === 'admin_message' || ((notification.type === 'tournament_approved' || notification.type === 'tournament_rejected') && notification.data?.from === 'admin')
+                    ? 'border-purple-500/50 bg-purple-500/5'
                     : ''
-                }`}
+                  }`}
               >
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-start justify-between">
@@ -463,7 +461,7 @@ export default function NotificationsPage() {
                           )}
                         </div>
                         <p className="text-muted-foreground mb-3 text-sm break-words">{notification.message}</p>
-                        
+
                         {/* Display detailed team info for invitations */}
                         {notification.type === 'team_invitation' && notification.data?.team && (
                           <div className="bg-muted/50 rounded-lg p-3 mb-3 space-y-3">
@@ -486,7 +484,7 @@ export default function NotificationsPage() {
                                 </div>
                               )}
                             </div>
-                            
+
                             {/* Current Team Members */}
                             {notification.data.team.members?.length > 0 && (
                               <div>
@@ -500,7 +498,7 @@ export default function NotificationsPage() {
                                 </div>
                               </div>
                             )}
-                            
+
                             {/* Inviter Info */}
                             {notification.data.inviter && (
                               <div className="pt-2 border-t border-border">
@@ -529,7 +527,7 @@ export default function NotificationsPage() {
                             )}
                           </div>
                         )}
-                        
+
                         {/* Display detailed user info for join requests */}
                         {notification.type === 'team_join_request' && notification.data?.player && (
                           <div className="bg-muted/50 rounded-lg p-3 mb-3">
@@ -544,7 +542,7 @@ export default function NotificationsPage() {
                                 </div>
                               </div>
                             )}
-                            
+
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                               <div className="flex items-center gap-3">
                                 <div>
@@ -574,7 +572,7 @@ export default function NotificationsPage() {
                             </div>
                           </div>
                         )}
-                        
+
                         {/* Team Invitation Actions - only show for pending invitations */}
                         {notification.type === 'team_invitation' && notification.data?.invitation_id && (
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
@@ -611,7 +609,7 @@ export default function NotificationsPage() {
                             </Button>
                           </div>
                         )}
-                        
+
                         {/* Team Join Request Actions */}
                         {notification.type === 'team_join_request' && notification.data?.request_id && (
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
@@ -650,14 +648,14 @@ export default function NotificationsPage() {
                             </Button>
                           </div>
                         )}
-                        
+
                         <p className="text-xs text-muted-foreground mt-3">
                           {new Date(notification.created_at).toLocaleDateString()} at{' '}
                           {new Date(notification.created_at).toLocaleTimeString()}
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                       <Button
                         onClick={() => deleteNotification(notification.id)}
@@ -679,14 +677,14 @@ export default function NotificationsPage() {
                   {filterType !== 'all' || searchTerm ? 'No Matching Notifications' : 'No Notifications'}
                 </h2>
                 <p className="text-muted-foreground">
-                  {filterType !== 'all' || searchTerm 
+                  {filterType !== 'all' || searchTerm
                     ? 'No notifications match your current filters. Try adjusting your search or filter criteria.'
                     : "You don't have any notifications yet. They'll appear here when you get team invitations or updates."
                   }
                 </p>
                 {(filterType !== 'all' || searchTerm) && (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setFilterType('all')
                       setSearchTerm('')
@@ -699,7 +697,7 @@ export default function NotificationsPage() {
               </div>
             </Card>
           )}
-          
+
           {/* Load More Button */}
           {notifications.length > 0 && hasMore && (
             <div className="flex justify-center mt-6">
@@ -720,7 +718,7 @@ export default function NotificationsPage() {
               </Button>
             </div>
           )}
-          
+
           {/* End of notifications indicator */}
           {notifications.length > 0 && !hasMore && (
             <p className="text-center text-muted-foreground text-sm mt-6">

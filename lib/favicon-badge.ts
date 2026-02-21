@@ -36,17 +36,17 @@ export class FaviconBadge {
       this.ctx = this.canvas.getContext('2d')!
       this.canvas.width = this.faviconSize
       this.canvas.height = this.faviconSize
-      
+
       // Store original favicon
-      const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']") || 
-                                            document.querySelector("link[rel='shortcut icon']")
+      const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']") ||
+        document.querySelector("link[rel='shortcut icon']")
       if (link) {
         this.originalFavicon = link.href
       }
-      
+
       this.isInitialized = true
     } catch (error) {
-      console.error('Error initializing favicon badge:', error)
+
     }
   }
 
@@ -135,65 +135,65 @@ export class FaviconBadge {
   }
 
   async setBadge(count: number, options: Partial<FaviconBadgeOptions> = {}) {
-    console.log('🏷️ FaviconBadge.setBadge called with count:', count)
-    
+
+
     if (typeof window === 'undefined') {
-      console.log('🏷️ SSR detected, skipping favicon update')
+
       return
     }
 
     // Initialize if not already done
     if (!this.isInitialized) {
-      console.log('🏷️ Initializing favicon badge system...')
+
       this.initialize()
     }
 
     if (!this.isInitialized || !this.ctx || !this.canvas) {
-      console.log('🏷️ Favicon badge not initialized or missing context/canvas')
+
       return
     }
 
     try {
-      console.log('🏷️ Loading original favicon...')
+
       // Load original favicon
       const img = await this.loadImage(this.originalFavicon || '/favicon.ico')
-      
+
       // Clear canvas and draw favicon
       this.ctx.clearRect(0, 0, this.faviconSize, this.faviconSize)
-      
+
       // Draw favicon centered and properly sized
       const faviconSize = this.faviconSize
       this.ctx.drawImage(img, 0, 0, faviconSize, faviconSize)
 
       // Draw badge if count > 0
       if (count > 0) {
-        console.log('🏷️ Drawing badge with count:', count)
+
         this.drawBadge(count, options)
       } else {
-        console.log('🏷️ Count is 0, skipping badge drawing')
+
       }
 
       // Update favicon
-      const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']") || 
-                                            document.querySelector("link[rel='shortcut icon']")
-      
+      const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']") ||
+        document.querySelector("link[rel='shortcut icon']")
+
       if (link) {
         const dataUrl = this.canvas.toDataURL('image/png')
         link.href = dataUrl
-        console.log('🏷️ Favicon updated with data URL length:', dataUrl.length)
+
       } else {
-        console.log('🏷️ No favicon link element found')
+
       }
 
       // Also update apple-touch-icon
       const appleLink: HTMLLinkElement | null = document.querySelector("link[rel='apple-touch-icon']")
       if (appleLink) {
         appleLink.href = this.canvas.toDataURL('image/png')
-        console.log('🏷️ Apple touch icon updated')
+
       }
 
     } catch (error) {
-      console.error('🏷️ Error setting favicon badge:', error)
+
     }
   }
 
@@ -201,9 +201,9 @@ export class FaviconBadge {
     if (typeof window === 'undefined' || !this.isInitialized) return
 
     // Reset to original favicon
-    const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']") || 
-                                          document.querySelector("link[rel='shortcut icon']")
-    
+    const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']") ||
+      document.querySelector("link[rel='shortcut icon']")
+
     if (link && this.originalFavicon) {
       link.href = this.originalFavicon
     }

@@ -53,7 +53,7 @@ export default function ManageTeamPage() {
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null)
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [updatingAvatar, setUpdatingAvatar] = useState(false)
-  const [takenAvatars, setTakenAvatars] = useState<{id: number; teamName: string; teamId: string}[]>([])
+  const [takenAvatars, setTakenAvatars] = useState<{ id: number; teamName: string; teamId: string }[]>([])
   const [showCaptainTransfer, setShowCaptainTransfer] = useState(false)
   const [selectedNewCaptain, setSelectedNewCaptain] = useState<string | null>(null)
   const [transferringCaptain, setTransferringCaptain] = useState(false)
@@ -65,14 +65,14 @@ export default function ManageTeamPage() {
   const loadTeamData = async () => {
     try {
       const supabase = createClient()
-      
+
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (!authUser) {
         router.push('/auth')
         return
       }
-      
+
       setUser(authUser)
 
       // Get team where user is captain using the view
@@ -97,10 +97,10 @@ export default function ManageTeamPage() {
         .eq('team_id', teamData.id)
 
       setTeamMembers(membersData || [])
-      
+
       // Find the substitute player from the queried members
       const substituteMember = membersData?.find((p: any) => p.is_substitute)
-      
+
       setFormData({
         name: teamData.name,
         open_positions: teamData.open_positions || [],
@@ -118,7 +118,7 @@ export default function ManageTeamPage() {
         `)
         .eq('team_id', teamData.id)
         .eq('status', 'pending')
-        .order('created_at', { ascending: false})
+        .order('created_at', { ascending: false })
 
       setJoinRequests(requestsData || [])
 
@@ -133,20 +133,20 @@ export default function ManageTeamPage() {
         .in('status', ['approved', 'Confirmed'])
         .order('registered_at', { ascending: false })
 
-      
+
       // Also check ALL registrations for debugging
       const { data: allRegistrations } = await supabase
         .from('tournament_registrations')
         .select('id, status, tournament_id')
         .eq('team_id', teamData.id)
-      
+
 
       setTournaments(tournamentsData || [])
-      
+
       // Fetch taken avatars
       fetchTakenAvatars()
     } catch (error) {
-      console.error('Error loading team data:', error)
+
     } finally {
       setLoading(false)
     }
@@ -155,7 +155,7 @@ export default function ManageTeamPage() {
   const handleSaveTeam = async () => {
     try {
       const supabase = createClient()
-      
+
       const { error } = await supabase
         .from('teams')
         .update({
@@ -167,20 +167,20 @@ export default function ManageTeamPage() {
         .eq('id', team.id)
 
       if (error) {
-        console.error('Error updating team:', error)
+
         return
       }
 
       // Update substitute status for all players
-      
+
       // First, remove substitute status from all players
       const { error: clearError } = await supabase
         .from('players')
         .update({ is_substitute: false })
         .eq('team_id', team.id)
-      
+
       if (clearError) {
-        console.error('Error clearing substitutes:', clearError)
+
       }
 
       // Then set the selected player as substitute (if any)
@@ -189,9 +189,9 @@ export default function ManageTeamPage() {
           .from('players')
           .update({ is_substitute: true })
           .eq('id', formData.substitute_id)
-        
+
         if (setError) {
-          console.error('Error setting substitute:', setError)
+
         } else {
         }
       }
@@ -199,19 +199,19 @@ export default function ManageTeamPage() {
       setEditing(false)
       loadTeamData() // Refresh data
     } catch (error) {
-      console.error('Error updating team:', error)
+
     }
   }
 
   const handleUpdateTeamAvatar = async (avatarId: number) => {
     if (!team || updatingAvatar) return
-    
+
     try {
       setUpdatingAvatar(true)
       const supabase = createClient()
-      
+
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch('/api/teams/update-avatar', {
         method: 'PUT',
         headers: {
@@ -220,21 +220,21 @@ export default function ManageTeamPage() {
         },
         body: JSON.stringify({ teamId: team.id, avatarId }),
       })
-      
+
       const result = await response.json()
-      
+
       if (response.ok) {
         setTeam((prev: any) => ({ ...prev, team_avatar: avatarId }))
         setShowAvatarPicker(false)
         // Refresh taken avatars list
         fetchTakenAvatars()
       } else {
-        console.error('Failed to update team avatar:', result.error)
+
         // Show user-friendly error message
         alert(result.message || result.error || 'Failed to update avatar')
       }
     } catch (error) {
-      console.error('Error updating team avatar:', error)
+
       alert('Error updating team avatar')
     } finally {
       setUpdatingAvatar(false)
@@ -249,21 +249,21 @@ export default function ManageTeamPage() {
         setTakenAvatars(data.takenAvatars || [])
       }
     } catch (error) {
-      console.error('Error fetching taken avatars:', error)
+
     }
   }
 
   const handleRemoveMember = async (memberId: string) => {
     try {
       const supabase = createClient()
-      
+
       // Get the player's name before removing
       const { data: playerData } = await supabase
         .from('players')
         .select('summoner_name')
         .eq('id', memberId)
         .single()
-      
+
       // Remove member from team
       const { error } = await supabase
         .from('players')
@@ -271,7 +271,7 @@ export default function ManageTeamPage() {
         .eq('id', memberId)
 
       if (error) {
-        console.error('Error removing member:', error)
+
         return
       }
 
@@ -306,13 +306,13 @@ export default function ManageTeamPage() {
         }])
 
       if (notificationError) {
-        console.error('Error creating removal notification:', notificationError)
+
       } else {
       }
 
       loadTeamData() // Refresh data
     } catch (error) {
-      console.error('Error removing member:', error)
+
     }
   }
 
@@ -336,14 +336,14 @@ export default function ManageTeamPage() {
         const error = await response.json()
         // Only log if it's not the "already processed" error
         if (error.error !== 'Join request not found or already processed') {
-          console.error(`Error ${action}ing join request:`, error.error)
+
         } else {
           // Request was already processed, just refresh
           loadTeamData()
         }
       }
     } catch (error) {
-      console.error(`Error ${action}ing join request:`, error)
+
     }
   }
 
@@ -363,14 +363,14 @@ export default function ManageTeamPage() {
 
     try {
       const supabase = createClient()
-      
+
       // Get all team members (excluding captain) to notify them
       const { data: members } = await supabase
         .from('players')
         .select('id, summoner_name')
         .eq('team_id', team.id)
         .neq('id', user.id)  // Exclude captain
-      
+
       // Send notifications to all team members
       if (members && members.length > 0) {
         const notifications = members.map(member => ({
@@ -396,7 +396,7 @@ export default function ManageTeamPage() {
         .eq('team_id', team.id)
 
       if (memberError) {
-        console.error('Error removing team members:', memberError)
+
         return
       }
 
@@ -407,14 +407,14 @@ export default function ManageTeamPage() {
         .eq('id', team.id)
 
       if (teamError) {
-        console.error('Error deleting team:', teamError)
+
         return
       }
 
       // Redirect to home after successful deletion
       router.push('/')
     } catch (error) {
-      console.error('Error deleting team:', error)
+
     }
   }
 
@@ -440,10 +440,10 @@ export default function ManageTeamPage() {
         router.push(`/teams/${team.id}`)
       } else {
         const errorData = await response.json()
-        console.error('Error transferring captain:', errorData)
+
       }
     } catch (error) {
-      console.error('Error transferring captain:', error)
+
     } finally {
       setTransferringCaptain(false)
     }
@@ -539,11 +539,11 @@ export default function ManageTeamPage() {
                         placeholder="Enter team name"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium mb-2">Team Avatar</label>
                       <div className="flex items-center gap-4">
-                        <AvatarPreview 
+                        <AvatarPreview
                           avatarId={team?.team_avatar}
                           showEditButton={true}
                           onEdit={() => setShowAvatarPicker(true)}
@@ -646,7 +646,7 @@ export default function ManageTeamPage() {
                     <div>
                       <h3 className="text-xl font-semibold">{team.name}</h3>
                     </div>
-                    
+
                     <div>
                       <p className="text-sm font-medium mb-2">Looking For:</p>
                       <div className="flex flex-wrap gap-2">
@@ -662,9 +662,9 @@ export default function ManageTeamPage() {
 
                     <div>
                       <p className="text-sm font-medium">Status:</p>
-                      <Badge 
-                        variant={team.recruiting_status === 'Open' ? 'default' : 
-                                team.recruiting_status === 'Closed' ? 'secondary' : 'outline'}
+                      <Badge
+                        variant={team.recruiting_status === 'Open' ? 'default' :
+                          team.recruiting_status === 'Closed' ? 'secondary' : 'outline'}
                       >
                         {team.recruiting_status}
                       </Badge>
@@ -687,8 +687,8 @@ export default function ManageTeamPage() {
                   {teamMembers.map(member => (
                     <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3 min-w-0">
-                        <Image 
-                          src={getRankImage(member.tier)} 
+                        <Image
+                          src={getRankImage(member.tier)}
                           alt={member.tier}
                           width={40}
                           height={40}
@@ -715,7 +715,7 @@ export default function ManageTeamPage() {
                             {member.main_role} • {member.tier}
                           </p>
                         </div>
-                      </div>  
+                      </div>
                       {member.id !== team.captain_id && (
                         <Button
                           size="sm"
@@ -727,7 +727,7 @@ export default function ManageTeamPage() {
                       )}
                     </div>
                   ))}
-                  
+
                   {teamMembers.length === 0 && (
                     <p className="text-center text-muted-foreground py-8">
                       No team members yet. Invite players to join your team!
@@ -799,17 +799,17 @@ export default function ManageTeamPage() {
                     Find Players
                   </Link>
                 </Button>
-                
+
                 <Button asChild variant="outline" className="w-full">
                   <Link href="/teams">
                     <Users className="w-4 h-4 mr-2" />
                     Browse Teams
                   </Link>
                 </Button>
-                
-                <Button 
+
+                <Button
                   onClick={handleDeleteTeam}
-                  variant="destructive" 
+                  variant="destructive"
                   className="w-full"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -818,7 +818,7 @@ export default function ManageTeamPage() {
 
                 <Button
                   onClick={() => setShowCaptainTransfer(true)}
-                  variant="outline" 
+                  variant="outline"
                   className="w-full"
                 >
                   <Crown className="w-4 h-4 mr-2" />
@@ -865,10 +865,10 @@ export default function ManageTeamPage() {
                       const tournament = reg.tournament
                       const slug = tournament?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'tournament'
                       const tournamentUrl = `/tournaments/${tournament?.tournament_number}/${slug}`
-                      
+
                       return (
-                        <Link 
-                          key={reg.id} 
+                        <Link
+                          key={reg.id}
                           href={tournamentUrl}
                           className="block p-3 border rounded-lg hover:border-primary/50 hover:bg-secondary/20 transition-all"
                         >
@@ -925,7 +925,7 @@ export default function ManageTeamPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       {/* Captain Transfer Dialog */}
       <Dialog open={showCaptainTransfer} onOpenChange={setShowCaptainTransfer}>
         <DialogContent className="max-w-md">
@@ -943,11 +943,10 @@ export default function ManageTeamPage() {
                   <button
                     key={member.id}
                     onClick={() => setSelectedNewCaptain(member.id)}
-                    className={`w-full p-3 text-left rounded-lg border transition-colors ${
-                      selectedNewCaptain === member.id
+                    className={`w-full p-3 text-left rounded-lg border transition-colors ${selectedNewCaptain === member.id
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:border-primary/50'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
@@ -985,7 +984,7 @@ export default function ManageTeamPage() {
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Avatar Picker Dialog */}
       <AvatarPicker
         open={showAvatarPicker}

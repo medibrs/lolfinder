@@ -32,15 +32,15 @@ export default function UserManagement() {
       const { data, error } = await supabase
         .from('players')
         .select('id, email, created_at, user_metadata, app_metadata')
-      
+
       if (error) {
-        console.error('Error fetching users:', error)
+
         return
       }
-      
+
       setUsers(data || [])
     } catch (error) {
-      console.error('Error:', error)
+
     } finally {
       setLoading(false)
     }
@@ -50,7 +50,7 @@ export default function UserManagement() {
     setUpdating(userId)
     try {
       const newRole = currentRole === 'admin' ? 'user' : 'admin'
-      
+
       const response = await fetch('/api/admin/set-role', {
         method: 'POST',
         headers: {
@@ -67,13 +67,13 @@ export default function UserManagement() {
       }
 
       // Update local state
-      setUsers(prev => prev.map(user => 
-        user.id === userId 
+      setUsers(prev => prev.map(user =>
+        user.id === userId
           ? { ...user, app_metadata: { ...user.app_metadata, role: newRole } }
           : user
       ))
     } catch (error) {
-      console.error('Error updating role:', error)
+
     } finally {
       setUpdating(null)
     }
@@ -116,9 +116,9 @@ export default function UserManagement() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
-                <Badge 
+                <Badge
                   variant={user.app_metadata?.role === 'admin' ? 'default' : 'secondary'}
                   className="flex items-center gap-1"
                 >
@@ -129,20 +129,20 @@ export default function UserManagement() {
                   )}
                   {user.app_metadata?.role || 'user'}
                 </Badge>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => toggleAdminRole(user.id, user.app_metadata?.role || 'user')}
                   disabled={updating === user.id}
                 >
-                  {updating === user.id ? 'Updating...' : 
-                   user.app_metadata?.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                  {updating === user.id ? 'Updating...' :
+                    user.app_metadata?.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
                 </Button>
               </div>
             </div>
           ))}
-          
+
           {users.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No users found

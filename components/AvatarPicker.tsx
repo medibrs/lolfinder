@@ -32,7 +32,7 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
         setTakenAvatars(data.takenAvatars || [])
       }
     } catch (error) {
-      console.error('Error fetching taken avatars:', error)
+
     }
   }
 

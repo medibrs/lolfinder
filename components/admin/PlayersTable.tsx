@@ -68,7 +68,7 @@ export default function PlayersTable() {
       const result = await response.json()
       setPlayers(Array.isArray(result) ? result : (result.data || []))
     } catch (error) {
-      console.error('Error fetching players:', error)
+
     } finally {
       setLoading(false)
     }
@@ -112,7 +112,7 @@ export default function PlayersTable() {
         }])
 
       if (error) {
-        console.error('Full error object:', error)
+
         throw error
       }
 
@@ -122,7 +122,7 @@ export default function PlayersTable() {
         description: `Your message has been sent to ${selectedPlayer.summoner_name}.`,
       })
     } catch (error: any) {
-      console.error('Error sending message:', error)
+
       toast({
         title: "Error Sending Message",
         description: error.message || "An unexpected error occurred.",
@@ -155,7 +155,7 @@ export default function PlayersTable() {
           description: "The player account has been removed.",
         })
       } catch (error: any) {
-        console.error('Error deleting player:', error)
+
         toast({
           title: "Deletion Failed",
           description: error.message || "Failed to delete player profile.",

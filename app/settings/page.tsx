@@ -39,8 +39,8 @@ export default function SettingsPage() {
     getUser()
   }, [supabase])
 
-  
-  
+
+
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
     setPasswordError('')
@@ -79,7 +79,7 @@ export default function SettingsPage() {
         setPasswordError(error.error || 'Failed to update password')
       }
     } catch (error) {
-      console.error('Error changing password:', error)
+
       setPasswordError('Failed to update password')
     } finally {
       setPasswordLoading(false)
@@ -109,7 +109,7 @@ export default function SettingsPage() {
         alert(error.error || 'Failed to delete account. Please contact support.')
       }
     } catch (error) {
-      console.error('Error deleting account:', error)
+
       alert('Failed to delete account. Please contact support.')
     } finally {
       setDeleteLoading(false)
@@ -163,7 +163,7 @@ export default function SettingsPage() {
                   <NotificationToggle />
                 </div>
               </div>
-              
+
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   <div className="text-blue-600 dark:text-blue-400 mt-0.5">
@@ -229,8 +229,8 @@ export default function SettingsPage() {
                     <h4 className="font-medium">Password</h4>
                     <p className="text-sm text-muted-foreground">Managed by your social login provider</p>
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     disabled
                     className="w-full sm:w-auto"
@@ -238,12 +238,12 @@ export default function SettingsPage() {
                     Change Password
                   </Button>
                 </div>
-                
+
                 <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
                   Since you're logged in via {user.app_metadata.provider || 'a social provider'}, please change your password directly on their platform (Google, Discord, etc.).
                 </div>
               </div>
-              
+
               <div className="space-y-3 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <h4 className="font-medium">Two-Factor Authentication</h4>
@@ -274,8 +274,8 @@ export default function SettingsPage() {
                   Deleting your account will permanently remove all your data including your player profile, teams (if you're a captain), tournament registrations, notifications, and team invitations. You will be signed out and may need to contact support to complete the account removal process.
                 </AlertDescription>
               </Alert>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={handleDeleteAccount}
                 disabled={deleteLoading}
                 className="flex items-center gap-2 w-full sm:w-auto"

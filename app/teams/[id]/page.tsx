@@ -78,7 +78,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [updatingAvatar, setUpdatingAvatar] = useState(false)
-  const [takenAvatars, setTakenAvatars] = useState<{id: number; teamName: string; teamId: string}[]>([])
+  const [takenAvatars, setTakenAvatars] = useState<{ id: number; teamName: string; teamId: string }[]>([])
   const supabase = createClient()
 
   const handleSearchPlayers = () => {
@@ -95,11 +95,11 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleUpdateTeamAvatar = async (avatarId: number) => {
     if (!isCaptain || updatingAvatar) return
-    
+
     try {
       setUpdatingAvatar(true)
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch('/api/teams/update-avatar', {
         method: 'PUT',
         headers: {
@@ -108,21 +108,21 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
         },
         body: JSON.stringify({ teamId: team.id, avatarId }),
       })
-      
+
       const result = await response.json()
-      
+
       if (response.ok) {
         setTeam((prev: any) => ({ ...prev, team_avatar: avatarId }))
         setShowAvatarPicker(false)
         // Refresh taken avatars list
         fetchTakenAvatars()
       } else {
-        console.error('Failed to update team avatar:', result.error)
+
         // Show user-friendly error message
         alert(result.message || result.error || 'Failed to update avatar')
       }
     } catch (error) {
-      console.error('Error updating team avatar:', error)
+
       alert('Error updating team avatar')
     } finally {
       setUpdatingAvatar(false)
@@ -137,7 +137,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
         setTakenAvatars(data.takenAvatars || [])
       }
     } catch (error) {
-      console.error('Error fetching taken avatars:', error)
+
     }
   }
 
@@ -147,7 +147,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
     try {
       setSendingRequest(true)
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch('/api/team-join-requests', {
         method: 'POST',
         headers: {
@@ -165,10 +165,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
         setPendingRequest(data.id)
       } else {
         const error = await response.json()
-        console.error('Error sending join request:', error.error)
+
       }
     } catch (error) {
-      console.error('Error sending join request:', error)
+
     } finally {
       setSendingRequest(false)
     }
@@ -176,18 +176,18 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
 
   const fetchProfileIconUrls = async (members: any[]) => {
     const urls: Record<string, string> = {};
-    
+
     for (const member of members) {
       if (member.profile_icon_id) {
         try {
           const url = await getProfileIconUrl(member.profile_icon_id);
           urls[member.id] = url;
         } catch (error) {
-          console.error(`Failed to fetch profile icon for ${member.summoner_name}:`, error);
+
         }
       }
     }
-    
+
     setProfileIconUrls(urls);
   }
 
@@ -205,25 +205,24 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
             .select('team_id')
             .eq('id', user.id)
             .single()
-          
-          console.log('Player data:', playerData)
-          console.log('Player error:', playerError)
-          
+
+
+
           if (playerError) {
-            console.log('User does not have a player profile')
+
             setHasPlayerProfile(false)
           } else {
-            console.log('User has a player profile')
+
             setHasPlayerProfile(true)
-            
+
             if (playerData?.team_id) {
               const { data: teamData } = await supabase
                 .from('teams')
                 .select('*')
                 .eq('id', playerData.team_id)
                 .single()
-              
-              console.log('User team data:', teamData)
+
+
               setUserTeam(teamData)
             }
 
@@ -235,7 +234,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
               .eq('team_id', id)
               .eq('status', 'pending')
               .single()
-            
+
             if (requestData) {
               setPendingRequest(requestData.id)
             }
@@ -250,7 +249,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
           .single()
 
         if (teamError) {
-          console.error('Error fetching team:', teamError)
+
           return
         }
 
@@ -266,15 +265,15 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
           setMembers(membersData)
           // Fetch profile icon URLs for members
           await fetchProfileIconUrls(membersData)
-          
+
           // Additional check: if current user is in this team's members, ensure userTeam is set
           if (currentUserId && membersData.some(m => m.id === currentUserId)) {
-            console.log('User is a member of this team, setting userTeam')
+
             setUserTeam(teamData)
           }
         }
       } catch (error) {
-        console.error('Error:', error)
+
       } finally {
         setLoading(false)
       }
@@ -317,14 +316,14 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const captain = members.find(m => m.id === team.captain_id)
   const neededRoles = team.open_positions || []
   const teamSize = team.team_size || 5
-  const averageTier = members.length > 0 
+  const averageTier = members.length > 0
     ? members.reduce((acc, m) => {
-        const tierIndex = TIERS.indexOf((m.tier || '').split(' ')[0])
-        return tierIndex >= 0 ? acc + tierIndex : acc
-      }, 0) / members.filter(m => {
-        const tierIndex = TIERS.indexOf((m.tier || '').split(' ')[0])
-        return tierIndex >= 0
-      }).length
+      const tierIndex = TIERS.indexOf((m.tier || '').split(' ')[0])
+      return tierIndex >= 0 ? acc + tierIndex : acc
+    }, 0) / members.filter(m => {
+      const tierIndex = TIERS.indexOf((m.tier || '').split(' ')[0])
+      return tierIndex >= 0
+    }).length
     : 0
 
   return (
@@ -371,8 +370,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                   <div className="relative group flex-shrink-0 mx-auto sm:mx-0">
                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-4 border-border bg-gradient-to-br from-primary/10 to-accent/10">
                       {team.team_avatar ? (
-                        <Image 
-                          src={getTeamAvatarUrl(team.team_avatar)!} 
+                        <Image
+                          src={getTeamAvatarUrl(team.team_avatar)!}
                           alt="Team Avatar"
                           width={96}
                           height={96}
@@ -397,7 +396,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                       </Button>
                     )}
                   </div>
-                  
+
                   <div className="flex-1 text-center sm:text-left">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
                       <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{team.name}</h1>
@@ -469,7 +468,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                   <Badge variant="outline">{members.length}/{teamSize} Members</Badge>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   {members.map(member => (
                     <div key={member.id} className="bg-gradient-to-r from-secondary/20 to-background rounded-lg p-3 sm:p-4 border border-border hover:border-primary/50 transition-all">
@@ -478,7 +477,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                         <div className="relative flex-shrink-0">
                           <div className="relative">
                             {member.profile_icon_id ? (
-                              <Image 
+                              <Image
                                 src={profileIconUrls[member.id] || ''}
                                 alt="Profile Icon"
                                 width={48}
@@ -508,8 +507,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
                             {/* Rank Badge */}
                             <div className="absolute -bottom-1 -right-1">
-                              <Image 
-                                src={getRankImage(member.tier)} 
+                              <Image
+                                src={getRankImage(member.tier)}
                                 alt={member.tier}
                                 width={20}
                                 height={20}
@@ -518,7 +517,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="font-semibold text-foreground truncate">
@@ -534,7 +533,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                               </Badge>
                             )}
                           </div>
-                          
+
                           <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
                             <div className="flex items-center gap-1">
                               <RoleIcon role={member.main_role} size={16} />
@@ -550,7 +549,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                               </>
                             )}
                           </div>
-                          
+
                           {/* Enhanced Rank Display */}
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-sm font-medium text-muted-foreground">Rank:</span>
@@ -566,7 +565,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                               </span>
                             )}
                           </div>
-                          
+
                           {/* Win/Loss Stats */}
                           {(member.wins !== undefined || member.losses !== undefined) && (
                             <div className="flex items-center gap-3 mb-2 p-2 bg-muted/50 rounded text-xs">
@@ -595,7 +594,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                               )}
                             </div>
                           )}
-                          
+
                           {/* Summoner Level */}
                           {member.summoner_level && (
                             <div className="flex items-center gap-2 mb-2">
@@ -603,13 +602,13 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                               <span className="text-sm font-semibold">{member.summoner_level}</span>
                             </div>
                           )}
-                          
+
                           {member.looking_for_team && (
                             <Badge variant="outline" className="text-xs">
                               LFT
                             </Badge>
                           )}
-                          
+
                           <div className="text-xs text-muted-foreground">
                           </div>
                         </div>
@@ -617,20 +616,15 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
                   ))}
                 </div>
-                
+
                 {members.length < teamSize && (
                   <div className="mt-4 p-4 border-2 border-dashed border-border rounded-lg text-center">
                     {(() => {
-                      console.log('UI Check - currentUserId:', currentUserId)
-                      console.log('UI Check - userTeam:', userTeam)
-                      console.log('UI Check - isCaptain:', isCaptain)
-                      console.log('UI Check - recruiting_status:', team.recruiting_status)
-                      console.log('UI Check - pendingRequest:', pendingRequest)
-                      console.log('UI Check - hasPlayerProfile:', hasPlayerProfile)
-                      
+
+
                       const canRequestToJoin = currentUserId && hasPlayerProfile && !userTeam && !isCaptain && team.recruiting_status === 'Open'
-                      console.log('UI Check - canRequestToJoin:', canRequestToJoin)
-                      
+
+
                       return canRequestToJoin ? (
                         // User has no team and can request to join
                         <div className="space-y-3">
@@ -649,7 +643,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
                           ) : (
                             <div className="space-y-2">
-                              <Button 
+                              <Button
                                 onClick={handleRequestToJoin}
                                 disabled={sendingRequest || members.length >= teamSize}
                                 className="w-full bg-primary hover:bg-primary/90"
@@ -725,24 +719,24 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                     <h3 className="font-bold">Team Actions</h3>
                   </div>
                   <div className="space-y-3">
-                    <Button 
-                      onClick={() => setShowAddMember(!showAddMember)} 
+                    <Button
+                      onClick={() => setShowAddMember(!showAddMember)}
                       className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
                       {showAddMember ? 'Hide Invite Form' : 'Find Players to Invite'}
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleEditTeam}
-                      variant="outline" 
+                      variant="outline"
                       className="w-full"
                     >
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Team
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleRegisterForTournament}
-                      variant="outline" 
+                      variant="outline"
                       className="w-full"
                     >
                       <Trophy className="h-4 w-4 mr-2" />
@@ -769,7 +763,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                         <option key={role} value={role}>{role}</option>
                       ))}
                     </select>
-                    <Button 
+                    <Button
                       onClick={handleSearchPlayers}
                       className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
                     >
@@ -835,7 +829,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
             </Card>
           </div>
         </div>
-        
+
         {/* Avatar Picker Dialog */}
         <AvatarPicker
           open={showAvatarPicker}

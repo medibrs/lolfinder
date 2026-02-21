@@ -38,7 +38,7 @@ export class BrowserNotificationManager {
     return BrowserNotificationManager.instance
   }
 
-  
+
   async requestPermission(): Promise<NotificationPermission> {
     if (typeof Notification === 'undefined') {
       return 'default'
@@ -50,18 +50,16 @@ export class BrowserNotificationManager {
 
     try {
       // On mobile, permissions often need to be requested from a user gesture
-      
+
       // Check if we're in a secure context (required for notifications)
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        console.warn('⚠️ Notifications require HTTPS on most devices')
-      }
+
 
       const permission = await Notification.requestPermission()
       this.permission = permission
-      
+
       return permission
     } catch (error) {
-      console.error('❌ Error requesting notification permission:', error)
+
       return 'default'
     }
   }
@@ -75,7 +73,7 @@ export class BrowserNotificationManager {
   }
 
   async showNotification(notification: NotificationOptions): Promise<boolean> {
-    
+
     if (!this.isSupported()) {
       return false
     }
@@ -86,7 +84,7 @@ export class BrowserNotificationManager {
     }
 
     const permission = await this.requestPermission()
-    
+
     if (permission !== 'granted') {
       return false
     }
@@ -127,13 +125,13 @@ export class BrowserNotificationManager {
 
       return true
     } catch (error) {
-      console.error('❌ Error showing browser notification:', error)
-      
+
+
       // Fallback for mobile: show an in-app notification
       if (this.isMobile()) {
         this.showMobileFallback(notification)
       }
-      
+
       return false
     }
   }
@@ -147,10 +145,10 @@ export class BrowserNotificationManager {
     // Check if the page is visible and the window is focused
     const isPageVisible = !document.hidden
     const isWindowFocused = document.hasFocus()
-    
+
     // Also check if the user was recently active (within last 30 seconds)
     const isRecentlyActive = Date.now() - this.lastActivityTime < 30000
-    
+
     return isPageVisible && isWindowFocused && isRecentlyActive
   }
 
@@ -175,7 +173,7 @@ export class BrowserNotificationManager {
 
     // Track various user interactions
     const events = [
-      'mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 
+      'mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart',
       'click', 'keydown', 'keyup', 'focus', 'blur'
     ]
 
@@ -201,7 +199,7 @@ export class BrowserNotificationManager {
   }
 
   private showMobileFallback(notification: NotificationOptions): void {
-    
+
     // Create a simple in-app notification banner
     const fallback = document.createElement('div')
     fallback.style.cssText = `
@@ -218,7 +216,7 @@ export class BrowserNotificationManager {
       font-family: system-ui, -apple-system, sans-serif;
       animation: slideDown 0.3s ease-out;
     `
-    
+
     fallback.innerHTML = `
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <div>
@@ -236,7 +234,7 @@ export class BrowserNotificationManager {
         ">✕</button>
       </div>
     `
-    
+
     // Add animation
     const style = document.createElement('style')
     style.textContent = `
@@ -246,9 +244,9 @@ export class BrowserNotificationManager {
       }
     `
     document.head.appendChild(style)
-    
+
     document.body.appendChild(fallback)
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
       if (fallback.parentElement) {
@@ -267,15 +265,15 @@ export class BrowserNotificationManager {
       read: notification.read,
       user_id: notification.user_id
     }
-    
+
     // Try to extract message from different possible fields
-    const message = notification.message || 
-                   notification.content || 
-                   notification.body || 
-                   notification.text ||
-                   (notification.data && notification.data.message) ||
-                   'You have a new notification'
-    
+    const message = notification.message ||
+      notification.content ||
+      notification.body ||
+      notification.text ||
+      (notification.data && notification.data.message) ||
+      'You have a new notification'
+
     const baseContent: NotificationData = {
       title: 'New Notification',
       body: message,
@@ -343,7 +341,7 @@ export class BrowserNotificationManager {
         }
 
       default:
-        
+
         // Create a more informative default message
         let defaultBody = message
         if (message === 'You have a new notification') {
@@ -357,7 +355,7 @@ export class BrowserNotificationManager {
             defaultBody = 'You have a new notification'
           }
         }
-        
+
         return {
           ...baseContent,
           title: notification.type ? `📬 ${notification.type}` : 'New Notification',

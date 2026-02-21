@@ -48,7 +48,7 @@ export default function CreateTeamPage() {
           await checkTeamEligibility(user.id)
         }
       } catch (error) {
-        console.error('Error getting current user:', error)
+
       } finally {
         setCheckingStatus(false)
       }
@@ -99,7 +99,7 @@ export default function CreateTeamPage() {
         setBlockReason('already_created_team')
       }
     } catch (error) {
-      console.error('Error checking team eligibility:', error)
+
       setCanCreateTeam(false)
     }
   }
@@ -141,7 +141,7 @@ export default function CreateTeamPage() {
         }, 2000)
       } else {
         const errorData = await response.json()
-        console.error('Error creating team:', errorData)
+
 
         // Handle specific error messages
         if (errorData.error?.includes('duplicate key') || errorData.error?.includes('teams_name_key')) {
@@ -155,7 +155,7 @@ export default function CreateTeamPage() {
         }
       }
     } catch (error) {
-      console.error('Error creating team:', error)
+
       setError('Failed to create team. Please try again.')
     } finally {
       setLoading(false)

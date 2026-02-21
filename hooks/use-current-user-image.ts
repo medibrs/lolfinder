@@ -8,7 +8,7 @@ export const useCurrentUserImage = () => {
     const fetchUserImage = async () => {
       const { data, error } = await createClient().auth.getSession()
       if (error) {
-        console.error(error)
+
       }
 
       setImage(data.session?.user.user_metadata.avatar_url ?? null)

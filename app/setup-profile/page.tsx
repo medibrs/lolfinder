@@ -53,30 +53,30 @@ export default function SetupProfilePage() {
     const loadExistingProfile = async () => {
       try {
         const supabase = createClient()
-        
+
         // Get current session first
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-        
-        
+
+
         if (sessionError || !sessionData?.session?.user) {
-          console.error('No authenticated session found:', sessionError)
+
           return
         }
-        
+
         const user = sessionData.session.user
         setUserId(user.id)
-        
+
         // Check if user already has a profile
         const { data: existingProfile, error: profileError } = await supabase
           .from('players')
           .select('*')
           .eq('id', user.id)
           .maybeSingle() // Use maybeSingle() instead of single() to handle 0 rows
-          
+
         if (profileError) {
-          console.error('Profile error details:', profileError)
+
         }
-        
+
         if (existingProfile) { // Check if profile exists (no error check needed with maybeSingle)
           // Profile exists, load for editing
           setFormData({
@@ -96,7 +96,7 @@ export default function SetupProfilePage() {
               .select('*')
               .eq('id', existingProfile.team_id)
               .single()
-            
+
             // Double-check by verifying there's a player record with this team_id
             if (!teamError && teamData) {
               const { data: verifyMember } = await supabase
@@ -105,7 +105,7 @@ export default function SetupProfilePage() {
                 .eq('id', user.id)
                 .eq('team_id', existingProfile.team_id)
                 .single()
-              
+
               if (verifyMember) {
                 setUserTeam(teamData)
               } else {
@@ -120,7 +120,7 @@ export default function SetupProfilePage() {
           }
         }
       } catch (error) {
-        console.error('Error loading profile:', error)
+
       }
     }
     loadExistingProfile()
@@ -128,9 +128,9 @@ export default function SetupProfilePage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value 
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }))
   }
 
@@ -142,7 +142,7 @@ export default function SetupProfilePage() {
     try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch('/api/teams/leave', {
         method: 'POST',
         headers: {
@@ -157,10 +157,10 @@ export default function SetupProfilePage() {
         window.location.reload()
       } else {
         const error = await response.json()
-        console.error('Error leaving team:', error.error)
+
       }
     } catch (error) {
-      console.error('Error leaving team:', error)
+
     }
   }
 
@@ -172,10 +172,10 @@ export default function SetupProfilePage() {
     try {
       const endpoint = isEditing ? `/api/players/${userId}` : '/api/players'
       const method = isEditing ? 'PUT' : 'POST'
-      
+
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       const response = await fetch(endpoint, {
         method,
         headers: {
@@ -189,13 +189,13 @@ export default function SetupProfilePage() {
         router.push('/')
       } else {
         const errorData = await response.json()
-        console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, errorData)
+
         // Show Riot API validation errors to the user
         const errorMessage = errorData.error || errorData.details?.[0]?.message || 'Failed to save profile'
         setRiotError(errorMessage)
       }
     } catch (error) {
-      console.error(`Error ${isEditing ? 'updating' : 'creating'} profile:`, error)
+
       setRiotError('An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -356,9 +356,9 @@ export default function SetupProfilePage() {
                           </Badge>
                         )}
                         {formData.looking_for_team && (
-                          <Badge 
-                            variant="default" 
-                            className="bg-green-500 text-xs cursor-help" 
+                          <Badge
+                            variant="default"
+                            className="bg-green-500 text-xs cursor-help"
                             title="Looking for team"
                           >
                             LFT
@@ -387,8 +387,8 @@ export default function SetupProfilePage() {
                 </div>
 
                 {/* Submit Button */}
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full bg-purple-600 hover:bg-purple-700"
                   disabled={loading}
                 >

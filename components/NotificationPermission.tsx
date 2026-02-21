@@ -15,13 +15,13 @@ export default function NotificationPermission() {
     setIsSupported(notificationManager.isSupported())
     const currentPermission = notificationManager.isPermissionGranted() ? 'granted' : 'default'
     setPermission(currentPermission)
-    
+
     // Show prompt after a delay if permission is default
     if (currentPermission === 'default') {
       const timer = setTimeout(() => {
         setShowPrompt(true)
       }, 5000) // Show after 5 seconds
-      
+
       return () => clearTimeout(timer)
     }
   }, [])
@@ -33,7 +33,7 @@ export default function NotificationPermission() {
       const result = await notificationManager.requestPermission()
       setPermission(result)
       setShowPrompt(false)
-      
+
       if (result === 'granted') {
         // Show a test notification
         await notificationManager.showNotification({
@@ -43,7 +43,7 @@ export default function NotificationPermission() {
         })
       }
     } catch (error) {
-      console.error('Error requesting notification permission:', error)
+
     }
   }
 
@@ -66,12 +66,12 @@ export default function NotificationPermission() {
         >
           <X className="w-4 h-4" />
         </button>
-        
+
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
             <Bell className="w-5 h-5 text-primary" />
           </div>
-          
+
           <div className="flex-1">
             <h3 className="font-semibold text-foreground mb-1">
               Stay Updated
@@ -79,7 +79,7 @@ export default function NotificationPermission() {
             <p className="text-sm text-muted-foreground mb-3">
               Enable browser notifications to get instant updates about tournaments, team invitations, and important announcements.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={requestPermission}

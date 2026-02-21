@@ -8,7 +8,7 @@ export const useCurrentUserName = () => {
     const fetchProfileName = async () => {
       try {
         const supabase = createClient()
-        
+
         // Get current user
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
@@ -25,7 +25,7 @@ export const useCurrentUserName = () => {
 
         setName(playerData?.summoner_name ?? 'Player')
       } catch (error) {
-        console.error('Error fetching user name:', error)
+
         setName('?')
       }
     }
