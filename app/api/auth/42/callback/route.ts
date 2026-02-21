@@ -76,9 +76,13 @@ export async function GET(request: Request) {
         })
 
         // It's completely fine if the user already exists (they've logged in before)
-        if (createError && !createError.message.includes('already exists') && !createError.message.includes('already registered')) {
+        if (createError &&
+            !createError.message.includes('already exists') &&
+            !createError.message.includes('already registered') &&
+            createError.code !== 'email_exists'
+        ) {
             console.error("42 Auth Provision Error:", createError)
-            return NextResponse.redirect(`${origin}/auth?error=Failed+to+provision+Supabase+user`)
+            return NextResponse.redirect(`${origin}/auth?error=Failed+to+provision+Supabase+user:${encodeURIComponent(createError.message || 'unknown')}`)
         }
 
         // 5. Generate a backend magic link session
