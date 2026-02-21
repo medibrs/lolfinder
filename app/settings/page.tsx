@@ -104,6 +104,10 @@ export default function SettingsPage() {
       if (response.ok) {
         const data = await response.json()
         alert(data.message || 'Account deleted successfully.')
+
+        // Explicitly clear the client-side session so the React context completely wipes
+        await supabase.auth.signOut()
+
         router.push('/')
       } else {
         const error = await response.json()
