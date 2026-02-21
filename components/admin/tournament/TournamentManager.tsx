@@ -129,7 +129,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
       toast({ title: `Promoted ${promotions.length} teams successfully` })
       setPromoteDialogOpen(false)
     } catch (error) {
-      toast({ title: "Promotion failed", description: error.message, variant: "destructive" })
+      toast({ title: "Promotion failed", description: (error as any).message, variant: "destructive" })
     }
   }
 
@@ -163,7 +163,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
     } catch (error) {
       toast({
         title: "Failed to add participant",
-        description: error.message,
+        description: (error as any).message,
         variant: "destructive"
       })
     }
@@ -277,7 +277,7 @@ export default function TournamentManager({ tournamentId, onClose }: TournamentM
     } catch (error) {
       toast({
         title: "Update failed",
-        description: error.message,
+        description: (error as any).message,
         variant: "destructive"
       })
     }

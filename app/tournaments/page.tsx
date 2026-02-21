@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CheckCircle, XCircle } from 'lucide-react'
+import { CheckCircle, XCircle, Calendar, Clock, Trophy, Users } from 'lucide-react'
 
 interface Tournament {
   id: string
@@ -21,6 +21,7 @@ interface Tournament {
   tournament_number?: number
   created_at: string
   updated_at: string
+  tournament_participants?: { count: number }[]
 }
 
 export default function TournamentsPage() {
@@ -137,7 +138,10 @@ export default function TournamentsPage() {
       // Fetch tournaments data
       const { data, error } = await supabase
         .from('tournaments')
-        .select('*')
+        .select(`
+          *,
+          tournament_participants(count)
+        `)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -270,44 +274,21 @@ export default function TournamentsPage() {
           <div className="grid grid-cols-1 gap-4">
             {/* Skeleton loaders for tournaments - matching card preview design */}
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="relative border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-300 group p-0">
-                {/* Full Card Background Image */}
-                <div className="absolute inset-0 bg-cover bg-top opacity-50">
-                  <Skeleton className="w-full h-full" />
-                </div>
+              <Card key={i} className="relative border-zinc-800/50 overflow-hidden group p-0 min-h-[300px] md:min-h-[360px] flex flex-col justify-between bg-zinc-900/50">
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/70 pointer-events-none" />
 
-                {/* Tournament Header - matching h-28 md:h-32 */}
-                <div className="relative h-28 md:h-32">
-                  <div className="relative h-full flex flex-col justify-end p-4 md:p-6">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <Skeleton className="h-6 md:h-8 w-3/4" />
-                        <Skeleton className="h-6 w-20 rounded" />
-                      </div>
-                      <Skeleton className="h-4 w-full" />
-                    </div>
+                {/* Header Skeleton */}
+                <div className="relative p-6 md:p-8 z-10 w-full">
+                  <div className="flex items-start justify-between gap-4">
+                    <Skeleton className="h-10 w-2/3 md:w-1/2 bg-white/10 rounded-lg" />
+                    <Skeleton className="h-8 w-24 bg-white/10 rounded-full" />
                   </div>
                 </div>
 
-                {/* Tournament Details - Compact blur section */}
-                <div className="relative px-4 md:px-6 py-3 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50">
-                  <div className="grid grid-cols-3 gap-2 md:gap-8 mb-3">
-                    <div className="text-center md:text-left">
-                      <Skeleton className="h-3 w-8 mb-1" />
-                      <Skeleton className="h-4 w-12" />
-                    </div>
-                    <div className="text-center md:text-left">
-                      <Skeleton className="h-3 w-8 mb-1" />
-                      <Skeleton className="h-4 w-16" />
-                    </div>
-                    <div className="text-center md:text-left">
-                      <Skeleton className="h-3 w-8 mb-1" />
-                      <Skeleton className="h-4 w-8" />
-                    </div>
-                  </div>
-
-                  {/* Registration Button Skeleton */}
-                  <Skeleton className="h-10 w-full rounded" />
+                {/* Footer Skeleton */}
+                <div className="relative p-6 md:p-8 z-10 flex flex-col xl:flex-row xl:items-end justify-between gap-6 mt-auto">
+                  <Skeleton className="h-[76px] w-full xl:w-[450px] bg-white/5 rounded-2xl" />
+                  <Skeleton className="h-[60px] w-full xl:w-[200px] bg-white/10 rounded-2xl" />
                 </div>
               </Card>
             ))}
@@ -316,109 +297,146 @@ export default function TournamentsPage() {
           <div className="grid grid-cols-1 gap-4">
             {tournaments.length > 0 ? (
               tournaments.map(tournament => {
+                const participantCount = tournament.tournament_participants?.[0]?.count || 0
                 const tournamentStatus = getTournamentStatus(tournament.start_date, tournament.end_date)
                 const startDate = new Date(tournament.start_date)
                 const endDate = new Date(tournament.end_date)
-                const dateRange = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
 
                 return (
                   <Card
                     key={tournament.id}
-                    className="relative border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-300 group p-0 cursor-pointer"
+                    className="relative border-zinc-800/50 overflow-hidden hover:border-primary/50 transition-all duration-500 group p-0 cursor-pointer shadow-2xl min-h-[300px] md:min-h-[360px] flex flex-col justify-between"
                     onClick={() => handleTournamentClick(tournament)}
                   >
                     {/* Full Card Background Image */}
                     <div
-                      className="absolute inset-0 bg-cover bg-top pointer-events-none"
+                      className="absolute inset-0 bg-cover bg-center pointer-events-none transition-transform duration-1000 group-hover:scale-105"
                       style={{
                         backgroundImage: 'url(/leet_lol_header.jpg)',
-                        filter: 'brightness(0.6)'
+                        filter: 'brightness(0.7) contrast(1.15) saturate(1.1)'
                       }}
                     />
 
-                    {/* Tournament Header */}
-                    <div className="relative h-28 md:h-32 pointer-events-none">
-                      <div className="relative h-full flex flex-col justify-end p-4 md:p-6">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-lg md:text-2xl font-bold text-white group-hover:text-primary transition-colors drop-shadow-lg line-clamp-2">{tournament.name}</h3>
-                            <div className="flex-shrink-0">
-                              {tournamentStatus.status === 'upcoming' && (
-                                <span className="px-2 md:px-3 py-1 rounded-md font-semibold text-xs bg-orange-600 text-white whitespace-nowrap shadow-lg">
-                                  Upcoming
-                                </span>
-                              )}
-                              {tournamentStatus.status === 'in-progress' && (
-                                <span className="px-2 md:px-3 py-1 rounded-md font-semibold text-xs bg-green-600 text-white whitespace-nowrap animate-pulse shadow-lg">
-                                  Live
-                                </span>
-                              )}
-                              {tournamentStatus.status === 'completed' && (
-                                <span className="px-2 md:px-3 py-1 rounded-md font-semibold text-xs bg-zinc-700 text-zinc-300 whitespace-nowrap shadow-lg">
-                                  Completed
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-zinc-300 text-xs md:text-sm drop-shadow-md line-clamp-2">{tournament.description || 'No description available'}</p>
+                    {/* Gradient Overlay for Text Legibility */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/70 pointer-events-none" />
+
+                    {/* Tournament Header Content */}
+                    <div className="relative p-6 md:p-8 z-10 pointer-events-none w-full">
+                      <div className="flex items-start justify-between gap-4">
+                        <h3 className="text-2xl md:text-4xl font-black text-white group-hover:text-primary transition-colors tracking-tight line-clamp-2 drop-shadow-2xl max-w-[70%] md:max-w-[80%] leading-tight">
+                          {tournament.name}
+                        </h3>
+                        <div className="flex-shrink-0">
+                          {tournamentStatus.status === 'upcoming' && (
+                            <span className="px-4 py-1.5 rounded-full font-bold text-xs bg-orange-500 text-white uppercase tracking-widest shadow-[0_0_15px_rgba(249,115,22,0.4)]">
+                              Upcoming
+                            </span>
+                          )}
+                          {tournamentStatus.status === 'in-progress' && (
+                            <span className="px-4 py-1.5 rounded-full font-bold text-xs bg-green-500 text-white uppercase tracking-widest shadow-[0_0_15px_rgba(34,197,94,0.4)] flex items-center gap-2 animate-pulse">
+                              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                              Live
+                            </span>
+                          )}
+                          {tournamentStatus.status === 'completed' && (
+                            <span className="px-4 py-1.5 rounded-full font-bold text-xs bg-zinc-700 text-zinc-200 uppercase tracking-widest shadow-md">
+                              Finished
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Tournament Details - Compact blur section */}
-                    <div className="relative px-4 md:px-6 py-3 bg-zinc-900/60 backdrop-blur-sm border-t border-zinc-700/50 pointer-events-none">
-                      <div className="grid grid-cols-3 gap-2 md:gap-8 mb-3">
-                        <div className="text-center md:text-left">
-                          <p className="text-zinc-400 text-[10px] md:text-xs uppercase tracking-wider">Date</p>
-                          <p className="text-white font-semibold text-xs md:text-sm">{dateRange}</p>
+                    {/* Bottom Stats & Actions */}
+                    <div className="relative p-6 md:p-8 z-10 flex flex-col xl:flex-row xl:items-end justify-between gap-6 pointer-events-none mt-auto">
+                      {/* Stats Unified Bar */}
+                      <div className="bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl p-1 flex items-center gap-1 flex-wrap sm:flex-nowrap shadow-2xl pointer-events-auto">
+                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
+                          <div className="p-2.5 bg-orange-500/20 rounded-xl shadow-inner">
+                            <Calendar className="h-5 w-5 text-orange-400" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-widest mb-0.5">Start</span>
+                            <span className="text-sm font-bold text-white whitespace-nowrap">
+                              {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-center md:text-left">
-                          <p className="text-zinc-400 text-[10px] md:text-xs uppercase tracking-wider">Prize</p>
-                          <p className="text-white font-semibold text-xs md:text-sm">{tournament.prize_pool || 'TBD'}</p>
+
+                        <div className="hidden sm:block w-px h-10 bg-white/10 mx-1" />
+
+                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
+                          <div className="p-2.5 bg-yellow-500/20 rounded-xl shadow-inner">
+                            <Trophy className="h-5 w-5 text-yellow-400" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-widest mb-0.5">Prize</span>
+                            <span className="text-sm font-bold text-white whitespace-nowrap">{tournament.prize_pool || 'TBD'}</span>
+                          </div>
                         </div>
-                        <div className="text-center md:text-left">
-                          <p className="text-zinc-400 text-[10px] md:text-xs uppercase tracking-wider">Teams</p>
-                          <p className="text-orange-500 font-semibold text-xs md:text-sm">{tournament.max_teams}</p>
+
+                        <div className="hidden sm:block w-px h-10 bg-white/10 mx-1" />
+
+                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
+                          <div className="p-2.5 bg-blue-500/20 rounded-xl shadow-inner">
+                            <Users className="h-5 w-5 text-blue-400" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-widest mb-0.5">Entry</span>
+                            <span className="text-sm font-bold text-white whitespace-nowrap">
+                              {participantCount} <span className="text-zinc-500">/ {tournament.max_teams}</span>
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Registration Button */}
-                      {user && userTeam ? (
-                        registrationStatuses[tournament.id] === 'approved' ? (
-                          <div className="w-full py-2.5 px-4 rounded-md bg-green-600/20 border border-green-600/50 text-green-400 font-semibold text-sm text-center flex items-center justify-center gap-2 pointer-events-none">
-                            <CheckCircle className="h-4 w-4" />
-                            Registered
+                      {/* Registration Action */}
+                      <div className="pointer-events-auto shrink-0 w-full xl:w-auto">
+                        {user && userTeam ? (
+                          registrationStatuses[tournament.id] === 'approved' ? (
+                            <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-green-500/10 border border-green-500/30 text-green-400 font-black text-sm text-center flex items-center justify-center gap-2 shadow-lg uppercase tracking-widest">
+                              <CheckCircle className="h-5 w-5" /> REGISTERED
+                            </div>
+                          ) : registrationStatuses[tournament.id] === 'pending' ? (
+                            <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-black text-sm text-center flex items-center justify-center gap-2 shadow-lg uppercase tracking-widest">
+                              <Clock className="h-5 w-5" /> PENDING APPROVAL
+                            </div>
+                          ) : registrationStatuses[tournament.id] === 'rejected' ? (
+                            <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-500 font-black text-sm text-center flex items-center justify-center gap-2 shadow-lg uppercase tracking-widest">
+                              <XCircle className="h-5 w-5" /> DECLINED
+                            </div>
+                          ) : tournamentStatus.status === 'upcoming' ? (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRegister(tournament.id)
+                              }}
+                              disabled={registering === tournament.id}
+                              className="w-full xl:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-black text-sm px-10 py-7 rounded-2xl shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:shadow-[0_0_30px_rgba(var(--primary),0.5)] transition-all duration-300 hover:-translate-y-1 active:translate-y-0 uppercase tracking-widest"
+                            >
+                              {registering === tournament.id ? 'REGISTERING...' : 'REGISTER NOW'}
+                            </Button>
+                          ) : (
+                            <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-zinc-800/80 border border-white/5 text-zinc-400 font-black text-sm text-center shadow-lg uppercase tracking-widest">
+                              CLOSED
+                            </div>
+                          )
+                        ) : user ? (
+                          <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-zinc-900/80 backdrop-blur border border-white/10 text-zinc-400 font-black text-sm text-center shadow-lg uppercase tracking-widest">
+                            JOIN A TEAM TO PLAY
                           </div>
-                        ) : registrationStatuses[tournament.id] === 'pending' ? (
-                          <div className="w-full py-2.5 px-4 rounded-md bg-yellow-600/20 border border-yellow-600/50 text-yellow-400 font-semibold text-sm text-center pointer-events-none">
-                            ⏳ Pending Approval
-                          </div>
-                        ) : registrationStatuses[tournament.id] === 'rejected' ? (
-                          <div className="w-full py-2.5 px-4 rounded-md bg-red-600/20 border border-red-600/50 text-red-400 font-semibold text-sm text-center flex items-center justify-center gap-2 pointer-events-none">
-                            <XCircle className="h-4 w-4" />
-                            Registration Declined
-                          </div>
-                        ) : tournamentStatus.status === 'upcoming' ? (
+                        ) : (
                           <Button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleRegister(tournament.id)
+                              router.push('/auth')
                             }}
-                            disabled={registering === tournament.id}
-                            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold pointer-events-auto"
+                            className="w-full xl:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-black text-sm px-10 py-7 rounded-2xl shadow-xl transition-all duration-300 hover:-translate-y-1 active:translate-y-0 uppercase tracking-widest"
                           >
-                            {registering === tournament.id ? 'Registering...' : 'Register Team'}
+                            LOGIN TO REGISTER
                           </Button>
-                        ) : (
-                          <div className="w-full py-2.5 px-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-500 font-semibold text-sm text-center pointer-events-none">
-                            Registration Closed
-                          </div>
-                        )
-                      ) : user ? (
-                        <div className="w-full py-2.5 px-4 rounded-md bg-zinc-800/50 border border-zinc-700 text-zinc-400 font-semibold text-sm text-center pointer-events-none">
-                          Create a Team First
-                        </div>
-                      ) : null}
+                        )}
+                      </div>
                     </div>
                   </Card>
                 )

@@ -10,7 +10,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    
+
     const responseSchema = z.object({
       action: z.enum(['accept', 'reject']),
     });
@@ -46,7 +46,7 @@ export async function PUT(
     // Get the invitation
     console.log('Looking for invitation with ID:', id)
     console.log('Current player ID:', currentPlayer.id)
-    
+
     const { data: invitation, error: invitationError } = await supabase
       .from('team_invitations')
       .select(`
@@ -68,7 +68,7 @@ export async function PUT(
     if (validatedData.action === 'accept') {
       console.log('Accepting invitation for user:', currentPlayer.id)
       console.log('Team to join:', invitation.team.id)
-      
+
       // Check if player is already in a team
       if (currentPlayer.team_id) {
         console.log('Player already in team:', currentPlayer.team_id)
@@ -91,8 +91,8 @@ export async function PUT(
 
       if (currentMemberCount && currentMemberCount >= maxTeamSize) {
         console.log('Team is full:', currentMemberCount, '/', maxTeamSize)
-        return NextResponse.json({ 
-          error: `This team is already full (${maxTeamSize}/${maxTeamSize} members)` 
+        return NextResponse.json({
+          error: `This team is already full (${maxTeamSize}/${maxTeamSize} members)`
         }, { status: 400 });
       }
 
@@ -120,9 +120,9 @@ export async function PUT(
       // Add player to team
       const { error: joinError } = await supabase
         .from('players')
-        .update({ 
+        .update({
           team_id: invitation.team.id,
-          looking_for_team: false 
+          looking_for_team: false
         })
         .eq('id', currentPlayer.id);
 
@@ -263,8 +263,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invitation not found' }, { status: 404 });
     }
 
-    console.log('Checking captain rights:', { 
-      invitationCaptain: invitation.team.captain_id, 
+    console.log('Checking captain rights:', {
+      invitationCaptain: invitation.team.captain_id,
       currentPlayer: currentPlayer.id,
       isCaptain: invitation.team.captain_id === currentPlayer.id
     })

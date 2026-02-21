@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   try {
     const supabase = await createClient()
-    
+
     const { searchParams } = new URL(request.url)
     const timeWindow = searchParams.get('timeWindow') || '1h'
 
@@ -31,8 +31,8 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error('❌ Error fetching Riot API stats:', error)
-      return NextResponse.json({ 
-        error: 'Failed to fetch stats', 
+      return NextResponse.json({
+        error: 'Failed to fetch stats',
         details: error.message || 'Unknown error',
         hint: 'Check database connection and table existence'
       }, { status: 500 })
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
 
     // Calculate rate limit status
     const timeMultiplier = timeWindow === '1m' ? 1 : timeWindow === '10s' ? 0.167 : 1
-    
+
     stats.rateLimitStatus = {
       account: {
         used: stats.account,
@@ -103,8 +103,8 @@ export async function GET(request: Request) {
     console.error('❌ Error type:', typeof error)
     console.error('❌ Error message:', error instanceof Error ? error.message : 'Unknown')
     console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack')
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error',
       type: typeof error

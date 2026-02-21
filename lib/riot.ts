@@ -35,6 +35,11 @@ interface LeagueEntry {
 }
 
 export async function getRiotAccount(gameName: string, tagLine: string, userId?: string): Promise<RiotAccount | null> {
+  
+  if(!RIOT_API_KEY) {
+    throw new Error('Riot API Key is not configured');
+  }
+
   const startTime = Date.now();
   const url = `https://${REGION_ROUTING}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${RIOT_API_KEY}`;
 

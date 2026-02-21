@@ -267,7 +267,7 @@ export default function RootLayout({
         {children}
         <Toaster />
         <NotificationPermission />
-        <Analytics />
+        <Analytics debug={false} />
         <script
           dangerouslySetInnerHTML={{
             __html: `

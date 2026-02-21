@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertTriangle, Settings, User, Shield, Trash2, Bell } from 'lucide-react'
+import { AlertTriangle, Settings, User, Shield, Trash2, Bell, Eye, EyeOff } from 'lucide-react'
 import NotificationToggle from '@/components/NotificationToggle'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +26,7 @@ export default function SettingsPage() {
   })
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [showEmail, setShowEmail] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -41,12 +42,12 @@ export default function SettingsPage() {
 
 
 
+  /* 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
     setPasswordError('')
     setPasswordSuccess('')
 
-    // Validation
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setPasswordError('New passwords do not match')
       return
@@ -79,12 +80,12 @@ export default function SettingsPage() {
         setPasswordError(error.error || 'Failed to update password')
       }
     } catch (error) {
-
       setPasswordError('Failed to update password')
     } finally {
       setPasswordLoading(false)
     }
   }
+  */
 
   const handleDeleteAccount = async () => {
     if (!confirm('Are you sure you want to delete your account? This action cannot be undone and will remove all your data including teams, tournaments, and notifications.')) {
@@ -198,9 +199,22 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-1">
                   <label className="text-sm font-medium text-muted-foreground">Email</label>
-                  <p className="font-medium break-all">{user.email}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium break-all">
+                      {showEmail ? user.email : '••••••••••••••••'}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 flex-shrink-0"
+                      onClick={() => setShowEmail(!showEmail)}
+                      title={showEmail ? "Hide Email" : "Show Email"}
+                    >
+                      {showEmail ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Account Created</label>
@@ -222,7 +236,7 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Password Change */}
+              {/* Password Change - Disabled for OAuth
               <div className="space-y-4">
                 <div className="space-y-3 sm:flex sm:items-center sm:justify-between">
                   <div>
@@ -243,6 +257,7 @@ export default function SettingsPage() {
                   Since you're logged in via {user.app_metadata.provider || 'a social provider'}, please change your password directly on their platform (Google, Discord, etc.).
                 </div>
               </div>
+              */}
 
               <div className="space-y-3 sm:flex sm:items-center sm:justify-between">
                 <div>

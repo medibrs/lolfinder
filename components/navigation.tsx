@@ -261,7 +261,7 @@ export default function Navigation() {
                       alt="lolfinder"
                       width={32}
                       height={32}
-                      className="rounded-lg"
+                      className="object-contain"
                     />
                     <span className="font-bold text-lg">lolfinder</span>
                   </div>
