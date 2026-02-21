@@ -173,8 +173,19 @@ export default function SetupProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setRiotError(null)
+
+    if (!formData.main_role) {
+      setRiotError("Please select a Main Role")
+      return;
+    }
+
+    if (!formData.secondary_role) {
+      setRiotError("Please select a Secondary Role")
+      return;
+    }
+
+    setLoading(true)
 
     try {
       const endpoint = isEditing ? `/api/players/${userId}` : '/api/players'
@@ -206,8 +217,13 @@ export default function SetupProfilePage() {
           setRiotError(errorData.error);
         } else {
           // Show normal Riot API validation errors to the user
-          const errorMessage = errorData.error || errorData.details?.[0]?.message || 'Failed to save profile'
-          setRiotError(errorMessage)
+          // If error is exactly "Validation error", we want to drill down into the 'details' array first
+          let errorMessage = errorData.error;
+          if (errorData.error === 'Validation error' && errorData.details?.length > 0) {
+            errorMessage = errorData.details[0].message;
+          }
+
+          setRiotError(errorMessage || 'Failed to save profile')
           setVerificationRequired(null) // Clear verification if there is a different error (like already claimed)
         }
       }
