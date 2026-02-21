@@ -4,10 +4,10 @@ import { NextResponse } from 'next/server'
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient()
-  const tournamentId = params.id
+  const { id: tournamentId } = await params
 
   try {
     // 1. Get tournament and participants
@@ -47,14 +47,14 @@ export async function POST(
     // and check history to avoid rematches.
     const pairings = []
     const teams = [...participants]
-    
+
     while (teams.length >= 2) {
       const team1 = teams.shift()
       const team2 = teams.shift() // Just take the next best seed for now
-      
+
       pairings.push({ team1, team2 })
     }
-    
+
     // Handle bye if odd number of teams
     let byeTeam = null
     if (teams.length === 1) {

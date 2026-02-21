@@ -2,10 +2,10 @@ import { ReactNode } from 'react';
 
 type Props = {
   children: ReactNode;
-  params: {
+  params: Promise<{
     id: string;
     slug: string;
-  };
+  }>;
 };
 
 export default function TournamentEventLayout({ children }: Props) {

@@ -54,7 +54,7 @@ export default function ChatDemo() {
               </Button>
             ))}
           </div>
-          
+
           <div className="flex gap-2">
             <Input
               placeholder="Create or join custom room..."
@@ -67,7 +67,7 @@ export default function ChatDemo() {
               Join Room
             </Button>
           </div>
-          
+
           <div className="text-sm text-muted-foreground">
             Current room: <span className="font-mono bg-muted px-2 py-1 rounded">{roomName}</span>
           </div>
@@ -86,8 +86,6 @@ export default function ChatDemo() {
           <RealtimeChatPersistent
             roomName={roomName}
             enablePersistence={true}
-            showClearHistory={true}
-            maxHeight="450px"
           />
         </CardContent>
       </Card>

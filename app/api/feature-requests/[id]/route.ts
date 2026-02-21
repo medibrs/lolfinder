@@ -11,10 +11,10 @@ const updateFeatureRequestSchema = z.object({
 // PUT /api/feature-requests/[id] - Update a feature request (admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const requestId = params.id
+    const { id: requestId } = await params
 
     // Get the current user
     const authHeader = request.headers.get('authorization')
@@ -69,12 +69,12 @@ export async function PUT(
 
     if (updateError) {
       console.error('Error updating feature request:', updateError)
-      
+
       // If table doesn't exist
       if (updateError.code === 'PGRST116' || updateError.message.includes('does not exist')) {
         return NextResponse.json({ error: 'Feature requests are not available at this time' }, { status: 503 })
       }
-      
+
       return NextResponse.json({ error: 'Failed to update feature request' }, { status: 500 })
     }
 
@@ -96,10 +96,10 @@ export async function PUT(
 // GET /api/feature-requests/[id] - Get a single feature request (admin only)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const requestId = params.id
+    const { id: requestId } = await params
 
     // Get the current user
     const authHeader = request.headers.get('authorization')
@@ -139,12 +139,12 @@ export async function GET(
 
     if (error) {
       console.error('Error fetching feature request:', error)
-      
+
       // If table doesn't exist
       if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
         return NextResponse.json({ error: 'Feature requests are not available at this time' }, { status: 503 })
       }
-      
+
       return NextResponse.json({ error: 'Failed to fetch feature request' }, { status: 500 })
     }
 
@@ -165,10 +165,10 @@ export async function GET(
 // DELETE /api/feature-requests/[id] - Delete a feature request (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const requestId = params.id
+    const { id: requestId } = await params
 
     // Get the current user
     const authHeader = request.headers.get('authorization')
@@ -202,12 +202,12 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('Error deleting feature request:', deleteError)
-      
+
       // If table doesn't exist
       if (deleteError.code === 'PGRST116' || deleteError.message.includes('does not exist')) {
         return NextResponse.json({ error: 'Feature requests are not available at this time' }, { status: 503 })
       }
-      
+
       return NextResponse.json({ error: 'Failed to delete feature request' }, { status: 500 })
     }
 
