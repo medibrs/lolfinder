@@ -256,6 +256,14 @@ export default function AuthPage() {
                     </Button>
                     <Button
                       variant="outline"
+                      onClick={() => window.location.href = '/api/auth/42/login'}
+                      className="gap-2 w-full bg-black hover:bg-zinc-800 text-white border-zinc-700"
+                    >
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/8/8d/42_Logo.svg" alt="42 Logo" className="h-5 w-5 brightness-0 invert" />
+                      Continue with 42
+                    </Button>
+                    <Button
+                      variant="outline"
                       onClick={() => supabase.auth.signInWithOAuth({
                         provider: 'github',
                         options: { redirectTo: `${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback` }
