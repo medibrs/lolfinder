@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Shield, User, Crown, Trash2, Search, Mail, Calendar, AlertTriangle } from 'lucide-react'
+import { Shield, User, Crown, Trash2, Search, Mail, Calendar, AlertTriangle, MessageSquare, UserX } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 
 interface AuthUser {
   id: string
@@ -37,7 +38,10 @@ export default function ComprehensiveUserManagement() {
   const [updating, setUpdating] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [supportTicket, setSupportTicket] = useState({ userId: '', issue: '', resolution: '' })
+  const [adminMessage, setAdminMessage] = useState({ userId: '', title: '', message: '' })
+  const [messagingUser, setMessagingUser] = useState<AuthUser | null>(null)
   const supabase = createClient()
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchUsers()
@@ -137,6 +141,46 @@ export default function ComprehensiveUserManagement() {
     }
   }
 
+  const deleteProfile = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user's profile? This will remove them from their team and delete all profile data, but keep their auth account intact.")) {
+      return
+    }
+
+    setDeleting(userId)
+    try {
+      const response = await fetch('/api/admin/delete-profile', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete profile')
+      }
+
+      // Update local state to remove profile
+      setUsers(prev => prev.map(user =>
+        user.id === userId ? { ...user, profile: undefined } : user
+      ))
+
+      toast({
+        title: "Profile Deleted",
+        description: "The user's profile has been completely reset."
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to delete profile: ${error.message}`,
+        variant: "destructive"
+      })
+    } finally {
+      setDeleting(null)
+    }
+  }
+
   const solveUserProblem = async () => {
     try {
       // Send notification to user
@@ -148,14 +192,66 @@ export default function ComprehensiveUserManagement() {
           title: 'Support Ticket Resolved',
           message: `Your support ticket has been marked as resolved.`,
           data: {
+            from: 'admin',
+            issue: supportTicket.issue,
+            resolution: supportTicket.resolution
+          }
+        }])
+
+      toast({
+        title: "Ticket Resolved",
+        description: "User has been notified of the resolution.",
+      })
+
+      // Reset form and close dialog
+      setSupportTicket({ userId: '', issue: '', resolution: '' })
+      setSelectedUser(null)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to resolve ticket",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const sendAdminMessage = async () => {
+    if (!adminMessage.title.trim() || !adminMessage.message.trim()) {
+      toast({
+        title: "Error",
+        description: "Title and message are required.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await supabase
+        .from('notifications')
+        .insert([{
+          user_id: adminMessage.userId,
+          type: 'admin_message',
+          title: adminMessage.title,
+          message: adminMessage.message,
+          data: {
             from: 'admin'
           }
         }])
 
-      // Reset form
-      setSupportTicket({ userId: '', issue: '', resolution: '' })
-    } catch (error) {
+      toast({
+        title: "Message Sent",
+        description: "Your message has been delivered to the user.",
+      })
 
+      // Reset form and close dialog
+      setAdminMessage({ userId: '', title: '', message: '' })
+      setMessagingUser(null)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      })
     }
   }
 
@@ -233,8 +329,16 @@ export default function ComprehensiveUserManagement() {
               className="flex items-center justify-between p-4 border rounded-lg hover:bg-background/50 transition"
             >
               <div className="flex items-center gap-4">
-                <div className="p-2 bg-gray-100 rounded-full">
-                  <User className="h-4 w-4 text-gray-600" />
+                <div className="flex-shrink-0 h-10 w-10 relative rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                  {(user.user_metadata?.avatar_url || user.user_metadata?.picture) ? (
+                    <img
+                      src={user.user_metadata.avatar_url || user.user_metadata.picture}
+                      alt={user.email}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <User className="h-5 w-5 text-gray-600" />
+                  )}
                 </div>
                 <div>
                   <p className="font-medium">{user.email}</p>
@@ -266,17 +370,26 @@ export default function ComprehensiveUserManagement() {
                   {user.app_metadata?.role || 'user'}
                 </Badge>
 
-                <Dialog>
+                <Dialog
+                  open={selectedUser?.id === user.id}
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setSelectedUser(user)
+                      setSupportTicket({ userId: user.id, issue: '', resolution: '' })
+                    } else {
+                      setSelectedUser(null)
+                    }
+                  }}
+                >
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedUser(user)}
                     >
                       Support
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-md">
                     <DialogHeader>
                       <DialogTitle>Support for {user.email}</DialogTitle>
                       <DialogDescription>
@@ -309,6 +422,60 @@ export default function ComprehensiveUserManagement() {
                   </DialogContent>
                 </Dialog>
 
+                <Dialog
+                  open={messagingUser?.id === user.id}
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setMessagingUser(user)
+                      setAdminMessage({ userId: user.id, title: '', message: '' })
+                    } else {
+                      setMessagingUser(null)
+                    }
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Message
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Message {user.profile?.summoner_name || user.email}</DialogTitle>
+                      <DialogDescription>
+                        Send a direct administrative message to this user's notification inbox.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="msg-title">Title</Label>
+                        <Input
+                          id="msg-title"
+                          placeholder="E.g., Warning, Account Update, etc."
+                          value={adminMessage.title}
+                          onChange={(e) => setAdminMessage({ ...adminMessage, title: e.target.value, userId: user.id })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="msg-body">Message</Label>
+                        <Textarea
+                          id="msg-body"
+                          rows={4}
+                          placeholder="Type your message here..."
+                          value={adminMessage.message}
+                          onChange={(e) => setAdminMessage({ ...adminMessage, message: e.target.value })}
+                        />
+                      </div>
+                      <Button onClick={sendAdminMessage} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                        Send Message
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -318,6 +485,18 @@ export default function ComprehensiveUserManagement() {
                   {updating === user.id ? 'Updating...' :
                     user.app_metadata?.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
                 </Button>
+
+                {user.profile && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteProfile(user.id)}
+                    disabled={deleting === user.id}
+                    title="Delete Profile (Keeps Auth)"
+                  >
+                    {deleting === user.id ? '...' : <UserX className="h-4 w-4" />}
+                  </Button>
+                )}
 
                 <Button
                   variant="destructive"

@@ -20,14 +20,6 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -35,7 +27,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import TournamentManager from '@/components/admin/tournament/TournamentManager'
 
 interface Tournament {
   id: string
@@ -92,12 +83,6 @@ export default function TournamentsTable() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [formatFilter, setFormatFilter] = useState('all')
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editingTournament, setEditingTournament] = useState<Tournament | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [manageDialogOpen, setManageDialogOpen] = useState(false)
-  const [managingTournament, setManagingTournament] = useState<Tournament | null>(null)
-  const [activeTab, setActiveTab] = useState('overview')
   const { toast } = useToast()
 
   useEffect(() => {
@@ -168,64 +153,6 @@ export default function TournamentsTable() {
 
     return matchesSearch && matchesStatus && matchesFormat
   })
-
-  const openEditDialog = (tournament: Tournament) => {
-    // Ensure all fields have proper values
-    setEditingTournament({
-      ...tournament,
-      description: tournament.description || '',
-      prize_pool: tournament.prize_pool || '',
-      format: tournament.format || 'Single_Elimination',
-      registration_deadline: tournament.registration_deadline || '',
-      current_round: tournament.current_round || 0,
-      total_rounds: tournament.total_rounds || 0,
-      is_active: tournament.is_active !== false,
-      swiss_rounds: tournament.swiss_rounds || 5,
-      enable_top_cut: tournament.enable_top_cut || false,
-      top_cut_size: tournament.top_cut_size || 8,
-    })
-    setEditDialogOpen(true)
-  }
-
-  const handleSaveTournament = async () => {
-    if (!editingTournament) return
-
-    setSaving(true)
-    try {
-      const response = await fetch(`/api/tournaments/${editingTournament.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingTournament),
-      })
-
-      if (response.ok) {
-        await fetchTournaments()
-        setEditDialogOpen(false)
-        setEditingTournament(null)
-        toast({
-          title: "Tournament Updated",
-          description: "The tournament settings have been saved successfully.",
-        })
-      } else {
-        const error = await response.json()
-
-        toast({
-          title: "Update Failed",
-          description: error.message || "Failed to update tournament settings.",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const openManageDialog = (tournament: Tournament) => {
-    setManagingTournament(tournament)
-    setManageDialogOpen(true)
-  }
 
   const deleteTournament = async (tournamentId: string) => {
     if (confirm('Are you sure you want to delete this tournament? This will also delete all registrations, matches, and related data.')) {
@@ -608,14 +535,6 @@ export default function TournamentsTable() {
                             <Eye className="mr-2 h-4 w-4" />
                             View Tournament
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openManageDialog(tournament)}>
-                            <Users className="mr-2 h-4 w-4" />
-                            Manage Teams
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openEditDialog(tournament)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Tournament
-                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => duplicateTournament(tournament)}>
                             <Copy className="mr-2 h-4 w-4" />
                             Duplicate
@@ -646,226 +565,6 @@ export default function TournamentsTable() {
         </CardContent>
       </Card>
 
-      {/* Enhanced Edit Tournament Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Edit Tournament Settings
-            </DialogTitle>
-            <DialogDescription>
-              Update tournament details, format, and advanced settings.
-            </DialogDescription>
-          </DialogHeader>
-
-          {editingTournament && (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="format">Format Settings</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="basic" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Tournament Name</Label>
-                    <Input
-                      id="name"
-                      value={editingTournament.name}
-                      onChange={(e) => setEditingTournament({ ...editingTournament, name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="max_teams">Max Teams</Label>
-                    <Input
-                      id="max_teams"
-                      type="number"
-                      value={editingTournament.max_teams}
-                      onChange={(e) => setEditingTournament({ ...editingTournament, max_teams: parseInt(e.target.value) })}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={editingTournament.description}
-                    onChange={(e) => setEditingTournament({ ...editingTournament, description: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="start_date">Start Date</Label>
-                    <Input
-                      id="start_date"
-                      type="datetime-local"
-                      value={editingTournament.start_date?.slice(0, 16)}
-                      onChange={(e) => setEditingTournament({ ...editingTournament, start_date: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="end_date">End Date</Label>
-                    <Input
-                      id="end_date"
-                      type="datetime-local"
-                      value={editingTournament.end_date?.slice(0, 16)}
-                      onChange={(e) => setEditingTournament({ ...editingTournament, end_date: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="registration_deadline">Registration Deadline</Label>
-                    <Input
-                      id="registration_deadline"
-                      type="datetime-local"
-                      value={editingTournament.registration_deadline?.slice(0, 16)}
-                      onChange={(e) => setEditingTournament({ ...editingTournament, registration_deadline: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="prize_pool">Prize Pool</Label>
-                    <Input
-                      id="prize_pool"
-                      value={editingTournament.prize_pool}
-                      onChange={(e) => setEditingTournament({ ...editingTournament, prize_pool: e.target.value })}
-                      placeholder="e.g., $1,000"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="format" className="space-y-4">
-                <div>
-                  <Label htmlFor="format">Tournament Format</Label>
-                  <Select
-                    value={editingTournament.format}
-                    onValueChange={(value: any) => setEditingTournament({ ...editingTournament, format: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Single_Elimination">Single Elimination</SelectItem>
-                      <SelectItem value="Double_Elimination">Double Elimination</SelectItem>
-                      <SelectItem value="Round_Robin">Round Robin</SelectItem>
-                      <SelectItem value="Swiss">Swiss</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {editingTournament.format === 'Swiss' && (
-                  <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                    <h3 className="font-semibold">Swiss Settings</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="swiss_rounds">Number of Rounds</Label>
-                        <Input
-                          id="swiss_rounds"
-                          type="number"
-                          value={editingTournament.swiss_rounds}
-                          onChange={(e) => setEditingTournament({ ...editingTournament, swiss_rounds: parseInt(e.target.value) })}
-                          min="3"
-                          max="9"
-                        />
-                      </div>
-                      <div className="flex items-center space-x-2 pt-6">
-                        <Switch
-                          id="enable_top_cut"
-                          checked={editingTournament.enable_top_cut}
-                          onCheckedChange={(checked) => setEditingTournament({ ...editingTournament, enable_top_cut: checked })}
-                        />
-                        <Label htmlFor="enable_top_cut">Enable Top Cut</Label>
-                      </div>
-                    </div>
-                    {editingTournament.enable_top_cut && (
-                      <div>
-                        <Label htmlFor="top_cut_size">Top Cut Size</Label>
-                        <Input
-                          id="top_cut_size"
-                          type="number"
-                          value={editingTournament.top_cut_size}
-                          onChange={(e) => setEditingTournament({ ...editingTournament, top_cut_size: parseInt(e.target.value) })}
-                          min="2"
-                          max="16"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="advanced" className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="is_active">Active Tournament</Label>
-                      <p className="text-sm text-muted-foreground">Inactive tournaments won't appear in public listings</p>
-                    </div>
-                    <Switch
-                      id="is_active"
-                      checked={editingTournament.is_active}
-                      onCheckedChange={(checked) => setEditingTournament({ ...editingTournament, is_active: checked })}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="current_round">Current Round</Label>
-                      <Input
-                        id="current_round"
-                        type="number"
-                        value={editingTournament.current_round}
-                        onChange={(e) => setEditingTournament({ ...editingTournament, current_round: parseInt(e.target.value) })}
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="total_rounds">Total Rounds</Label>
-                      <Input
-                        id="total_rounds"
-                        type="number"
-                        value={editingTournament.total_rounds}
-                        onChange={(e) => setEditingTournament({ ...editingTournament, total_rounds: parseInt(e.target.value) })}
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={saving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveTournament} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Enhanced Manage Teams Dialog */}
-      <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
-        <DialogContent className="max-w-[95vw] w-full h-[90vh] sm:h-[95vh] p-0 overflow-hidden">
-          {managingTournament && (
-            <TournamentManager
-              tournamentId={managingTournament.id}
-              onClose={() => setManageDialogOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

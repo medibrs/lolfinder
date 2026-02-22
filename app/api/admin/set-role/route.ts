@@ -10,7 +10,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
     }
 
-    // Create admin client to update user metadata
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,7 +25,7 @@ export async function POST(request: Request) {
 
     // Check if current user is admin
     const { data: { user: currentUser } } = await supabase.auth.getUser()
-    
+
     if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -36,8 +35,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    // Create service role client to update user metadata
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'Service role key not configured.' }, { status: 500 })
+    }
+
+    const adminClient = await import('@supabase/supabase-js').then(mod => mod.createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    ))
+
     // Update the target user's role
-    const { error } = await supabase.auth.admin.updateUserById(userId, {
+    const { error } = await adminClient.auth.admin.updateUserById(userId, {
       app_metadata: { role }
     })
 

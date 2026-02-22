@@ -206,6 +206,8 @@ export default function NotificationsPage() {
         return <AlertCircle className="w-5 h-5 text-orange-500" />
       case 'admin_message':
         return <MessageSquare className="w-5 h-5 text-purple-500" />
+      case 'support_resolved':
+        return <Check className="w-5 h-5 text-purple-500" />
       case 'tournament_approved':
         return <Trophy className={`w-5 h-5 ${data?.from === 'admin' ? 'text-purple-500' : 'text-green-500'}`} />
       case 'tournament_rejected':
@@ -380,6 +382,7 @@ export default function NotificationsPage() {
                   <SelectItem value="team_member_joined">Member Joined</SelectItem>
                   <SelectItem value="team_member_left">Member Left</SelectItem>
                   <SelectItem value="team_member_removed">Member Removed</SelectItem>
+                  <SelectItem value="support_resolved">Support Resolved</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -437,7 +440,7 @@ export default function NotificationsPage() {
               <Card
                 key={notification.id}
                 className={`bg-card border-border ${!notification.read ? 'border-primary/50' : ''
-                  } ${notification.type === 'admin_message' || ((notification.type === 'tournament_approved' || notification.type === 'tournament_rejected') && notification.data?.from === 'admin')
+                  } ${notification.type === 'admin_message' || notification.type === 'support_resolved' || ((notification.type === 'tournament_approved' || notification.type === 'tournament_rejected') && notification.data?.from === 'admin')
                     ? 'border-purple-500/50 bg-purple-500/5'
                     : ''
                   }`}
@@ -454,13 +457,29 @@ export default function NotificationsPage() {
                           {!notification.read && (
                             <Badge variant="default" className="text-xs">New</Badge>
                           )}
-                          {(notification.type === 'admin_message' || ((notification.type === 'tournament_approved' || notification.type === 'tournament_rejected') && notification.data?.from === 'admin')) && (
+                          {(notification.type === 'admin_message' || notification.type === 'support_resolved' || ((notification.type === 'tournament_approved' || notification.type === 'tournament_rejected') && notification.data?.from === 'admin')) && (
                             <Badge variant="secondary" className="bg-purple-500/10 text-purple-500 border-purple-500/20">
                               Admin
                             </Badge>
                           )}
                         </div>
                         <p className="text-muted-foreground mb-3 text-sm break-words">{notification.message}</p>
+
+                        {/* Display Support Resolution */}
+                        {notification.type === 'support_resolved' && notification.data?.issue && (
+                          <div className="bg-muted/50 rounded-lg p-3 mb-3 border border-purple-500/20">
+                            <div className="space-y-3">
+                              <div>
+                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Issue Reported</p>
+                                <p className="text-sm font-medium">{notification.data.issue}</p>
+                              </div>
+                              <div className="pt-2 border-t border-border/50">
+                                <p className="text-xs text-purple-400 font-medium uppercase tracking-wider mb-1">Resolution</p>
+                                <p className="text-sm">{notification.data.resolution || 'No further details provided.'}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Display detailed team info for invitations */}
                         {notification.type === 'team_invitation' && notification.data?.team && (
