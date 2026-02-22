@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Users, MessageSquare, Check, Trophy, X } from 'lucide-react'
+import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Users, MessageSquare, Check, Trophy, X, Bot, CheckSquare } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -63,7 +64,71 @@ export default function TeamsTable() {
   const [addingToTournament, setAddingToTournament] = useState(false)
   const [teamTournaments, setTeamTournaments] = useState<string[]>([])
   const [loadingTournaments, setLoadingTournaments] = useState(false)
+  const [generatingTeams, setGeneratingTeams] = useState(false)
+  const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(new Set())
+  const [bulkTournamentDialogOpen, setBulkTournamentDialogOpen] = useState(false)
+  const [bulkTournamentId, setBulkTournamentId] = useState('')
+  const [bulkAdding, setBulkAdding] = useState(false)
   const { toast } = useToast()
+
+  const toggleTeamSelection = (teamId: string) => {
+    setSelectedTeamIds(prev => {
+      const next = new Set(prev)
+      if (next.has(teamId)) next.delete(teamId)
+      else next.add(teamId)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedTeamIds.size === filteredTeams.length) {
+      setSelectedTeamIds(new Set())
+    } else {
+      setSelectedTeamIds(new Set(filteredTeams.map(t => t.id)))
+    }
+  }
+
+  const bulkAddToTournament = async () => {
+    if (!bulkTournamentId || selectedTeamIds.size === 0) return
+    setBulkAdding(true)
+    let added = 0
+    let skipped = 0
+    try {
+      const supabase = createClient()
+      for (const teamId of selectedTeamIds) {
+        const { data: existing } = await supabase
+          .from('tournament_registrations')
+          .select('id')
+          .eq('team_id', teamId)
+          .eq('tournament_id', bulkTournamentId)
+          .single()
+
+        if (existing) {
+          skipped++
+          continue
+        }
+
+        const { error } = await supabase
+          .from('tournament_registrations')
+          .insert([{ team_id: teamId, tournament_id: bulkTournamentId, status: 'approved' }])
+
+        if (!error) added++
+        else skipped++
+      }
+
+      toast({
+        title: 'Bulk Registration Complete',
+        description: `${added} teams registered${skipped > 0 ? `, ${skipped} skipped (already registered)` : ''}.`,
+      })
+      setBulkTournamentDialogOpen(false)
+      setSelectedTeamIds(new Set())
+      setBulkTournamentId('')
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to register teams.', variant: 'destructive' })
+    } finally {
+      setBulkAdding(false)
+    }
+  }
 
   useEffect(() => {
     fetchTeams()
@@ -261,6 +326,38 @@ export default function TeamsTable() {
     }
   }
 
+  const generateDemoTeams = async () => {
+    setGeneratingTeams(true)
+    try {
+      const response = await fetch('/api/admin/generate-bot-teams', {
+        method: 'POST'
+      })
+      const data = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: "Teams Generated",
+          description: data.message || "Successfully generated 8 demo teams.",
+        })
+        fetchTeams() // Reload teams
+      } else {
+        toast({
+          title: "Error Generating Teams",
+          description: data.error || "Failed to generate teams.",
+          variant: "destructive",
+        })
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while generating teams.",
+        variant: "destructive",
+      })
+    } finally {
+      setGeneratingTeams(false)
+    }
+  }
+
   const openContactDialog = (team: Team) => {
     setSelectedTeam(team)
     setMessageSubject('')
@@ -362,11 +459,22 @@ export default function TeamsTable() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Teams Management</CardTitle>
-        <CardDescription>
-          Manage all teams on the platform ({filteredTeams.length} total)
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Teams Management</CardTitle>
+          <CardDescription>
+            Manage all teams on the platform ({filteredTeams.length} total)
+          </CardDescription>
+        </div>
+        <Button
+          variant="outline"
+          onClick={generateDemoTeams}
+          disabled={generatingTeams}
+          className="gap-2"
+        >
+          <Bot className="h-4 w-4" />
+          {generatingTeams ? 'Creating...' : 'Create Demo Team'}
+        </Button>
       </CardHeader>
       <CardContent>
         {/* Filters */}
@@ -411,11 +519,43 @@ export default function TeamsTable() {
           </Select>
         </div>
 
+        {/* Bulk Action Bar */}
+        {selectedTeamIds.size > 0 && (
+          <div className="flex items-center gap-3 mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+            <CheckSquare className="h-4 w-4 text-purple-400" />
+            <span className="text-sm font-medium text-purple-200">
+              {selectedTeamIds.size} team{selectedTeamIds.size > 1 ? 's' : ''} selected
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto gap-2"
+              onClick={() => { setBulkTournamentDialogOpen(true); setBulkTournamentId('') }}
+            >
+              <Trophy className="h-4 w-4" />
+              Add to Tournament
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedTeamIds(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+
         {/* Table */}
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={filteredTeams.length > 0 && selectedTeamIds.size === filteredTeams.length}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Team</TableHead>
                 <TableHead>Captain</TableHead>
                 <TableHead>Members</TableHead>
@@ -428,7 +568,13 @@ export default function TeamsTable() {
             </TableHeader>
             <TableBody>
               {filteredTeams.map((team) => (
-                <TableRow key={team.id}>
+                <TableRow key={team.id} className={selectedTeamIds.has(team.id) ? 'bg-purple-500/5' : ''}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedTeamIds.has(team.id)}
+                      onCheckedChange={() => toggleTeamSelection(team.id)}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <TeamAvatar team={team} size="sm" showTooltip={false} />
@@ -515,6 +661,41 @@ export default function TeamsTable() {
             No teams found matching your filters.
           </div>
         )}
+
+        {/* Bulk Add to Tournament Dialog */}
+        <Dialog open={bulkTournamentDialogOpen} onOpenChange={setBulkTournamentDialogOpen}>
+          <DialogContent className="sm:max-w-[450px]">
+            <DialogHeader>
+              <DialogTitle>Add {selectedTeamIds.size} Teams to Tournament</DialogTitle>
+              <DialogDescription>
+                Select a tournament to register all selected teams.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label>Tournament</Label>
+              <Select value={bulkTournamentId} onValueChange={setBulkTournamentId}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select a tournament" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tournaments.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBulkTournamentDialogOpen(false)}>Cancel</Button>
+              <Button
+                onClick={bulkAddToTournament}
+                disabled={!bulkTournamentId || bulkAdding}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {bulkAdding ? 'Registering...' : `Register ${selectedTeamIds.size} Teams`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
 
       {/* Contact Team Dialog */}

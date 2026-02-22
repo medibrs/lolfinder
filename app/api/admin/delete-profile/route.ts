@@ -73,16 +73,34 @@ export async function DELETE(request: Request) {
                 .single()
 
             if (teamData && teamData.captain_id === userId) {
-                // If captain, we either assign random member or delete team. 
-                // For profile deletion, it's safest to disband team to prevent orphan teams.
-                await adminClient.from('team_invitations').delete().eq('team_id', teamData.id)
-                await adminClient.from('team_join_requests').delete().eq('team_id', teamData.id)
+                // If captain, check if there are other members
+                const { data: teamMembers } = await adminClient
+                    .from('players')
+                    .select('id')
+                    .eq('team_id', teamData.id)
+                    .neq('id', userId)
 
-                // Update other members to have NULL team_id
-                await adminClient.from('players').update({ team_id: null }).eq('team_id', teamData.id)
+                if (teamMembers && teamMembers.length > 0) {
+                    // Promote the first available member to captain
+                    const newCaptainId = teamMembers[0].id
+                    await adminClient.from('teams').update({ captain_id: newCaptainId }).eq('id', teamData.id)
 
-                // Delete the team itself
-                await adminClient.from('teams').delete().eq('id', teamData.id)
+                    // Notify the new captain
+                    await adminClient.from('notifications').insert([{
+                        user_id: newCaptainId,
+                        type: 'admin_message',
+                        title: 'You are the new Team Captain',
+                        message: 'The previous team captain deactivated their account. You have been automatically reassigned as the new Team Captain.',
+                        data: { from: 'admin' },
+                        read: false
+                    }])
+                } else {
+                    // No other members, safe to disband team completely
+                    await adminClient.from('tournament_registrations').delete().eq('team_id', teamData.id)
+                    await adminClient.from('team_invitations').delete().eq('team_id', teamData.id)
+                    await adminClient.from('team_join_requests').delete().eq('team_id', teamData.id)
+                    await adminClient.from('teams').delete().eq('id', teamData.id)
+                }
             }
         }
 

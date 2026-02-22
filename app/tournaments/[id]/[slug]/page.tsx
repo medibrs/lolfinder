@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { SwissBracketPreview } from '@/components/tournament/swiss-bracket-preview';
 import { SingleEliminationBracketPreview } from '@/components/tournament/single-elimination-bracket-preview';
+import { buildSwissBracketData } from '@/lib/swiss-bracket-data';
 type Props = {
   params: Promise<{
     id: string;
@@ -183,6 +184,22 @@ async function getMatchData(tournamentId: string) {
   }));
 }
 
+async function getParticipants(tournamentId: string) {
+  const { createClient: createServiceClient } = await import('@supabase/supabase-js');
+  const supabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: participants } = await supabase
+    .from('tournament_participants')
+    .select('*, team:teams(id, name, team_avatar)')
+    .eq('tournament_id', tournamentId)
+    .order('seed_number', { ascending: true });
+
+  return participants || [];
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const tournament = await getTournament(id);
@@ -220,6 +237,7 @@ export default async function TournamentEventPage({ params }: Props) {
   const tournament = await getTournament(id);
   const registeredTeams = tournament ? await getRegisteredTeams(tournament.id) : [];
   const matchData = tournament ? await getMatchData(tournament.id) : [];
+  const participants = tournament ? await getParticipants(tournament.id) : [];
 
   if (!tournament) {
     notFound();
@@ -328,10 +346,11 @@ export default async function TournamentEventPage({ params }: Props) {
             <div className="w-full">
               {tournament.format === 'Swiss' ? (
                 <SwissBracketPreview
-                  teams={registeredTeams.map((r: any) => r.teams).filter(Boolean)}
-                  maxWins={3}
-                  maxLosses={3}
-                  teamCount={tournament.max_teams || 16}
+                  data={buildSwissBracketData(
+                    tournament,
+                    participants,
+                    matchData
+                  )}
                 />
               ) : tournament.format === 'Single_Elimination' ? (
                 <SingleEliminationBracketPreview

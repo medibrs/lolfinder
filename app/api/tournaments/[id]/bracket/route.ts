@@ -122,15 +122,33 @@ export async function PUT(
     const body = await request.json();
     const { action } = body;
 
+    // Get tournament - handle both UUID and tournament_number
+    const isNumber = /^\d+$/.test(id);
+    let tournamentQuery = supabase.from('tournaments').select('id');
+
+    if (isNumber) {
+      tournamentQuery = tournamentQuery.eq('tournament_number', parseInt(id));
+    } else {
+      tournamentQuery = tournamentQuery.eq('id', id);
+    }
+
+    const { data: tournament, error: tournamentError } = await tournamentQuery.single();
+
+    if (tournamentError || !tournament) {
+      return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
+    }
+
+    const tournamentUuid = tournament.id;
+
     switch (action) {
       case 'swap_seeds':
-        return await swapSeeds(id, body.team1_id, body.team2_id);
+        return await swapSeeds(tournamentUuid, body.team1_id, body.team2_id);
       case 'set_seed':
-        return await setSeed(id, body.team_id, body.seed_number);
+        return await setSeed(tournamentUuid, body.team_id, body.seed_number);
       case 'randomize_seeds':
-        return await randomizeSeeds(id);
+        return await randomizeSeeds(tournamentUuid);
       case 'seed_by_rank':
-        return await seedByRank(id);
+        return await seedByRank(tournamentUuid);
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -652,7 +670,7 @@ async function generateSwissRound(
       status: p2 ? 'Scheduled' : 'Completed',
       result: !p2 ? 'Team1_Win' : null,
       winner_id: !p2 ? p1?.team_id : null,
-      best_of: tournament.progression_best_of || 3
+      best_of: tournament.opening_best_of || 1
     });
   }
 

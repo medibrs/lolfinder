@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { SingleEliminationBracketPreview } from '@/components/tournament/single-elimination-bracket-preview'
 import { SwissBracketPreview } from '@/components/tournament/swiss-bracket-preview'
+import { buildSwissBracketData } from '@/lib/swiss-bracket-data'
 
 interface Team {
   id: string
@@ -74,9 +75,9 @@ export default function BracketManager({
     fetchSeeding()
   }, [tournamentId])
 
-  const fetchSeeding = async () => {
+  const fetchSeeding = async (silent = false) => {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const response = await fetch(`/api/tournaments/${tournamentId}/seeding`)
       const data = await response.json()
 
@@ -95,7 +96,7 @@ export default function BracketManager({
     } catch (error) {
 
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -112,9 +113,9 @@ export default function BracketManager({
   }
 
   const handleStateChanged = async () => {
-    // Re-fetch both seeding state and match data
+    // Re-fetch in background — no loading spinner flash
     await fetchMatchData()
-    await fetchSeeding()
+    await fetchSeeding(true)
   }
 
   const handleGenerateSeeding = async (method: 'random' | 'rank') => {
@@ -209,13 +210,23 @@ export default function BracketManager({
     }
 
     try {
-      await fetch(`/api/tournaments/${tournamentId}/bracket`, {
+      const response = await fetch(`/api/tournaments/${tournamentId}/bracket`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'swap_seeds', team1_id: team1Id, team2_id: team2Id })
       })
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to swap seeds', variant: 'destructive' })
+      if (!response.ok) {
+        let errStr = "API error"
+        try { const err = await response.json(); errStr = err.error || errStr; } catch (e) { }
+        throw new Error(errStr)
+      }
+
+      // Refresh local state to ensure active buckets update properly
+      await fetchSeeding(true)
+      await fetchMatchData()
+    } catch (error: any) {
+      console.error("Swap Error:", error)
+      toast({ title: 'Error', description: String(error.message || error) || 'Failed to swap seeds', variant: 'destructive' })
       fetchSeeding() // Revert on error
     }
   }
@@ -236,13 +247,23 @@ export default function BracketManager({
     }
 
     try {
-      await fetch(`/api/tournaments/${tournamentId}/seeding`, {
+      const response = await fetch(`/api/tournaments/${tournamentId}/seeding`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: direction === 'up' ? 'move_up' : 'move_down', team_id: teamId })
       })
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to move seed', variant: 'destructive' })
+      if (!response.ok) {
+        let errStr = "API error"
+        try { const err = await response.json(); errStr = err.error || errStr; } catch (e) { }
+        throw new Error(errStr)
+      }
+
+      // Refresh local state
+      await fetchSeeding(true)
+      await fetchMatchData()
+    } catch (error: any) {
+      console.error("Move Error:", error)
+      toast({ title: 'Error', description: String(error.message || error) || 'Failed to move seed', variant: 'destructive' })
       fetchSeeding() // Revert on error
     }
   }
@@ -505,6 +526,7 @@ export default function BracketManager({
         <div className="space-y-6">
           <MatchDirector
             tournamentId={tournamentId}
+            tournamentFormat={tournamentFormat}
             onStateChanged={handleStateChanged}
           />
 
@@ -522,10 +544,11 @@ export default function BracketManager({
               <div className="min-w-max">
                 {tournamentFormat === 'Swiss' ? (
                   <SwissBracketPreview
-                    teams={participants.map(p => p.team).filter(Boolean)}
-                    maxWins={3}
-                    maxLosses={3}
-                    teamCount={maxTeams}
+                    data={buildSwissBracketData(
+                      { ...tournament, id: tournamentId },
+                      participants,
+                      matchData
+                    )}
                   />
                 ) : (
                   <SingleEliminationBracketPreview
@@ -540,16 +563,40 @@ export default function BracketManager({
 
           {/* Seeding List — always accessible for admin overrides */}
           {(() => {
-            // Compute eliminated teams from match data
+            // Compute eliminated/qualified teams from match data
             const eliminatedTeamIds = new Set<string>()
-            for (const m of matchData) {
-              if (m.status === 'Completed' && m.winner_id) {
-                // The loser is eliminated (the team that isn't the winner)
-                if (m.team1_id && m.team1_id !== m.winner_id) eliminatedTeamIds.add(m.team1_id)
-                if (m.team2_id && m.team2_id !== m.winner_id) eliminatedTeamIds.add(m.team2_id)
+            const qualifiedTeamIds = new Set<string>()
+
+            if (tournamentFormat === 'Swiss') {
+              // Swiss: compute W-L records — eliminated at maxLosses, qualified at maxWins
+              const maxWins = 3, maxLosses = 3
+              const records: Record<string, { wins: number; losses: number }> = {}
+              for (const m of matchData) {
+                if (m.status !== 'Completed' || !m.result) continue
+                if (m.team1_id && !records[m.team1_id]) records[m.team1_id] = { wins: 0, losses: 0 }
+                if (m.team2_id && !records[m.team2_id]) records[m.team2_id] = { wins: 0, losses: 0 }
+                if (m.result === 'Team1_Win') {
+                  if (m.team1_id) records[m.team1_id].wins++
+                  if (m.team2_id) records[m.team2_id].losses++
+                } else if (m.result === 'Team2_Win') {
+                  if (m.team2_id) records[m.team2_id].wins++
+                  if (m.team1_id) records[m.team1_id].losses++
+                }
+              }
+              for (const [tid, rec] of Object.entries(records)) {
+                if (rec.losses >= maxLosses) eliminatedTeamIds.add(tid)
+                if (rec.wins >= maxWins) qualifiedTeamIds.add(tid)
+              }
+            } else {
+              // Single Elimination: any loss = eliminated
+              for (const m of matchData) {
+                if (m.status === 'Completed' && m.winner_id) {
+                  if (m.team1_id && m.team1_id !== m.winner_id) eliminatedTeamIds.add(m.team1_id)
+                  if (m.team2_id && m.team2_id !== m.winner_id) eliminatedTeamIds.add(m.team2_id)
+                }
               }
             }
-            const activeParticipants = participants.filter(p => !eliminatedTeamIds.has(p.team_id))
+            const activeParticipants = participants.filter(p => !eliminatedTeamIds.has(p.team_id) && !qualifiedTeamIds.has(p.team_id))
 
             return (
               <Card>
@@ -559,87 +606,280 @@ export default function BracketManager({
                     Active Teams ({activeParticipants.length}/{participants.length})
                   </CardTitle>
                   <CardDescription>
-                    {eliminatedTeamIds.size > 0
-                      ? `${eliminatedTeamIds.size} team${eliminatedTeamIds.size > 1 ? 's' : ''} eliminated. Drag to reorder remaining seeding.`
+                    {(qualifiedTeamIds.size > 0 || eliminatedTeamIds.size > 0)
+                      ? `${qualifiedTeamIds.size > 0 ? `${qualifiedTeamIds.size} qualified` : ''}${qualifiedTeamIds.size > 0 && eliminatedTeamIds.size > 0 ? ', ' : ''}${eliminatedTeamIds.size > 0 ? `${eliminatedTeamIds.size} eliminated` : ''}. Drag to reorder remaining seeding.`
                       : 'Drag teams to reorder seeding. Changes here affect future round pairings.'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {activeParticipants.map((participant, index) => (
-                      <div
-                        key={participant.id}
-                        draggable
-                        onDragStart={() => handleDragStart(index, participant.team_id)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDrop={(e) => handleDrop(e, index, participant.team_id)}
-                        className={`
-                      flex items-center gap-3 p-3 rounded-lg border transition-all
-                      cursor-grab hover:border-primary/50 hover:bg-muted/50
-                      ${draggedTeamId === participant.team_id ? 'opacity-50 border-primary' : 'border-border'}
-                    `}
-                      >
-                        <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
-                          {participant.seed_number}
-                        </div>
-                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                          {participant.team?.team_avatar ? (
-                            <Image
-                              src={getTeamAvatarUrl(participant.team.team_avatar)!}
-                              alt=""
-                              width={40}
-                              height={40}
-                              className="w-full h-full object-cover"
-                              placeholder="blur"
-                              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
-                              unoptimized={process.env.NODE_ENV === 'development'}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Users className="h-5 w-5 text-muted-foreground" />
+                  {tournamentFormat === 'Swiss' ? (() => {
+                    // Group active teams by W-L record
+                    const records: Record<string, { wins: number; losses: number }> = {}
+                    for (const m of matchData) {
+                      if (m.status !== 'Completed' || !m.result) continue
+                      if (m.team1_id && !records[m.team1_id]) records[m.team1_id] = { wins: 0, losses: 0 }
+                      if (m.team2_id && !records[m.team2_id]) records[m.team2_id] = { wins: 0, losses: 0 }
+                      if (m.result === 'Team1_Win') {
+                        if (m.team1_id) records[m.team1_id].wins++
+                        if (m.team2_id) records[m.team2_id].losses++
+                      } else if (m.result === 'Team2_Win') {
+                        if (m.team2_id) records[m.team2_id].wins++
+                        if (m.team1_id) records[m.team1_id].losses++
+                      }
+                    }
+
+                    // Build buckets
+                    const buckets: Record<string, typeof activeParticipants> = {}
+                    for (const p of activeParticipants) {
+                      const rec = records[p.team_id] || { wins: 0, losses: 0 }
+                      const key = `${rec.wins}:${rec.losses}`
+                      if (!buckets[key]) buckets[key] = []
+                      buckets[key].push(p)
+                    }
+
+                    // Sort buckets: higher wins first, then lower losses
+                    const sortedBuckets = Object.entries(buckets).sort((a, b) => {
+                      const [aw, al] = a[0].split(':').map(Number)
+                      const [bw, bl] = b[0].split(':').map(Number)
+                      if (bw !== aw) return bw - aw
+                      return al - bl
+                    })
+
+                    // Qualified teams section
+                    const qualifiedParticipants = participants.filter(p => qualifiedTeamIds.has(p.team_id))
+                    // Eliminated teams section
+                    const eliminatedParticipants = participants.filter(p => eliminatedTeamIds.has(p.team_id))
+
+                    return (
+                      <div className="space-y-5">
+                        {/* Qualified */}
+                        {qualifiedParticipants.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-green-500" />
+                              <span className="text-xs font-semibold text-green-400 uppercase tracking-wider">
+                                Qualified ({qualifiedParticipants.length})
+                              </span>
+                              <div className="flex-1 h-px bg-green-500/20" />
                             </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{participant.team?.name}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            {participant.team?.average_rank && (
-                              <div className="flex items-center gap-1">
-                                <Image
-                                  src={getRankImage(participant.team.average_rank)}
-                                  alt={participant.team.average_rank}
-                                  width={16}
-                                  height={16}
-                                />
-                                <span>{participant.team.average_rank}</span>
+                            <div className="space-y-1.5 pl-4 opacity-60">
+                              {qualifiedParticipants.map(p => {
+                                const rec = records[p.team_id] || { wins: 0, losses: 0 }
+                                return (
+                                  <div key={p.id} className="flex items-center gap-3 p-2 rounded-md bg-green-500/5 border border-green-500/15">
+                                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                      {p.team?.team_avatar ? (
+                                        <Image src={getTeamAvatarUrl(p.team.team_avatar)!} alt="" width={32} height={32} className="w-full h-full object-cover" unoptimized={process.env.NODE_ENV === 'development'} />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center"><Users className="h-4 w-4 text-muted-foreground" /></div>
+                                      )}
+                                    </div>
+                                    <span className="text-sm font-medium truncate flex-1">{p.team?.name}</span>
+                                    <span className="text-xs text-green-400 font-mono">{rec.wins}:{rec.losses}</span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Active buckets */}
+                        {sortedBuckets.map(([bucket, bucketTeams]) => {
+                          const [w, l] = bucket.split(':').map(Number)
+                          return (
+                            <div key={bucket}>
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-sm font-bold">
+                                  <span className="text-green-400">{w}</span>
+                                  <span className="text-muted-foreground mx-0.5">:</span>
+                                  <span className="text-red-400">{l}</span>
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({bucketTeams.length} team{bucketTeams.length > 1 ? 's' : ''})
+                                </span>
+                                <div className="flex-1 h-px bg-border" />
+                              </div>
+                              <div className="space-y-1.5">
+                                {bucketTeams.map((participant, index) => (
+                                  <div
+                                    key={participant.id}
+                                    draggable
+                                    onDragStart={() => handleDragStart(index, participant.team_id)}
+                                    onDragOver={(e) => handleDragOver(e, index)}
+                                    onDrop={(e) => handleDrop(e, index, participant.team_id)}
+                                    className={`
+                                      flex items-center gap-3 p-3 rounded-lg border transition-all
+                                      cursor-grab hover:border-primary/50 hover:bg-muted/50
+                                      ${draggedTeamId === participant.team_id ? 'opacity-50 border-primary' : 'border-border'}
+                                    `}
+                                  >
+                                    <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
+                                      {participant.seed_number}
+                                    </div>
+                                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                      {participant.team?.team_avatar ? (
+                                        <Image
+                                          src={getTeamAvatarUrl(participant.team.team_avatar)!}
+                                          alt=""
+                                          width={40}
+                                          height={40}
+                                          className="w-full h-full object-cover"
+                                          placeholder="blur"
+                                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
+                                          unoptimized={process.env.NODE_ENV === 'development'}
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                          <Users className="h-5 w-5 text-muted-foreground" />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium truncate">{participant.team?.name}</p>
+                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        {participant.team?.average_rank && (
+                                          <div className="flex items-center gap-1">
+                                            <Image
+                                              src={getRankImage(participant.team.average_rank)}
+                                              alt={participant.team.average_rank}
+                                              width={16}
+                                              height={16}
+                                            />
+                                            <span>{participant.team.average_rank}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                      <Button
+                                        size="icon" variant="ghost" className="h-8 w-8"
+                                        onClick={() => handleMoveSeed(participant.team_id, 'up')}
+                                        disabled={index === 0}
+                                      >
+                                        <ArrowUp className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        size="icon" variant="ghost" className="h-8 w-8"
+                                        onClick={() => handleMoveSeed(participant.team_id, 'down')}
+                                        disabled={index === bucketTeams.length - 1}
+                                      >
+                                        <ArrowDown className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        })}
+
+                        {/* Eliminated */}
+                        {eliminatedParticipants.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-red-500" />
+                              <span className="text-xs font-semibold text-red-400 uppercase tracking-wider">
+                                Eliminated ({eliminatedParticipants.length})
+                              </span>
+                              <div className="flex-1 h-px bg-red-500/20" />
+                            </div>
+                            <div className="space-y-1.5 pl-4 opacity-40">
+                              {eliminatedParticipants.map(p => {
+                                const rec = records[p.team_id] || { wins: 0, losses: 0 }
+                                return (
+                                  <div key={p.id} className="flex items-center gap-3 p-2 rounded-md bg-red-500/5 border border-red-500/15">
+                                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                      {p.team?.team_avatar ? (
+                                        <Image src={getTeamAvatarUrl(p.team.team_avatar)!} alt="" width={32} height={32} className="w-full h-full object-cover" unoptimized={process.env.NODE_ENV === 'development'} />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center"><Users className="h-4 w-4 text-muted-foreground" /></div>
+                                      )}
+                                    </div>
+                                    <span className="text-sm font-medium truncate flex-1 line-through">{p.team?.name}</span>
+                                    <span className="text-xs text-red-400 font-mono">{rec.wins}:{rec.losses}</span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })() : (
+                    /* Non-Swiss: flat list */
+                    <div className="space-y-2">
+                      {activeParticipants.map((participant, index) => (
+                        <div
+                          key={participant.id}
+                          draggable
+                          onDragStart={() => handleDragStart(index, participant.team_id)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDrop={(e) => handleDrop(e, index, participant.team_id)}
+                          className={`
+                            flex items-center gap-3 p-3 rounded-lg border transition-all
+                            cursor-grab hover:border-primary/50 hover:bg-muted/50
+                            ${draggedTeamId === participant.team_id ? 'opacity-50 border-primary' : 'border-border'}
+                          `}
+                        >
+                          <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
+                            {participant.seed_number}
+                          </div>
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                            {participant.team?.team_avatar ? (
+                              <Image
+                                src={getTeamAvatarUrl(participant.team.team_avatar)!}
+                                alt=""
+                                width={40}
+                                height={40}
+                                className="w-full h-full object-cover"
+                                placeholder="blur"
+                                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
+                                unoptimized={process.env.NODE_ENV === 'development'}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Users className="h-5 w-5 text-muted-foreground" />
                               </div>
                             )}
                           </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{participant.team?.name}</p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              {participant.team?.average_rank && (
+                                <div className="flex items-center gap-1">
+                                  <Image
+                                    src={getRankImage(participant.team.average_rank)}
+                                    alt={participant.team.average_rank}
+                                    width={16}
+                                    height={16}
+                                  />
+                                  <span>{participant.team.average_rank}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              size="icon" variant="ghost" className="h-8 w-8"
+                              onClick={() => handleMoveSeed(participant.team_id, 'up')}
+                              disabled={index === 0}
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon" variant="ghost" className="h-8 w-8"
+                              onClick={() => handleMoveSeed(participant.team_id, 'down')}
+                              disabled={index === activeParticipants.length - 1}
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => handleMoveSeed(participant.team_id, 'up')}
-                            disabled={index === 0}
-                          >
-                            <ArrowUp className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => handleMoveSeed(participant.team_id, 'down')}
-                            disabled={index === activeParticipants.length - 1}
-                          >
-                            <ArrowDown className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )

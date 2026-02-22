@@ -85,6 +85,47 @@ export async function POST(
             return NextResponse.json({ error: 'No matches found in the current round' }, { status: 400 });
         }
 
+        // For Swiss: auto-resolve matches where both teams are already qualified or eliminated
+        if (format === 'Swiss') {
+            const maxWins = 3;
+            const maxLosses = 3;
+
+            // Compute W-L records from all completed matches across all rounds
+            const wlRecords: Record<string, { wins: number; losses: number }> = {};
+            for (const m of (allMatches || [])) {
+                if (m.status !== 'Completed') continue;
+                if (m.team1_id && !wlRecords[m.team1_id]) wlRecords[m.team1_id] = { wins: 0, losses: 0 };
+                if (m.team2_id && !wlRecords[m.team2_id]) wlRecords[m.team2_id] = { wins: 0, losses: 0 };
+                if (m.result === 'Team1_Win') {
+                    if (m.team1_id) wlRecords[m.team1_id].wins++;
+                    if (m.team2_id) wlRecords[m.team2_id].losses++;
+                } else if (m.result === 'Team2_Win') {
+                    if (m.team2_id) wlRecords[m.team2_id].wins++;
+                    if (m.team1_id) wlRecords[m.team1_id].losses++;
+                }
+            }
+
+            const isFinished = (teamId: string | null) => {
+                if (!teamId) return true;
+                const rec = wlRecords[teamId];
+                if (!rec) return false;
+                return rec.wins >= maxWins || rec.losses >= maxLosses;
+            };
+
+            // Auto-complete ghost matches
+            for (const m of roundMatches) {
+                if (m.status === 'Completed') continue;
+                if (isFinished(m.team1_id) && isFinished(m.team2_id)) {
+                    await supabase
+                        .from('tournament_matches')
+                        .update({ status: 'Completed', result: 'Draw', winner_id: null })
+                        .eq('id', m.id);
+                    m.status = 'Completed';
+                    m.result = 'Draw';
+                }
+            }
+        }
+
         // Ensure all matches in the current round are 'Completed'
         const incompleteMatches = roundMatches.filter(m => m.status !== 'Completed');
         if (incompleteMatches.length > 0) {
@@ -217,12 +258,65 @@ async function advanceSwiss(tournamentId: string, currentRound: number, roundMat
             .eq('id', p.id);
     }
 
+    // 2. Compute actual W-L records from ALL completed matches (not just this round)
+    const { data: allMatches } = await supabase
+        .from('tournament_matches')
+        .select('*, bracket:tournament_brackets!inner(round_number)')
+        .eq('tournament_id', tournamentId)
+        .eq('status', 'Completed');
+
+    const wlRecords: Record<string, { wins: number; losses: number }> = {};
+    for (const p of participants) {
+        wlRecords[p.team_id] = { wins: 0, losses: 0 };
+    }
+
+    for (const m of (allMatches || [])) {
+        if (m.result === 'Team1_Win') {
+            if (m.team1_id && wlRecords[m.team1_id]) wlRecords[m.team1_id].wins++;
+            if (m.team2_id && wlRecords[m.team2_id]) wlRecords[m.team2_id].losses++;
+        } else if (m.result === 'Team2_Win') {
+            if (m.team2_id && wlRecords[m.team2_id]) wlRecords[m.team2_id].wins++;
+            if (m.team1_id && wlRecords[m.team1_id]) wlRecords[m.team1_id].losses++;
+        }
+    }
+
+    // Swiss format constants
+    const maxWins = 3;
+    const maxLosses = 3;
+
+    // 3. Mark eliminated teams as inactive, track qualified teams
+    const qualifiedTeamIds = new Set<string>();
+    const eliminatedTeamIds = new Set<string>();
+
+    for (const p of participants) {
+        const rec = wlRecords[p.team_id];
+        if (!rec) continue;
+
+        if (rec.wins >= maxWins) {
+            qualifiedTeamIds.add(p.team_id);
+        }
+        if (rec.losses >= maxLosses) {
+            eliminatedTeamIds.add(p.team_id);
+            // Mark as eliminated in DB
+            await supabase
+                .from('tournament_participants')
+                .update({ is_active: false })
+                .eq('id', p.id);
+        }
+    }
+
     // Check if next round exists
     if (currentRound + 1 > tournament.total_rounds) return;
 
-    // Generate parings for next round!
-    // Very simple pairing algorithm sorting descending by score and not repeating opponents if possible.
-    const sorted = [...participants].sort((a, b) => (b.swiss_score || 0) - (a.swiss_score || 0) || (a.seed_number || 0) - (b.seed_number || 0));
+    // 4. Only pair teams that are still active (not qualified, not eliminated)
+    const activePlayers = participants.filter(p =>
+        !qualifiedTeamIds.has(p.team_id) && !eliminatedTeamIds.has(p.team_id)
+    );
+
+    // If no active players left, tournament is effectively done
+    if (activePlayers.length < 2) return;
+
+    const sorted = [...activePlayers].sort((a, b) => (b.swiss_score || 0) - (a.swiss_score || 0) || (a.seed_number || 0) - (b.seed_number || 0));
 
     const paired = new Set();
     const newMatches: any[] = [];
@@ -279,6 +373,32 @@ async function advanceSwiss(tournamentId: string, currentRound: number, roundMat
 
         const bracketForMatch = newBrackets[matchCount - 1];
 
+        // Determine best_of based on match context
+        const nextRound = currentRound + 1;
+        const isLastRound = nextRound >= tournament.total_rounds;
+        let bestOf: number;
+
+        if (isLastRound) {
+            // Final/decider round
+            bestOf = tournament.finals_best_of || tournament.elimination_best_of || 5;
+        } else {
+            // Check if either team is at risk of elimination or progression
+            const p1Losses = (p1.opponents_played?.length || 0) - (p1.swiss_score || 0) / (tournament.swiss_points_per_win || 3);
+            const maxLosses = 3; // Swiss standard
+
+            if (pairedWith) {
+                const p2Losses = (pairedWith.opponents_played?.length || 0) - (pairedWith.swiss_score || 0) / (tournament.swiss_points_per_win || 3);
+                // If either team losing means elimination, use elimination_best_of
+                if (p1Losses >= maxLosses - 1 || p2Losses >= maxLosses - 1) {
+                    bestOf = tournament.elimination_best_of || tournament.progression_best_of || 3;
+                } else {
+                    bestOf = tournament.progression_best_of || 3;
+                }
+            } else {
+                bestOf = tournament.progression_best_of || 3;
+            }
+        }
+
         // Queue match insert
         newMatches.push({
             tournament_id: tournamentId,
@@ -289,7 +409,7 @@ async function advanceSwiss(tournamentId: string, currentRound: number, roundMat
             status: pairedWith ? 'Scheduled' : 'Completed',
             result: !pairedWith ? 'Team1_Win' : null, // Give a bye to unpaired!
             winner_id: !pairedWith ? p1?.team_id : null,
-            best_of: tournament.progression_best_of || 3
+            best_of: bestOf
         });
     }
 
