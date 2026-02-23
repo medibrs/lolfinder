@@ -150,10 +150,10 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Remove team_id from all players in this team
+    // Remove team_id from all players in this team and reset looking_for_team
     await supabase
       .from('players')
-      .update({ team_id: null })
+      .update({ team_id: null, looking_for_team: true })
       .eq('team_id', id);
 
     const { error } = await supabase

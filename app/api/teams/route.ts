@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
+import sharp from 'sharp';
+import { analyzeTextSafety, analyzeImageSafety, getFlaggedCategories, analyzeImageVision, validateImageTags } from '@/lib/azure/content-safety';
+import { uploadToBlob } from '@/lib/azure/storage';
 
 // Validation schema
 const createTeamSchema = z.object({
@@ -9,8 +12,10 @@ const createTeamSchema = z.object({
   captain_id: z.string().uuid(),
   open_positions: z.array(z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support'])).default([]),
   recruiting_status: z.enum(['Open', 'Closed', 'Full']).default('Open'),
-  team_avatar: z.number().min(3905).max(4016).optional(),
+  team_size: z.number().default(5),
+  team_avatar: z.union([z.number(), z.string()]).optional(),
 });
+
 
 // GET /api/teams - List all teams with optional filtering and pagination
 export async function GET(request: NextRequest) {
@@ -93,10 +98,78 @@ export async function GET(request: NextRequest) {
 // POST /api/teams - Create a new team
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const contentType = request.headers.get('content-type') || '';
+    let body: any = {};
+    let file: File | null = null;
+    let base64Image: string | null = null;
+    let fileType: string | null = null;
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      file = formData.get('file') as File | null;
+
+      const openPositions = formData.getAll('open_positions');
+
+      body = {
+        name: formData.get('name') as string,
+        description: formData.get('description') ? formData.get('description') as string : undefined,
+        captain_id: formData.get('captain_id') as string,
+        open_positions: openPositions.length > 0 ? openPositions : [],
+        recruiting_status: formData.get('recruiting_status') ? formData.get('recruiting_status') as string : 'Open',
+        team_size: formData.get('team_size') ? parseInt(formData.get('team_size') as string) : 5,
+      };
+    } else {
+      body = await request.json();
+    }
 
     // Validate input
     const validatedData = createTeamSchema.parse(body);
+
+    // --- Content Safety Validation ---
+    try {
+      // 1. Validate Text (Name)
+      const textResult = await analyzeTextSafety(validatedData.name);
+
+      let flaggedCats = getFlaggedCategories(textResult);
+      if (flaggedCats.length > 0) {
+        return NextResponse.json({
+          error: `Team name rejected. Flagged for: ${flaggedCats.join(', ')}`
+        }, { status: 400 });
+      }
+
+      // 2. Validate Image (if provided)
+      if (file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        base64Image = buffer.toString('base64');
+        fileType = file.type;
+
+        // A: Content Safety Verification (Hate/Sexual/etc)
+        const imageResult = await analyzeImageSafety(base64Image);
+        let imgFlaggedCats = getFlaggedCategories(imageResult);
+
+        if (imgFlaggedCats.length > 0) {
+          return NextResponse.json({
+            error: `Upload rejected. Image flagged for: ${imgFlaggedCats.join(', ')}`
+          }, { status: 400 });
+        }
+
+        // B: Ensure it is actually a logo/graphic
+        const visionResult = await analyzeImageVision(buffer);
+        const validLogoTags = ['logo', 'icon', 'graphic', 'design', 'clipart', 'illustration', 'symbol', 'text', 'font', 'drawing', 'sports', 'esports', 'badge'];
+        const tagCheck = validateImageTags(visionResult, validLogoTags, 0.4);
+
+        if (!tagCheck.isValid) {
+          return NextResponse.json({
+            error: `Image rejected. Please upload a valid logo or graphic icon.`
+          }, { status: 400 });
+        }
+      }
+    } catch (safetyError) {
+      console.error('Content Safety API error:', safetyError);
+      return NextResponse.json({ error: 'Failed to verify content safety' }, { status: 500 });
+    }
+    // --- End Content Safety Validation ---
 
     // Check if captain exists and has a complete profile
     const { data: existingCaptain, error: existingCaptainError } = await supabase
@@ -112,7 +185,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if player profile is complete (Riot ID, Main Role, Secondary Role)
     if (!existingCaptain.summoner_name || !existingCaptain.main_role || !existingCaptain.secondary_role) {
       return NextResponse.json(
         { error: 'Please complete your player profile before creating a team.' },
@@ -120,7 +192,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if player is already in a team
     if (existingCaptain.team_id) {
       return NextResponse.json(
         { error: 'You are already in a team and cannot create a new team' },
@@ -128,7 +199,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if captain already owns a team
     const { data: existingTeam, error: teamCheckError } = await supabase
       .from('teams')
       .select('id')
@@ -142,31 +212,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if avatar is already taken (if avatar is provided)
-    if (validatedData.team_avatar) {
-      const { data: existingAvatarTeam, error: avatarCheckError } = await supabase
-        .from('teams')
-        .select('id, name')
-        .eq('team_avatar', validatedData.team_avatar)
-        .single();
-
-      if (avatarCheckError && avatarCheckError.code !== 'PGRST116') { // PGRST116 is "not found" error
-        console.error('Error checking avatar availability:', avatarCheckError);
-        return NextResponse.json({ error: 'Failed to check avatar availability' }, { status: 500 });
-      }
-
-      if (existingAvatarTeam) {
-        return NextResponse.json({
-          error: 'Avatar already taken',
-          message: `This avatar is already being used by ${existingAvatarTeam.name}`
-        }, { status: 409 });
-      }
-    }
+    // Note: Avatar checks for pre-existing are skipped here because file uploads are processed directly after.
+    const dbPayload = { ...validatedData };
 
     // Create the team
     const { data, error } = await supabase
       .from('teams')
-      .insert([validatedData])
+      .insert([dbPayload])
       .select('*, captain:players!captain_id(*)')
       .single();
 
@@ -188,6 +240,40 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to link captain to team: ' + updateError.message },
         { status: 400 }
       );
+    }
+
+    // --- Upload Avatar strictly after DB creation ---
+    if (file && base64Image) {
+      try {
+        const extension = file.name.split('.').pop()?.toLowerCase() || 'png';
+        const teamId = data.id;
+        const originalBlobName = `${teamId}/original.${extension}`;
+        const compressedBlobName = `${teamId}/compressed-${Date.now()}.webp`;
+
+        const buffer = Buffer.from(base64Image, 'base64');
+
+        await uploadToBlob('logos', originalBlobName, buffer, fileType || 'image/png');
+
+        const resizedBuffer = await sharp(buffer)
+          .resize(256, 256, {
+            fit: 'cover',
+            withoutEnlargement: true
+          })
+          .webp({ quality: 80 })
+          .toBuffer();
+
+        const fileUrl = await uploadToBlob('logos', compressedBlobName, resizedBuffer, 'image/webp');
+
+        await supabase
+          .from('teams')
+          .update({ team_avatar: fileUrl })
+          .eq('id', teamId);
+
+        data.team_avatar = fileUrl;
+      } catch (uploadError) {
+        console.error('Failed to upload blob:', uploadError);
+        // Note: The team was successfully created but avatar failed. They can fix it in 'Manage Team'.
+      }
     }
 
     return NextResponse.json(data, { status: 201 });

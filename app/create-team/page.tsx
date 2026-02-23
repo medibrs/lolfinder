@@ -138,39 +138,25 @@ export default function CreateTeamPage() {
     setError(null)
 
     try {
+      const submitData = new FormData()
+      submitData.append('name', formData.name)
+      submitData.append('captain_id', formData.captain_id)
+      submitData.append('team_size', formData.team_size)
+      submitData.append('recruiting_status', formData.recruiting_status)
+      formData.open_positions.forEach(pos => submitData.append('open_positions', pos))
+
+      if (avatarFile) {
+        submitData.append('file', avatarFile)
+      }
+
       const response = await fetch('/api/teams', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        body: submitData,
       })
 
       if (response.ok) {
         const teamData = await response.json()
         const newTeam = teamData.team || teamData[0] || teamData
-
-        // If an avatar was selected, upload it now
-        if (avatarFile && newTeam?.id) {
-          try {
-            const supabase = createClient()
-            const { data: { session } } = await supabase.auth.getSession()
-
-            const formDataUpload = new FormData()
-            formDataUpload.append('file', avatarFile)
-            formDataUpload.append('teamId', newTeam.id)
-
-            await fetch('/api/teams/upload-avatar', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${session?.access_token}`,
-              },
-              body: formDataUpload,
-            })
-          } catch (uploadError) {
-            console.error('Failed to upload initial avatar', uploadError)
-          }
-        }
 
         // Let the Navigation know to refresh its UI state
         window.dispatchEvent(new Event('team-updated'))

@@ -1,35 +1,39 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { BlobServiceClient } from '@azure/storage-blob';
 import sharp from 'sharp';
+import { analyzeImageSafety, getFlaggedCategories, analyzeImageVision, validateImageTags } from '@/lib/azure/content-safety';
+import { uploadToBlob } from '@/lib/azure/storage';
+import { ratelimit } from '@/lib/rate-limit/upstash';
+import { logApiMetric } from '@/lib/telemetry/logger';
 
 export async function POST(request: Request) {
+    const startTime = Date.now();
+
     try {
+        // Enforce strict rate limit using Upstash Redis
+        const ip = request.headers.get("x-forwarded-for") || "anonymous_ip";
+        const { success, limit, remaining } = await ratelimit.limit(ip);
+
+        // Fail early if rate limited
+        if (!success) {
+            await logApiMetric(request, { endpoint: '/api/tournaments/upload-banner', method: 'POST', statusCode: 429, responseTimeMs: Date.now() - startTime });
+            return NextResponse.json({ error: 'Too many uploads. Please wait a minute.' }, { status: 429 });
+        }
+
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
+            await logApiMetric(request, { endpoint: '/api/tournaments/upload-banner', method: 'POST', statusCode: 401, responseTimeMs: Date.now() - startTime });
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
-
-        // Check if user is an admin (you might have a specific check here)
-        // For now, we'll assume auth is enough or check for a specific role if available
-        // In many systems, we'd check user data:
-        const { data: userData } = await supabase
-            .from('players')
-            .select('is_admin')
-            .eq('id', user.id)
-            .single();
-
-        // Note: is_admin might not exist, but let's check for captain_id being null or similar
-        // if !userData?.is_admin return ... 
-        // Based on other routes, let's just proceed for now as it's an admin-only intended feature
 
         const formData = await request.formData();
         const file = formData.get('file') as File;
         const tournamentId = formData.get('tournamentId') as string;
 
         if (!file) {
+            await logApiMetric(request, { endpoint: '/api/tournaments/upload-banner', method: 'POST', statusCode: 400, responseTimeMs: Date.now() - startTime });
             return NextResponse.json({ error: 'Missing file' }, { status: 400 });
         }
 
@@ -38,33 +42,41 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
         }
 
-        // Connect to Azure Blob Storage
-        const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-        if (!connectionString) {
-            return NextResponse.json({ error: 'Storage configuration error' }, { status: 500 });
-        }
-
-        const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-        const containerClient = blobServiceClient.getContainerClient('banners');
-
-        // Create container if it doesn't exist
-        try {
-            await containerClient.createIfNotExists({ access: 'blob' });
-        } catch (e) {
-            console.error('Error creating container:', e);
-        }
-
-        const extension = file.name.split('.').pop()?.toLowerCase() || 'png';
-        const timestamp = Date.now();
-        const fileName = tournamentId ? `${tournamentId}-${timestamp}.webp` : `new-${timestamp}.webp`;
-        const blobClient = containerClient.getBlockBlobClient(fileName);
-
         // Upload data
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
+        const base64Image = buffer.toString('base64');
+
+        // --- Azure Content Safety & Vision Check ---
+        try {
+            // A: Harmful Content Safety
+            const imageResult = await analyzeImageSafety(base64Image);
+            const flaggedCategories = getFlaggedCategories(imageResult);
+
+            if (flaggedCategories.length > 0) {
+                return NextResponse.json({
+                    error: `Upload rejected. Image flagged for: ${flaggedCategories.join(', ')}`
+                }, { status: 400 });
+            }
+
+            // B: Contextual Accuracy for Banners
+            const visionResult = await analyzeImageVision(buffer);
+            // Allow gaming, esports, abstract backgrounds, landscapes, computer/hardware, graphics
+            const validBannerTags = ['esports', 'video game', 'event', 'graphic', 'poster', 'banner', 'computer', 'landscape', 'abstract', 'design', 'tournament', 'text', 'game', 'play', 'competition'];
+            const tagCheck = validateImageTags(visionResult, validBannerTags, 0.4);
+
+            if (!tagCheck.isValid) {
+                return NextResponse.json({
+                    error: `Banner rejected. Please upload an esports or gaming related graphic.`
+                }, { status: 400 });
+            }
+        } catch (error) {
+            console.error('Failed to analyze banner content safety:', error);
+            return NextResponse.json({ error: 'Failed to verify image safety' }, { status: 500 });
+        }
+        // --- End Azure Content Safety & Vision Check ---
 
         // Resize/compress banner for better performance
-        // Banners are ultra-wide (2.5:1 ratio), so let's aim for 2000px width
         const processedBuffer = await sharp(buffer)
             .resize(2000, 800, {
                 fit: 'cover',
@@ -74,11 +86,10 @@ export async function POST(request: Request) {
             .webp({ quality: 85 })
             .toBuffer();
 
-        await blobClient.uploadData(processedBuffer, {
-            blobHTTPHeaders: { blobContentType: 'image/webp' }
-        });
+        const timestamp = Date.now();
+        const fileName = tournamentId ? `${tournamentId}-${timestamp}.webp` : `new-${timestamp}.webp`;
 
-        const fileUrl = blobClient.url;
+        const fileUrl = await uploadToBlob('banners', fileName, processedBuffer, 'image/webp');
 
         // If tournamentId is provided, update the database directly
         if (tournamentId) {
@@ -89,13 +100,16 @@ export async function POST(request: Request) {
 
             if (updateError) {
                 console.error('Error updating tournament banner:', updateError);
+                await logApiMetric(request, { endpoint: '/api/tournaments/upload-banner', method: 'POST', statusCode: 500, responseTimeMs: Date.now() - startTime });
                 return NextResponse.json({ error: 'Failed to update banner in database' }, { status: 500 });
             }
         }
 
+        await logApiMetric(request, { endpoint: '/api/tournaments/upload-banner', method: 'POST', statusCode: 200, responseTimeMs: Date.now() - startTime });
         return NextResponse.json({ success: true, url: fileUrl });
     } catch (error) {
         console.error('Error uploading banner:', error);
+        await logApiMetric(request, { endpoint: '/api/tournaments/upload-banner', method: 'POST', statusCode: 500, responseTimeMs: Date.now() - startTime });
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
