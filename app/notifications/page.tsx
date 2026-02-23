@@ -245,6 +245,11 @@ export default function NotificationsPage() {
       const responseData = await response.json()
 
       if (response.ok) {
+        // Dispatch team updated event if user accepted an invite so the UI reloads the team profile to the navbar
+        if (action === 'accept') {
+          window.dispatchEvent(new Event('team-updated'))
+        }
+
         // Remove notification from UI immediately using hook
         await deleteNotificationFromHook(notification.id)
 
@@ -294,6 +299,11 @@ export default function NotificationsPage() {
       const responseData = await response.json()
 
       if (response.ok) {
+        // Dispatch team updated event if a join request was accepted so the navbar displays updated team members info
+        if (action === 'accept') {
+          window.dispatchEvent(new Event('team-updated'))
+        }
+
         // Remove notification from UI immediately using hook
         await deleteNotificationFromHook(notification.id)
 

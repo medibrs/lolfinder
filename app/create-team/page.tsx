@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AvatarPicker, AvatarPreview } from '@/components/AvatarPicker'
+import { Shield } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
@@ -27,12 +27,12 @@ export default function CreateTeamPage() {
     team_size: '5' as '5' | '6', // 5 players (main) or 6 players (5 + sub)
     open_positions: [] as string[],
     recruiting_status: 'Open' as 'Open' | 'Closed' | 'Full',
-    team_avatar: null as number | null
   })
 
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
 
   useEffect(() => {
     // Get current user and check if they can create a team
@@ -118,6 +118,20 @@ export default function CreateTeamPage() {
     }))
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File size must be less than 2MB")
+      if (e.target) e.target.value = ''
+      return
+    }
+
+    setAvatarFile(file)
+    setAvatarPreviewUrl(URL.createObjectURL(file))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -134,6 +148,33 @@ export default function CreateTeamPage() {
 
       if (response.ok) {
         const teamData = await response.json()
+        const newTeam = teamData.team || teamData[0] || teamData
+
+        // If an avatar was selected, upload it now
+        if (avatarFile && newTeam?.id) {
+          try {
+            const supabase = createClient()
+            const { data: { session } } = await supabase.auth.getSession()
+
+            const formDataUpload = new FormData()
+            formDataUpload.append('file', avatarFile)
+            formDataUpload.append('teamId', newTeam.id)
+
+            await fetch('/api/teams/upload-avatar', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session?.access_token}`,
+              },
+              body: formDataUpload,
+            })
+          } catch (uploadError) {
+            console.error('Failed to upload initial avatar', uploadError)
+          }
+        }
+
+        // Let the Navigation know to refresh its UI state
+        window.dispatchEvent(new Event('team-updated'))
+
         setSubmitted(true)
         // Navigate to manage team page after a short delay
         setTimeout(() => {
@@ -340,23 +381,24 @@ export default function CreateTeamPage() {
             <div>
               <Label>Team Avatar</Label>
               <div className="flex items-center gap-4 mt-2">
-                <AvatarPreview
-                  avatarId={formData.team_avatar}
-                  showEditButton={true}
-                  onEdit={() => setShowAvatarPicker(true)}
-                  size="md"
-                />
+                {avatarPreviewUrl ? (
+                  <div className="w-16 h-16 rounded-full overflow-hidden border shrink-0">
+                    <img src={avatarPreviewUrl} alt="Team Avatar Preview" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-full overflow-hidden border bg-zinc-800 flex items-center justify-center shrink-0">
+                    <Shield className="w-8 h-8 text-zinc-600" />
+                  </div>
+                )}
                 <div className="flex-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAvatarPicker(true)}
-                  >
-                    {formData.team_avatar ? 'Change Avatar' : 'Choose Avatar'}
-                  </Button>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="max-w-xs cursor-pointer"
+                  />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Select a unique avatar for your team from League of Legends profile icons
+                    Upload a team logo (Max 2MB, JPG/PNG)
                   </p>
                 </div>
               </div>
@@ -427,14 +469,6 @@ export default function CreateTeamPage() {
               </Button>
             </div>
           </form>
-
-          {/* Avatar Picker Dialog */}
-          <AvatarPicker
-            open={showAvatarPicker}
-            onOpenChange={setShowAvatarPicker}
-            currentAvatar={formData.team_avatar}
-            onAvatarSelect={(avatarId) => setFormData(prev => ({ ...prev, team_avatar: avatarId }))}
-          />
         </Card>
       </div>
     </main>

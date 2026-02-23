@@ -151,6 +151,7 @@ export default function ViewTeamPage() {
 
       }
 
+      window.dispatchEvent(new Event('team-updated'))
       // Redirect to teams page
       router.push('/teams')
     } catch (error) {

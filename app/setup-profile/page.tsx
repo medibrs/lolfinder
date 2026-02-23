@@ -160,6 +160,7 @@ export default function SetupProfilePage() {
 
       if (response.ok) {
         setUserTeam(null)
+        window.dispatchEvent(new Event('team-updated'))
         // Reload profile to update team_id
         window.location.reload()
       } else {

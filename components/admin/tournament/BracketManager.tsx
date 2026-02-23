@@ -196,6 +196,26 @@ export default function BracketManager({
     }
   }
 
+  const attemptAutoRegenerateIfSafe = async () => {
+    if (!bracketGenerated || !tournament?.current_round || !matchData) return false;
+    if (tournamentFormat === 'Single_Elimination' && tournament.current_round !== 1) return false;
+
+    const isSwiss = tournamentFormat === 'Swiss';
+    const currentRoundMatches = matchData.filter(m => m.bracket?.round_number === tournament.current_round);
+    const matchesToCheck = isSwiss ? currentRoundMatches : matchData;
+
+    if (matchesToCheck.length === 0 || matchesToCheck.some(m => m.status !== 'Scheduled')) return false;
+
+    try {
+      const resp = await fetch(`/api/tournaments/${tournamentId}/bracket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'regenerate_round' })
+      });
+      return resp.ok;
+    } catch (e) { return false; }
+  }
+
   const handleSwapSeeds = async (team1Id: string, team2Id: string) => {
     // Optimistic update
     const idx1 = participants.findIndex(p => p.team_id === team1Id)
@@ -221,9 +241,16 @@ export default function BracketManager({
         throw new Error(errStr)
       }
 
+      // Try auto regenerating bracket changes (for SE completely, for Swiss current round)
+      const regenerated = await attemptAutoRegenerateIfSafe();
+
       // Refresh local state to ensure active buckets update properly
       await fetchSeeding(true)
       await fetchMatchData()
+
+      if (regenerated) {
+        toast({ title: 'Matches Updated', description: 'Bracket dynamically re-paired to match new seeding.' })
+      }
     } catch (error: any) {
       console.error("Swap Error:", error)
       toast({ title: 'Error', description: String(error.message || error) || 'Failed to swap seeds', variant: 'destructive' })
@@ -258,9 +285,16 @@ export default function BracketManager({
         throw new Error(errStr)
       }
 
+      // Try auto regenerating bracket
+      const regenerated = await attemptAutoRegenerateIfSafe();
+
       // Refresh local state
       await fetchSeeding(true)
       await fetchMatchData()
+
+      if (regenerated) {
+        toast({ title: 'Matches Updated', description: 'Bracket dynamically re-paired to match new seeding.' })
+      }
     } catch (error: any) {
       console.error("Move Error:", error)
       toast({ title: 'Error', description: String(error.message || error) || 'Failed to move seed', variant: 'destructive' })

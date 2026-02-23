@@ -30,7 +30,6 @@ import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash
 import { createClient } from '@/lib/supabase/client'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import { getRankImage } from '@/lib/rank-utils'
-import { AvatarPicker, AvatarPreview } from '@/components/AvatarPicker'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -51,12 +50,13 @@ export default function ManageTeamPage() {
     substitute_id: null as string | null
   })
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null)
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [updatingAvatar, setUpdatingAvatar] = useState(false)
-  const [takenAvatars, setTakenAvatars] = useState<{ id: number; teamName: string; teamId: string }[]>([])
   const [showCaptainTransfer, setShowCaptainTransfer] = useState(false)
   const [selectedNewCaptain, setSelectedNewCaptain] = useState<string | null>(null)
   const [transferringCaptain, setTransferringCaptain] = useState(false)
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [isTeamInActiveTournament, setIsTeamInActiveTournament] = useState(false)
 
   useEffect(() => {
     loadTeamData()
@@ -143,8 +143,17 @@ export default function ManageTeamPage() {
 
       setTournaments(tournamentsData || [])
 
-      // Fetch taken avatars
-      fetchTakenAvatars()
+      // Check if team is in an active tournament (Current time is between start and end date)
+      const now = new Date()
+      const inActive = tournamentsData?.some(reg => {
+        const tournament = reg.tournament as any
+        if (!tournament) return false
+        const start = new Date(tournament.start_date)
+        const end = new Date(tournament.end_date)
+        return now >= start && now <= end
+      })
+      setIsTeamInActiveTournament(!!inActive)
+
     } catch (error) {
 
     } finally {
@@ -167,8 +176,31 @@ export default function ManageTeamPage() {
         .eq('id', team.id)
 
       if (error) {
-
         return
+      }
+
+      // Handle avatar upload if pending
+      if (pendingAvatarFile) {
+        setUpdatingAvatar(true)
+        const { data: { session } } = await supabase.auth.getSession()
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', pendingAvatarFile)
+        uploadFormData.append('teamId', team.id)
+
+        const uploadResponse = await fetch('/api/teams/upload-avatar', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: uploadFormData,
+        })
+
+        if (!uploadResponse.ok) {
+          const result = await uploadResponse.json()
+          alert(result.error || 'Failed to update avatar')
+        }
+        setPendingAvatarFile(null)
+        setAvatarPreview(null)
       }
 
       // Update substitute status for all players
@@ -197,59 +229,34 @@ export default function ManageTeamPage() {
       }
 
       setEditing(false)
+      window.dispatchEvent(new Event('team-updated'))
       loadTeamData() // Refresh data
     } catch (error) {
 
     }
   }
 
-  const handleUpdateTeamAvatar = async (avatarId: number) => {
-    if (!team || updatingAvatar) return
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !team || isTeamInActiveTournament) return;
 
-    try {
-      setUpdatingAvatar(true)
-      const supabase = createClient()
-
-      const { data: { session } } = await supabase.auth.getSession()
-
-      const response = await fetch('/api/teams/update-avatar', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ teamId: team.id, avatarId }),
-      })
-
-      const result = await response.json()
-
-      if (response.ok) {
-        setTeam((prev: any) => ({ ...prev, team_avatar: avatarId }))
-        setShowAvatarPicker(false)
-        // Refresh taken avatars list
-        fetchTakenAvatars()
-      } else {
-
-        // Show user-friendly error message
-        alert(result.message || result.error || 'Failed to update avatar')
-      }
-    } catch (error) {
-
-      alert('Error updating team avatar')
-    } finally {
-      setUpdatingAvatar(false)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File size must be less than 2MB");
+      if (event.target) event.target.value = '';
+      return;
     }
-  }
 
-  const fetchTakenAvatars = async () => {
-    try {
-      const response = await fetch('/api/teams/taken-avatars')
-      if (response.ok) {
-        const data = await response.json()
-        setTakenAvatars(data.takenAvatars || [])
-      }
-    } catch (error) {
+    setPendingAvatarFile(file);
+    // Create local preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
 
+    // Reset file input value so same file can be picked again
+    if (event.target) {
+      event.target.value = '';
     }
   }
 
@@ -310,6 +317,7 @@ export default function ManageTeamPage() {
       } else {
       }
 
+      window.dispatchEvent(new Event('team-updated'))
       loadTeamData() // Refresh data
     } catch (error) {
 
@@ -331,6 +339,7 @@ export default function ManageTeamPage() {
       })
 
       if (response.ok) {
+        window.dispatchEvent(new Event('team-updated'))
         loadTeamData() // Refresh data
       } else {
         const error = await response.json()
@@ -411,6 +420,7 @@ export default function ManageTeamPage() {
         return
       }
 
+      window.dispatchEvent(new Event('team-updated'))
       // Redirect to home after successful deletion
       router.push('/')
     } catch (error) {
@@ -436,6 +446,7 @@ export default function ManageTeamPage() {
       if (response.ok) {
         setShowCaptainTransfer(false)
         setSelectedNewCaptain(null)
+        window.dispatchEvent(new Event('team-updated'))
         // Route former captain to view team page since they're no longer captain
         router.push(`/teams/${team.id}`)
       } else {
@@ -543,24 +554,42 @@ export default function ManageTeamPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Team Avatar</label>
                       <div className="flex items-center gap-4">
-                        <AvatarPreview
-                          avatarId={team?.team_avatar}
-                          showEditButton={true}
-                          onEdit={() => setShowAvatarPicker(true)}
-                          size="md"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowAvatarPicker(true)}
-                        >
-                          Change Avatar
-                        </Button>
+                        {(avatarPreview || team?.team_avatar) ? (
+                          <div className="w-16 h-16 rounded-full overflow-hidden border">
+                            <img src={avatarPreview || getTeamAvatarUrl(team.team_avatar) || ''} alt="Team Avatar" className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 rounded-full overflow-hidden border bg-zinc-800 flex items-center justify-center">
+                            <Shield className="w-8 h-8 text-zinc-600" />
+                          </div>
+                        )}
+                        <div>
+                          {isTeamInActiveTournament ? (
+                            <div className="space-y-2">
+                              <p className="text-sm font-semibold text-orange-500 flex items-center gap-2">
+                                <Trophy className="w-4 h-4" />
+                                Locked during tournament
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Team logo cannot be changed while participating in an ongoing tournament.
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileUpload}
+                                disabled={updatingAvatar}
+                                className="max-w-xs cursor-pointer"
+                              />
+                              <p className="text-xs text-muted-foreground mt-2">
+                                Select a team logo (Max 2MB). Upload happens when saving team info.
+                              </p>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Choose an avatar from League of Legends profile icons (IDs 3905-4016)
-                      </p>
                     </div>
 
                     <div>
@@ -944,8 +973,8 @@ export default function ManageTeamPage() {
                     key={member.id}
                     onClick={() => setSelectedNewCaptain(member.id)}
                     className={`w-full p-3 text-left rounded-lg border transition-colors ${selectedNewCaptain === member.id
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/50'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-primary/50'
                       }`}
                   >
                     <div className="flex items-center gap-3">
@@ -985,14 +1014,6 @@ export default function ManageTeamPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Avatar Picker Dialog */}
-      <AvatarPicker
-        open={showAvatarPicker}
-        onOpenChange={setShowAvatarPicker}
-        currentAvatar={team?.team_avatar}
-        onAvatarSelect={handleUpdateTeamAvatar}
-        disabled={updatingAvatar}
-      />
     </main>
   )
 }

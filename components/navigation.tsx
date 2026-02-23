@@ -87,6 +87,14 @@ export default function Navigation() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Listen for client-side team updates (e.g. after team creation or avatar upload)
+  useEffect(() => {
+    if (!user) return
+    const handleTeamUpdate = () => fetchUserTeam(user.id)
+    window.addEventListener('team-updated', handleTeamUpdate)
+    return () => window.removeEventListener('team-updated', handleTeamUpdate)
+  }, [user])
+
   const checkAdminStatus = (user: any) => {
     // Check if user has admin role in metadata
     const isUserAdmin = user?.app_metadata?.role === 'admin' ||
@@ -114,10 +122,17 @@ export default function Navigation() {
         if (teamData) {
           setUserTeam(teamData)
           setIsCaptain(teamData.captain_id === userId)
+        } else {
+          setUserTeam(null)
+          setIsCaptain(false)
         }
+      } else {
+        setUserTeam(null)
+        setIsCaptain(false)
       }
     } catch (error) {
-
+      setUserTeam(null)
+      setIsCaptain(false)
     }
   }
 
@@ -144,7 +159,7 @@ export default function Navigation() {
     }
   }
 
-  // Listen for team chat messages
+  // Listen for team chat messages and team updates
   useEffect(() => {
     if (!user || !userTeam) return
 
@@ -163,7 +178,7 @@ export default function Navigation() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [user, userTeam, supabase])
+  }, [user, userTeam?.id, supabase])
 
   // Reset unread count when user visits team chat pages
   useEffect(() => {

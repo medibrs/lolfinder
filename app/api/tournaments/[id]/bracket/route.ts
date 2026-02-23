@@ -103,6 +103,8 @@ export async function POST(
         return await generateBracket(tournamentUuid, tournament);
       case 'reset_bracket':
         return await resetBracket(tournamentUuid);
+      case 'regenerate_round':
+        return await regenerateCurrentRound(tournamentUuid, tournament);
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -749,6 +751,171 @@ async function resetBracket(tournamentId: string) {
   await logTournamentAction(tournamentId, 'bracket_reset', {});
 
   return NextResponse.json({ message: 'Bracket reset successfully' });
+}
+
+async function regenerateCurrentRound(tournamentId: string, tournament: any) {
+  const format = tournament.format || 'Single_Elimination';
+  const currentRound = tournament.current_round;
+
+  if (currentRound < 1) {
+    return NextResponse.json({ error: 'Bracket has not been generated yet' }, { status: 400 });
+  }
+
+  // 1. Check if ANY matches in the current round have started/completed.
+  const { data: currentMatches } = await supabase
+    .from('tournament_matches')
+    .select('id, status, bracket_id, bracket:tournament_brackets!inner(round_number)')
+    .eq('tournament_id', tournamentId)
+    .eq('bracket.round_number', currentRound);
+
+  if (currentMatches && currentMatches.some(m => m.status !== 'Scheduled')) {
+    return NextResponse.json({ error: 'Cannot regenerate round when matches have already started' }, { status: 400 });
+  }
+
+  // 2. Wipe the current round from the database
+  const bracketIds = currentMatches?.map(m => m.bracket_id) || [];
+  if (currentMatches && currentMatches.length > 0) {
+    await supabase.from('tournament_matches').delete().in('id', currentMatches.map(m => m.id));
+  }
+  if (bracketIds.length > 0) {
+    await supabase.from('tournament_brackets').delete().in('id', bracketIds);
+  }
+
+  // 3. Re-pair based on format
+  if (format === 'Single_Elimination') {
+    if (currentRound !== 1) {
+      return NextResponse.json({ error: 'Single elimination seeding can only be regenerated for Round 1' }, { status: 400 });
+    }
+    // Delete all future empty bracket shells too for SE, then fully regenerate from scratch.
+    await resetBracket(tournamentId);
+
+    // Get active participants ordered by new seed
+    const { data: participants, error: pError } = await supabase
+      .from('tournament_participants')
+      .select('*, team:teams(id, name, team_avatar)')
+      .eq('tournament_id', tournamentId)
+      .eq('is_active', true)
+      .order('seed_number', { ascending: true });
+
+    if (pError || !participants) return NextResponse.json({ error: 'Failed to fetch participants' }, { status: 500 });
+    return await generateSingleEliminationBracket(tournamentId, tournament, participants);
+  }
+
+  if (format === 'Swiss') {
+    // Get active participants ordered strictly by current swiss points, then seed.
+    // Their `swiss_score` is exactly correct for going into `currentRound` because it's updated as rounds end!
+    const { data: participants, error: pError } = await supabase
+      .from('tournament_participants')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .eq('is_active', true);
+
+    if (pError || !participants) return NextResponse.json({ error: 'Failed to fetch participants' }, { status: 500 });
+
+    if (currentRound === 1) {
+      // Just generate standard R1 Swiss (top vs bottom within 0-0 pool = basically just 1v2, 3v4 ordered by seed)
+      const sorted = participants.sort((a, b) => a.seed_number - b.seed_number);
+      return await generateSwissRound(tournamentId, tournament, sorted, 1);
+    } else {
+      // Standard swiss pairing logic exactly mimicking `advanceSwiss`
+      const sorted = [...participants].sort((a, b) => (b.swiss_score || 0) - (a.swiss_score || 0) || (a.seed_number || 0) - (b.seed_number || 0));
+
+      const paired = new Set();
+      const newMatches: any[] = [];
+
+      // Generate bracket IDs for the current round
+      const { data: newBrackets, error: bErr } = await supabase
+        .from('tournament_brackets')
+        .insert(
+          Array.from({ length: Math.ceil(sorted.length / 2) }).map((_, i) => ({
+            tournament_id: tournamentId,
+            round_number: currentRound,
+            bracket_position: i + 1,
+          }))
+        )
+        .select('*');
+
+      if (bErr || !newBrackets) {
+        return NextResponse.json({ error: 'Failed to create new brackets for round ' + currentRound }, { status: 500 });
+      }
+
+      let matchCount = 1;
+      for (let i = 0; i < sorted.length; i++) {
+        const p1 = sorted[i];
+        if (paired.has(p1.team_id)) continue;
+        paired.add(p1.team_id);
+
+        let pairedWith = null;
+
+        // Find available opponent
+        for (let j = i + 1; j < sorted.length; j++) {
+          const p2 = sorted[j];
+          if (paired.has(p2.team_id)) continue;
+          const previouslyPaired = p1.opponents_played?.includes(p2.team_id) || false;
+
+          if (!previouslyPaired) {
+            pairedWith = p2;
+            paired.add(p2.team_id);
+            break;
+          }
+        }
+
+        // Fallback if no unique pair found
+        if (!pairedWith) {
+          for (let j = i + 1; j < sorted.length; j++) {
+            const p2 = sorted[j];
+            if (paired.has(p2.team_id)) continue;
+            pairedWith = p2;
+            paired.add(p2.team_id);
+            break;
+          }
+        }
+
+        const bracketForMatch = newBrackets[matchCount - 1];
+        const isLastRound = currentRound >= tournament.total_rounds;
+        let bestOf: number;
+
+        if (isLastRound) {
+          bestOf = tournament.finals_best_of || tournament.elimination_best_of || 5;
+        } else {
+          const p1Losses = (p1.opponents_played?.length || 0) - (p1.swiss_score || 0) / (tournament.swiss_points_per_win || 3);
+          const maxLosses = 3;
+
+          if (pairedWith) {
+            const p2Losses = (pairedWith.opponents_played?.length || 0) - (pairedWith.swiss_score || 0) / (tournament.swiss_points_per_win || 3);
+            if (p1Losses >= maxLosses - 1 || p2Losses >= maxLosses - 1) {
+              bestOf = tournament.elimination_best_of || tournament.progression_best_of || 3;
+            } else {
+              bestOf = tournament.progression_best_of || 3;
+            }
+          } else {
+            bestOf = tournament.progression_best_of || 3;
+          }
+        }
+
+        newMatches.push({
+          tournament_id: tournamentId,
+          bracket_id: bracketForMatch.id,
+          match_number: matchCount++,
+          team1_id: p1?.team_id || null,
+          team2_id: pairedWith?.team_id || null,
+          status: pairedWith ? 'Scheduled' : 'Completed',
+          result: !pairedWith ? 'Team1_Win' : null,
+          winner_id: !pairedWith ? p1?.team_id : null,
+          best_of: bestOf
+        });
+      }
+
+      if (newMatches.length > 0) {
+        await supabase.from('tournament_matches').insert(newMatches);
+      }
+
+      await logTournamentAction(tournamentId, 'round_regenerated', { round: currentRound, format: 'Swiss' });
+      return NextResponse.json({ message: `Round ${currentRound} regenerated successfully`, total_rounds: tournament.total_rounds });
+    }
+  }
+
+  return NextResponse.json({ error: 'Unsupported format configuration for regeneration' }, { status: 400 });
 }
 
 // ============ HELPER FUNCTIONS ============

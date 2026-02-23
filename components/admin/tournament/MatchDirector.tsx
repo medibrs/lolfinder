@@ -69,6 +69,7 @@ export default function MatchDirector({ tournamentId, tournamentFormat, onStateC
     const [tournamentStatus, setTournamentStatus] = useState('')
 
     const isSwiss = tournamentFormat === 'Swiss'
+    const isRoundRobin = tournamentFormat === 'Round_Robin'
 
     const fetchState = useCallback(async () => {
         try {
@@ -329,21 +330,25 @@ export default function MatchDirector({ tournamentId, tournamentFormat, onStateC
                                         </Button>
                                     )}
                                     {!isScheduled && !isLive && (
-                                        <span className="text-xs text-muted-foreground">Set a winner or declare a draw</span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {isRoundRobin ? 'Set a winner or declare a draw' : 'Set a winner'}
+                                        </span>
                                     )}
                                     {isScheduled && !bothTeamsReady && (
                                         <span className="text-xs text-muted-foreground">Waiting for teams...</span>
                                     )}
 
-                                    <Button
-                                        size="sm"
-                                        variant="secondary"
-                                        className="text-xs border border-yellow-500/20 hover:bg-yellow-500/10 hover:text-yellow-400"
-                                        onClick={() => handleUpdateMatch(match.id, { status: 'Completed', result: 'Draw', winner_id: null })}
-                                        disabled={!bothTeamsReady}
-                                    >
-                                        🤝 Draw
-                                    </Button>
+                                    {isRoundRobin && (
+                                        <Button
+                                            size="sm"
+                                            variant="secondary"
+                                            className="text-xs border border-yellow-500/20 hover:bg-yellow-500/10 hover:text-yellow-400"
+                                            onClick={() => handleUpdateMatch(match.id, { status: 'Completed', result: 'Draw', winner_id: null })}
+                                            disabled={!bothTeamsReady}
+                                        >
+                                            🤝 Draw
+                                        </Button>
+                                    )}
                                 </>
                             )}
                         </div>
@@ -390,10 +395,11 @@ export default function MatchDirector({ tournamentId, tournamentFormat, onStateC
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                         <Input
                             type="number"
+                            min={0}
                             className="w-14 h-8 text-center text-sm"
                             defaultValue={match[scoreKey] ?? 0}
                             key={`${match.id}-${scoreKey}-${match[scoreKey]}`}
-                            onBlur={(e) => handleUpdateMatch(match.id, { [scoreKey]: parseInt(e.target.value) || 0 })}
+                            onBlur={(e) => handleUpdateMatch(match.id, { [scoreKey]: Math.max(0, parseInt(e.target.value) || 0) })}
                             disabled={isCompleted}
                         />
                         <Button

@@ -12,7 +12,7 @@ const DDRAGON_VERSION = '15.23.1'
 export interface TeamAvatarTeam {
   id: string
   name: string
-  team_avatar?: number
+  team_avatar?: number | string
 }
 
 interface TeamAvatarProps {
@@ -40,8 +40,9 @@ const iconSizes = {
 }
 
 // Synchronous URL generation - no async delay
-export function getTeamAvatarUrl(avatarId?: number): string | null {
+export function getTeamAvatarUrl(avatarId?: number | string): string | null {
   if (!avatarId) return null
+  if (typeof avatarId === 'string' && avatarId.startsWith('http')) return avatarId
   return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${avatarId}.png`
 }
 

@@ -39,6 +39,8 @@ interface RawMatch {
     team2?: { id: string; name: string; team_avatar?: number } | null
     winner_id?: string | null
     status: string
+    team1_score?: number
+    team2_score?: number
     bracket?: {
         round_number: number
         bracket_position: number
@@ -73,15 +75,15 @@ function buildBracketFromMatches(matches: RawMatch[], totalRounds: number): Sing
 
         const mappedMatches: SingleElimMatch[] = roundMatches.map(m => {
             const team1: SingleElimMatchCardTeam | null = m.team1
-                ? { id: m.team1.id, name: m.team1.name, team_avatar: m.team1.team_avatar }
+                ? { id: m.team1.id, name: m.team1.name, team_avatar: m.team1.team_avatar, score: m.team1_score }
                 : m.team1_id
-                    ? { id: m.team1_id, name: 'Unknown', team_avatar: undefined }
+                    ? { id: m.team1_id, name: 'Unknown', team_avatar: undefined, score: m.team1_score }
                     : null
 
             const team2: SingleElimMatchCardTeam | null = m.team2
-                ? { id: m.team2.id, name: m.team2.name, team_avatar: m.team2.team_avatar }
+                ? { id: m.team2.id, name: m.team2.name, team_avatar: m.team2.team_avatar, score: m.team2_score }
                 : m.team2_id
-                    ? { id: m.team2_id, name: 'Unknown', team_avatar: undefined }
+                    ? { id: m.team2_id, name: 'Unknown', team_avatar: undefined, score: m.team2_score }
                     : null
 
             let status: 'live' | 'scheduled' | 'done' = 'scheduled'
@@ -278,17 +280,17 @@ export function SingleEliminationBracketPreview({ teams, teamCount, matchData }:
 
                                                 {/* Connecting Lines Outward */}
                                                 {!isLastColumn && (
-                                                    <div className="h-[2px] bg-zinc-700 absolute top-1/2 z-0 right-[-5px] md:right-[-10px]" style={{ left: '50%' }} />
+                                                    <div className="h-[2px] bg-zinc-700 absolute top-1/2 z-0 right-[-10px] md:right-[-20px]" style={{ left: '50%' }} />
                                                 )}
                                                 {/* Connecting Line Inward (except first column) */}
                                                 {colIndex !== 0 && (
-                                                    <div className="h-[2px] bg-zinc-700 absolute top-1/2 z-0 left-[-5px] md:left-[-10px]" style={{ right: '50%' }} />
+                                                    <div className="h-[2px] bg-zinc-700 absolute top-1/2 z-0 left-[-10px] md:left-[-20px]" style={{ right: '50%' }} />
                                                 )}
 
                                                 {/* Vertical Connectors (rendered by the top match of each pair pointing to the next match) */}
                                                 {!isLastColumn && matchIndex % 2 === 0 && (
                                                     <div
-                                                        className="absolute bg-zinc-700 w-[2px] z-0 right-[-5px] md:right-[-10px]"
+                                                        className="absolute bg-zinc-700 w-[2px] z-0 right-[-10px] md:right-[-20px]"
                                                         style={{
                                                             top: '50%',
                                                             height: '100%',
@@ -303,7 +305,7 @@ export function SingleEliminationBracketPreview({ teams, teamCount, matchData }:
 
                             {/* Gap between columns */}
                             {!isLastColumn && (
-                                <div className="w-[10px] md:w-[20px] shrink-0" />
+                                <div className="w-[20px] md:w-[40px] shrink-0" />
                             )}
                         </div>
                     )

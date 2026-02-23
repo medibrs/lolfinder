@@ -351,6 +351,7 @@ export default async function TournamentEventPage({ params }: Props) {
                     participants,
                     matchData
                   )}
+                  teamCount={tournament.max_teams}
                 />
               ) : tournament.format === 'Single_Elimination' ? (
                 <SingleEliminationBracketPreview

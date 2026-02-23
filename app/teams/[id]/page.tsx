@@ -22,7 +22,6 @@ import { getRankImage } from '@/lib/rank-utils'
 import { getProfileIconUrl } from '@/lib/ddragon'
 import RoleIcon from '@/components/RoleIcon'
 import { Shield, Trophy, Users, Calendar, UserPlus, Edit, Gamepad2, Crown } from 'lucide-react'
-import { AvatarPicker, AvatarPreview } from '@/components/AvatarPicker'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
@@ -76,9 +75,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   const [pendingRequest, setPendingRequest] = useState<string | null>(null)
   const [sendingRequest, setSendingRequest] = useState(false)
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
-  const [updatingAvatar, setUpdatingAvatar] = useState(false)
-  const [takenAvatars, setTakenAvatars] = useState<{ id: number; teamName: string; teamId: string }[]>([])
   const supabase = createClient()
 
   const handleSearchPlayers = () => {
@@ -93,53 +89,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
     router.push('/tournaments')
   }
 
-  const handleUpdateTeamAvatar = async (avatarId: number) => {
-    if (!isCaptain || updatingAvatar) return
 
-    try {
-      setUpdatingAvatar(true)
-      const { data: { session } } = await supabase.auth.getSession()
-
-      const response = await fetch('/api/teams/update-avatar', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ teamId: team.id, avatarId }),
-      })
-
-      const result = await response.json()
-
-      if (response.ok) {
-        setTeam((prev: any) => ({ ...prev, team_avatar: avatarId }))
-        setShowAvatarPicker(false)
-        // Refresh taken avatars list
-        fetchTakenAvatars()
-      } else {
-
-        // Show user-friendly error message
-        alert(result.message || result.error || 'Failed to update avatar')
-      }
-    } catch (error) {
-
-      alert('Error updating team avatar')
-    } finally {
-      setUpdatingAvatar(false)
-    }
-  }
-
-  const fetchTakenAvatars = async () => {
-    try {
-      const response = await fetch('/api/teams/taken-avatars')
-      if (response.ok) {
-        const data = await response.json()
-        setTakenAvatars(data.takenAvatars || [])
-      }
-    } catch (error) {
-
-    }
-  }
 
   const handleRequestToJoin = async () => {
     if (!currentUserId || sendingRequest) return
@@ -280,7 +230,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
     }
 
     fetchTeamData()
-    fetchTakenAvatars()
   }, [id, supabase])
 
   if (loading) {
@@ -385,16 +334,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                         </div>
                       )}
                     </div>
-                    {isCaptain && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setShowAvatarPicker(true)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                    )}
                   </div>
 
                   <div className="flex-1 text-center sm:text-left">
@@ -830,14 +769,6 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* Avatar Picker Dialog */}
-        <AvatarPicker
-          open={showAvatarPicker}
-          onOpenChange={setShowAvatarPicker}
-          currentAvatar={team.team_avatar}
-          onAvatarSelect={handleUpdateTeamAvatar}
-          disabled={updatingAvatar}
-        />
       </div>
     </main>
   )

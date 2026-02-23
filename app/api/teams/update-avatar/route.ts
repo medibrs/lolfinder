@@ -50,9 +50,9 @@ export async function PUT(request: Request) {
     }
 
     if (existingTeam) {
-      return NextResponse.json({ 
-        error: 'Avatar already taken', 
-        message: `This avatar is already being used by ${existingTeam.name}` 
+      return NextResponse.json({
+        error: 'Avatar already taken',
+        message: `This avatar is already being used by ${existingTeam.name}`
       }, { status: 409 })
     }
 

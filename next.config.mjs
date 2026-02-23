@@ -13,6 +13,11 @@ const nextConfig = {
         hostname: 'ddragon.leagueoflegends.com',
         pathname: '/cdn/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lolfinderassets.blob.core.windows.net',
+        pathname: '/logos/**',
+      },
     ],
   },
 }
