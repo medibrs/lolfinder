@@ -52,6 +52,7 @@ export async function POST() {
                 main_role: ['Top', 'Jungle', 'Mid', 'ADC', 'Support'][j],
                 secondary_role: ['Mid', 'Top', 'ADC', 'Support', 'Jungle'][j],
                 looking_for_team: false,
+                is_bot: true,
             })
             if (profileErr) throw new Error(`Profile: ${profileErr.message}`)
 
@@ -64,6 +65,7 @@ export async function POST() {
             captain_id: playerIds[0],
             recruiting_status: 'Closed',
             description: 'Demo team for testing',
+            is_bot: true,
         }).select().single()
         if (teamErr) throw new Error(`Team: ${teamErr.message}`)
 

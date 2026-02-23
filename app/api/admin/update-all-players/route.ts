@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
     const { data: players, error: fetchError } = await supabase
       .from('players')
       .select('id, summoner_name, puuid')
-      .not('puuid', 'is', null);
+      .not('puuid', 'is', null)
+      .or('is_bot.is.null,is_bot.eq.false');
 
     if (fetchError) {
       return NextResponse.json({ error: 'Failed to fetch players' }, { status: 500 });
