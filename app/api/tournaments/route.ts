@@ -11,6 +11,7 @@ const createTournamentSchema = z.object({
   prize_pool: z.string().optional(),
   max_teams: z.number().int().positive(),
   rules: z.string().optional(),
+  banner_image: z.string().optional(),
 });
 
 // GET /api/tournaments - List all tournaments
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validate input
     const validatedData = createTournamentSchema.parse(body);
 

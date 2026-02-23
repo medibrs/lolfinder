@@ -37,6 +37,7 @@ interface Player {
   league_points?: number
   wins?: number
   losses?: number
+  is_bot?: boolean
 }
 
 export default function PlayersPage() {

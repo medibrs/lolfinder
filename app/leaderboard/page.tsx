@@ -52,6 +52,7 @@ interface Player {
   league_points?: number
   wins?: number
   losses?: number
+  is_bot?: boolean
 }
 
 function getRankScore(tier: string, division: string | null | undefined, lp: number = 0): number {
@@ -116,7 +117,7 @@ export default function LeaderboardPage() {
 
       // Filter out test profiles and sort by rank
       const sortedPlayers = allPlayers
-        .filter((p: Player) => !p.summoner_name.toLowerCase().includes('test'))
+        .filter((p: Player) => !p.summoner_name.toLowerCase().includes('test') && !p.is_bot)
         .sort((a: Player, b: Player) => {
           const scoreA = getRankScore(a.tier, a.rank, a.league_points || 0)
           const scoreB = getRankScore(b.tier, b.rank, b.league_points || 0)

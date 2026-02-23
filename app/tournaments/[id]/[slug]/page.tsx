@@ -276,7 +276,7 @@ export default async function TournamentEventPage({ params }: Props) {
         {/* Background image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-zinc-900"
-          style={{ backgroundImage: 'url(/leet_lol_header.jpg)' }}
+          style={{ backgroundImage: `url(${tournament.banner_image || '/leet_lol_header.jpg'})` }}
         />
         {/* Dark overlay */}
         <div className="absolute inset-0 bg-black/50" />

@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    let query = supabase.from('players').select('*');
+    let query = supabase.from('players')
+      .select('*')
+      .or('is_bot.is.null,is_bot.eq.false');
 
     // Apply filters
     if (role) {
@@ -38,7 +40,9 @@ export async function GET(request: NextRequest) {
     query = query.order('created_at', { ascending: false });
 
     // Get total count for pagination info
-    let countQuery = supabase.from('players').select('*', { count: 'exact', head: true });
+    let countQuery = supabase.from('players')
+      .select('*', { count: 'exact', head: true })
+      .or('is_bot.is.null,is_bot.eq.false');
 
     // Apply same filters to count query
     if (role) {

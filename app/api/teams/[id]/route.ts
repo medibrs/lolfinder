@@ -19,12 +19,13 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
+
     // Get team with captain info
     const { data: team, error: teamError } = await supabase
       .from('teams')
       .select('*, captain:players!captain_id(*)')
       .eq('id', id)
+      .or('is_bot.is.null,is_bot.eq.false')
       .single();
 
     if (teamError) {
@@ -38,7 +39,8 @@ export async function GET(
     const { data: members, error: membersError } = await supabase
       .from('players')
       .select('*')
-      .eq('team_id', id);
+      .eq('team_id', id)
+      .or('is_bot.is.null,is_bot.eq.false');
 
     if (membersError) {
       return NextResponse.json({ error: membersError.message }, { status: 500 });
@@ -61,7 +63,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    
+
     // Validate input
     const validatedData = updateTeamSchema.parse(body);
 
@@ -147,7 +149,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    
+
     // Remove team_id from all players in this team
     await supabase
       .from('players')

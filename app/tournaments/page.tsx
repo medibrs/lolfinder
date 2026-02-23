@@ -19,6 +19,7 @@ interface Tournament {
   prize_pool?: string
   rules?: string
   tournament_number?: number
+  banner_image?: string
   created_at: string
   updated_at: string
   tournament_participants?: { count: number }[]
@@ -142,6 +143,7 @@ export default function TournamentsPage() {
           *,
           tournament_participants(count)
         `)
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -312,7 +314,7 @@ export default function TournamentsPage() {
                     <div
                       className="absolute inset-0 bg-cover bg-center pointer-events-none transition-transform duration-1000 group-hover:scale-105"
                       style={{
-                        backgroundImage: 'url(/leet_lol_header.jpg)',
+                        backgroundImage: `url(${tournament.banner_image || '/leet_lol_header.jpg'})`,
                         filter: 'brightness(0.7) contrast(1.15) saturate(1.1)'
                       }}
                     />

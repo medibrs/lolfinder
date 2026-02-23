@@ -44,7 +44,11 @@ interface Tournament {
   progression_best_of?: number
   elimination_best_of?: number
   finals_best_of?: number
+  banner_image?: string
 }
+
+import { ImagePlus, X } from 'lucide-react'
+import Image from 'next/image'
 
 export default function TournamentManagePage() {
   const params = useParams()
@@ -55,8 +59,44 @@ export default function TournamentManagePage() {
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !tournament) return
+
+    setUploadingBanner(true)
+    const uploadFormData = new FormData()
+    uploadFormData.append('file', file)
+    uploadFormData.append('tournamentId', tournament.id)
+
+    try {
+      const response = await fetch('/api/tournaments/upload-banner', {
+        method: 'POST',
+        body: uploadFormData
+      })
+
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to upload banner')
+
+      setTournament({ ...tournament, banner_image: data.url })
+      setHasUnsavedChanges(true)
+      toast({ title: "Success", description: "Banner uploaded. Don't forget to save changes!" })
+    } catch (error: any) {
+      toast({ title: "Upload Failed", description: error.message, variant: "destructive" })
+    } finally {
+      setUploadingBanner(false)
+    }
+  }
+
+  const removeBanner = () => {
+    if (!tournament) return
+    setTournament({ ...tournament, banner_image: undefined })
+    setHasUnsavedChanges(true)
+    toast({ title: "Banner Removed", description: "Banner removal pending. Save changes to persist." })
+  }
 
   useEffect(() => {
     async function fetchTournament() {
@@ -124,6 +164,7 @@ export default function TournamentManagePage() {
         progression_best_of: tournament.progression_best_of,
         elimination_best_of: tournament.elimination_best_of,
         finals_best_of: tournament.finals_best_of,
+        banner_image: tournament.banner_image || null,
       }
 
       const response = await fetch(`/api/tournaments/${tournament.id}`, {
@@ -288,7 +329,63 @@ export default function TournamentManagePage() {
                       <CardTitle>General Information</CardTitle>
                       <CardDescription>Basic details about the tournament.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-6">
+                      <div className="space-y-2">
+                        <Label>Tournament Banner</Label>
+                        <div className="relative group">
+                          {tournament.banner_image ? (
+                            <div className="relative aspect-[5/2] w-full rounded-lg overflow-hidden border border-border bg-muted">
+                              <Image
+                                src={tournament.banner_image}
+                                alt="Banner"
+                                fill
+                                className="object-cover"
+                              />
+                              <button
+                                onClick={removeBanner}
+                                className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Label htmlFor="banner-upload" className="cursor-pointer bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium transition-all">
+                                  Change Banner
+                                </Label>
+                              </div>
+                            </div>
+                          ) : (
+                            <Label
+                              htmlFor="banner-upload"
+                              className="flex flex-col items-center justify-center aspect-[5/2] w-full rounded-lg border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group"
+                            >
+                              <div className="flex flex-col items-center gap-2">
+                                <div className="p-3 rounded-full bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                                  <ImagePlus className="h-6 w-6" />
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-sm font-medium">Upload Banner Image</p>
+                                  <p className="text-xs text-muted-foreground">Recommend 2000x800 (Max 5MB)</p>
+                                </div>
+                              </div>
+                            </Label>
+                          )}
+                          <input
+                            id="banner-upload"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleBannerUpload}
+                            disabled={uploadingBanner}
+                          />
+                        </div>
+                        {uploadingBanner && (
+                          <div className="flex items-center gap-2 text-xs text-primary animate-pulse mt-2">
+                            <div className="h-2 w-2 rounded-full bg-primary" />
+                            Uploading to Azure cdn...
+                          </div>
+                        )}
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-[1fr_120px] gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="name">Tournament Name</Label>

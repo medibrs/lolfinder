@@ -21,7 +21,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    let query = supabase.from('teams').select('*, captain:players!captain_id(*)');
+    let query = supabase.from('teams')
+      .select('*, captain:players!captain_id(*)')
+      .or('is_bot.is.null,is_bot.eq.false');
 
     // Apply filters
     if (recruiting) {
@@ -34,7 +36,9 @@ export async function GET(request: NextRequest) {
     query = query.order('created_at', { ascending: false });
 
     // Get total count for pagination
-    let countQuery = supabase.from('teams').select('*', { count: 'exact', head: true });
+    let countQuery = supabase.from('teams')
+      .select('*', { count: 'exact', head: true })
+      .or('is_bot.is.null,is_bot.eq.false');
     if (recruiting) {
       countQuery = countQuery.eq('recruiting_status', recruiting);
     }

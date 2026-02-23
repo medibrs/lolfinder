@@ -28,6 +28,7 @@ export interface Player {
   team_id?: string;
   puuid?: string;
   summoner_level?: number;
+  is_bot?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -42,6 +43,7 @@ export interface Team {
   region: Region;
   recruiting_status: RecruitingStatus;
   team_avatar?: string | number;
+  is_bot?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +57,7 @@ export interface Tournament {
   prize_pool?: string;
   max_teams: number;
   rules?: string;
+  banner_image?: string;
   created_at: string;
   updated_at: string;
 }

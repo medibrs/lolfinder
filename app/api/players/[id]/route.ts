@@ -24,6 +24,7 @@ export async function GET(
       .from('players')
       .select('*')
       .eq('id', id)
+      .or('is_bot.is.null,is_bot.eq.false')
       .single();
 
     if (error) {

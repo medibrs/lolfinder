@@ -32,6 +32,7 @@ interface Team {
   captain?: {
     summoner_name: string
   }
+  is_bot?: boolean
 }
 
 export default function TeamsPage() {
@@ -188,8 +189,9 @@ export default function TeamsPage() {
         newTeams.map(async (team: any) => {
           const { data: members } = await supabase
             .from('players')
-            .select('id, summoner_name, main_role, tier, profile_icon_id')
+            .select('id, summoner_name, main_role, tier, profile_icon_id, is_bot')
             .eq('team_id', team.id)
+            .or('is_bot.is.null,is_bot.eq.false')
 
           const membersWithIcons = members?.map(m => ({
             ...m,
