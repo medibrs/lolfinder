@@ -10,6 +10,7 @@ import { getRankImage } from '@/lib/rank-utils'
 import { getProfileIconUrl } from '@/lib/ddragon'
 import RoleIcon from '@/components/RoleIcon'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useIsMobile } from '@/hooks/use-mobile'
 import {
   Tooltip,
   TooltipContent,
@@ -68,6 +69,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true)
   const [profileIconUrls, setProfileIconUrls] = useState<Record<string, string>>({})
   const supabase = createClient()
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     checkAuthAndFetchPlayers()
@@ -216,8 +218,7 @@ export default function LeaderboardPage() {
             <div className="relative mb-20">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[150%] bg-cyan-500/[0.03] blur-[120px] rounded-full pointer-events-none"></div>
 
-              <div className="max-w-4xl mx-auto mb-10 px-4">
-                <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-cyan-400/80 mb-2 px-2">Top 3 Podium</h2>
+              <div className="max-w-4xl mx-auto mb-10 px-4 mt-[-20px]">
                 <div className="h-[1px] w-full bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent"></div>
               </div>
 
@@ -225,7 +226,7 @@ export default function LeaderboardPage() {
                 <div className="flex flex-col md:flex-row items-end justify-center gap-1 lg:gap-3 px-4 max-w-6xl mx-auto">
 
                   {/* RANK 2 HUD */}
-                  <div className="relative w-full md:w-[280px] order-2 md:order-1 transform transition-all hover:translate-y-[-2px] group/p2">
+                  <div className="relative w-full md:w-[280px] order-2 md:order-1 transform transition-all hover:translate-y-[-2px] group/p2 mb-12 md:mb-0">
                     <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30">
                       <div className="relative w-14 h-14 rounded-full border-2 border-slate-500 p-0.5 bg-[#060a13] shadow-[0_0_15px_rgba(100,116,139,0.3)] group-hover/p2:shadow-cyan-500/20 transition-all">
                         {profileIconUrls[players[1].id] ? (
@@ -237,18 +238,18 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
 
-                    <div className="relative h-[110px] bg-[#0c121d]/90 border border-slate-500/40 backdrop-blur-xl flex items-center justify-center md:justify-end px-4 pt-2 shadow-2xl skew-x-[-1deg]">
+                    <div className="relative h-[110px] bg-[#0c121d]/90 border border-slate-500/40 backdrop-blur-xl flex items-center justify-end px-4 pt-2 shadow-2xl skew-x-[-1deg]">
                       {/* Under-glow (Hover only) */}
                       <div className="absolute inset-0 bg-cyan-500/10 blur-[40px] opacity-0 group-hover/p2:opacity-100 transition-opacity duration-500 -z-10"></div>
 
-                      {/* Bleeding Medal - Responsive */}
-                      <div className="absolute -left-6 -top-6 md:-left-10 md:-top-10 w-[100px] md:w-[150px] z-20 opacity-90 pointer-events-none">
-                        <Image src="/tournament_assets/second_place_medal.png" alt="" width={150} height={150} className="object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
+                      {/* Bleeding Medal - Responsive Positioning */}
+                      <div className={`absolute ${isMobile ? '-left-4 -top-4 w-[110px]' : '-left-10 -top-10 w-[150px]'} z-10 opacity-90 pointer-events-none`}>
+                        <Image src="/tournament_assets/second_place_medal.png" alt="" width={isMobile ? 110 : 150} height={isMobile ? 110 : 150} className="object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
                       </div>
 
-                      <div className="flex flex-col z-10 text-center md:text-right md:pr-2 ml-10 md:ml-0">
+                      <div className={`flex flex-col z-30 text-right pr-2 ${isMobile ? 'pl-20' : 'pl-24 md:pl-0'}`}>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-0.5">Rank 2</p>
-                        <h4 className="text-base font-beaufort font-bold text-white uppercase tracking-tight leading-none mb-1 truncate max-w-[140px]">
+                        <h4 className={`font-beaufort font-bold text-white uppercase tracking-tight leading-none mb-1 truncate ${isMobile ? 'text-sm max-w-[120px]' : 'text-base max-w-[140px]'}`}>
                           {players[1].summoner_name.split('#')[0]}
                         </h4>
                         <div className="flex items-center justify-center md:justify-end gap-1.5 mb-1.5 opacity-60">
@@ -264,12 +265,12 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
 
-                  <div className="relative w-full md:w-[480px] order-1 md:order-2 z-30 group/p1 mb-16 md:mb-0">
+                  <div className="relative w-full md:w-[480px] order-1 md:order-2 z-30 group/p1 mb-20 md:mb-0">
                     {/* AVATAR WITH NEW HALO ASSET */}
                     <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-40">
                       {/* Halo Asset */}
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 pointer-events-none z-20 opacity-60">
-                        <Image src="/tournament_assets/halo.png" alt="" width={100} height={100} className="object-contain" />
+                      <div className={`absolute ${isMobile ? '-top-6 w-16 h-16' : '-top-10 w-20 h-20'} left-1/2 -translate-x-1/2 pointer-events-none z-20 opacity-60`}>
+                        <Image src="/tournament_assets/halo.png" alt="" width={isMobile ? 80 : 100} height={isMobile ? 80 : 100} className="object-contain" />
                       </div>
                       {/* Avatar Circle */}
                       <div className="relative w-26 h-26 rounded-full border-[3px] border-[#c9aa71] p-1.5 bg-[#060a13] shadow-[0_0_40px_rgba(201,170,113,0.6)] z-10">
@@ -281,45 +282,43 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
 
-                    <div className="relative h-[180px] md:h-[220px] bg-[#0c121d] border-2 border-[#c9aa71] shadow-[0_0_80px_rgba(201,170,113,0.1)] flex items-center justify-center md:justify-end px-4 md:px-12 pt-6">
+                    <div className="relative h-[200px] md:h-[220px] bg-[#0c121d] border-2 border-[#c9aa71] shadow-[0_0_80px_rgba(201,170,113,0.1)] flex items-center justify-end px-4 md:px-12 pt-6">
                       {/* Big Under-glow (Hover only) */}
                       <div className="absolute inset-0 bg-[#c9aa71]/15 blur-[60px] opacity-0 group-hover/p1:opacity-100 transition-opacity duration-700 -z-10"></div>
 
                       <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[#c9aa71]/10 to-transparent"></div>
 
                       {/* Giant Bleeding Trophy - Responsive */}
-                      <div className="absolute -left-10 -top-24 md:-left-20 md:-top-31 w-[200px] md:w-[340px] z-[50] pointer-events-none opacity-90 md:opacity-100">
-                        <Image src="/tournament_assets/first_place_trophy.png" alt="" width={340} height={340} className="object-contain drop-shadow-[0_40px_60px_rgba(0,0,0,0.9)]" />
+                      <div className={`absolute ${isMobile ? '-left-8 -top-1 w-[200px]' : '-left-20 -top-31 w-[340px]'} z-10 opacity-100 pointer-events-none`}>
+                        <Image src="/tournament_assets/first_place_trophy.png" alt="" width={isMobile ? 150 : 340} height={isMobile ? 150 : 340} className="object-contain drop-shadow-[0_40px_60px_rgba(0,0,0,0.9)]" />
                       </div>
 
-                      <div className="flex flex-col z-20 text-center md:text-right pt-2 pb-6 md:pb-6 ml-20 md:ml-0">
+                      <div className={`flex flex-col z-30 text-right pt-2 pb-6 md:pb-6 ${isMobile ? 'pl-28' : 'pl-32 md:pl-0'}`}>
                         <p className="text-[12px] md:text-[14px] font-black uppercase tracking-[0.5em] text-[#c9aa71] mb-1 md:mb-2">Rank 1</p>
                         <h3 className="text-2xl md:text-4xl font-beaufort font-black text-white uppercase tracking-tight leading-none mb-2 md:mb-3 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">
                           {players[0].summoner_name.split('#')[0]}
                         </h3>
-                        <div className="flex items-center justify-center md:justify-end gap-2 mb-3 md:mb-4">
+                        <div className="flex items-center justify-end gap-2 mb-3 md:mb-4">
                           <Image src={getRankImage(players[0].tier)} alt="" width={24} height={24} className="object-contain" />
                           <p className="text-[10px] md:text-[12px] font-black text-slate-300 uppercase tracking-widest leading-none">{players[0].tier}</p>
                         </div>
-                        <div className="flex items-baseline justify-center md:justify-end gap-2">
+                        <div className="flex items-baseline justify-end gap-2">
                           <span className="text-2xl md:text-4xl font-black text-white tracking-widest">{players[0].league_points}S</span>
                           <span className="text-[12px] md:text-[16px] font-black text-[#c9aa71] uppercase tracking-tighter">LP</span>
                         </div>
                       </div>
 
                       {/* Fixed "KING OF THE RIFT" positioning - Bottom Corner */}
-                      <div className="absolute bottom-3 right-4 md:bottom-4 md:right-10 z-20">
+                      <div className="absolute bottom-4 right-4 md:bottom-4 md:right-10 z-20">
                         <p className="text-[8px] md:text-[11px] font-black text-[#c9aa71]/80 uppercase tracking-[0.6em] animate-pulse whitespace-nowrap border-t border-[#c9aa71]/20 pt-1 md:pt-2 px-2 md:px-4 shadow-sm bg-[#0c121d]/40">
                           KING OF THE RIFT
                         </p>
                       </div>
-                      <div className="absolute top-0 left-0 w-6 h-6 border-l-2 border-t-2 border-[#c9aa71] shadow-[0_0_10px_rgba(201,170,113,0.5)]"></div>
-                      <div className="absolute bottom-0 right-0 w-6 h-6 border-r-2 border-b-2 border-[#c9aa71] shadow-[0_0_10px_rgba(201,170,113,0.5)]"></div>
                     </div>
                   </div>
 
                   {/* RANK 3 HUD */}
-                  <div className="relative w-full md:w-[280px] order-3 md:order-3 transform transition-all hover:translate-y-[-2px] group/p3">
+                  <div className="relative w-full md:w-[280px] order-3 md:order-3 transform transition-all hover:translate-y-[-2px] group/p3 mt-12 md:mt-0">
                     <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30">
                       <div className="relative w-14 h-14 rounded-full border-2 border-amber-700 p-0.5 bg-[#060a13] shadow-[0_0_15px_rgba(180,83,9,0.3)] group-hover/p3:shadow-orange-500/20 transition-all">
                         {profileIconUrls[players[2].id] ? (
@@ -331,16 +330,16 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
 
-                    <div className="relative h-[110px] bg-[#0c121d]/90 border border-[#b45309]/30 backdrop-blur-xl flex items-center justify-center md:justify-end px-4 pt-2 shadow-2xl skew-x-[1deg] mt-12 md:mt-0">
+                    <div className="relative h-[110px] bg-[#0c121d]/90 border border-[#b45309]/30 backdrop-blur-xl flex items-center justify-end px-4 pt-2 shadow-2xl skew-x-[1deg]">
                       {/* Under-glow (Hover only) */}
                       <div className="absolute inset-0 bg-orange-500/10 blur-[40px] opacity-0 group-hover/p3:opacity-100 transition-opacity duration-500 -z-10"></div>
 
-                      {/* Bleeding Medal - Responsive */}
-                      <div className="absolute -left-6 -top-6 md:-left-10 md:-top-10 w-[100px] md:w-[150px] z-20 opacity-90 pointer-events-none">
-                        <Image src="/tournament_assets/third_place_medal.png" alt="" width={150} height={150} className="object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
+                      {/* Bleeding Medal - Responsive Positioning */}
+                      <div className={`absolute ${isMobile ? '-left-4 -top-4 w-[110px]' : '-left-10 -top-10 w-[150px]'} z-10 opacity-90 pointer-events-none`}>
+                        <Image src="/tournament_assets/third_place_medal.png" alt="" width={isMobile ? 110 : 150} height={isMobile ? 110 : 150} className="object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
                       </div>
 
-                      <div className="flex flex-col z-10 text-center md:text-right md:pr-2 ml-10 md:ml-0">
+                      <div className={`flex flex-col z-30 text-right pr-2 ${isMobile ? 'pl-20' : 'pl-24 md:pl-0'}`}>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700 mb-0.5">Rank 3</p>
                         <h4 className="text-base font-beaufort font-bold text-white uppercase tracking-tight leading-none mb-1 truncate max-w-[140px]">
                           {players[2].summoner_name.split('#')[0]}
