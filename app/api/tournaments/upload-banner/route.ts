@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import sharp from 'sharp';
 import { analyzeImageSafety, getFlaggedCategories, analyzeImageVision, validateImageTags } from '@/lib/azure/content-safety';
 import { uploadToBlob } from '@/lib/azure/storage';
+import { BANNER_TAGS, BANNER_TAG_THRESHOLD } from '@/lib/azure/tags';
 import { ratelimit } from '@/lib/rate-limit/upstash';
 import { logApiMetric } from '@/lib/telemetry/logger';
 
@@ -61,9 +62,7 @@ export async function POST(request: Request) {
 
             // B: Contextual Accuracy for Banners
             const visionResult = await analyzeImageVision(buffer);
-            // Allow gaming, esports, abstract backgrounds, landscapes, computer/hardware, graphics
-            const validBannerTags = ['esports', 'video game', 'event', 'graphic', 'poster', 'banner', 'computer', 'landscape', 'abstract', 'design', 'tournament', 'text', 'game', 'play', 'competition'];
-            const tagCheck = validateImageTags(visionResult, validBannerTags, 0.4);
+            const tagCheck = validateImageTags(visionResult, BANNER_TAGS, BANNER_TAG_THRESHOLD);
 
             if (!tagCheck.isValid) {
                 return NextResponse.json({

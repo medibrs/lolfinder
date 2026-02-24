@@ -247,12 +247,7 @@ export default function ManageTeamPage() {
     }
 
     setPendingAvatarFile(file);
-    // Create local preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    setAvatarPreview(URL.createObjectURL(file));
 
     // Reset file input value so same file can be picked again
     if (event.target) {

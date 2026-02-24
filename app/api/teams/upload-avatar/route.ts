@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import sharp from 'sharp';
-import { analyzeImageSafety, getFlaggedCategories, analyzeImageVision, validateImageTags } from '@/lib/azure/content-safety';
-import { uploadToBlob } from '@/lib/azure/storage';
+import { validateAndUploadTeamAvatar } from '@/lib/azure/image-validation';
 import { ratelimit } from '@/lib/rate-limit/upstash';
 import { logApiMetric } from '@/lib/telemetry/logger';
 
@@ -50,74 +48,30 @@ export async function POST(request: Request) {
 
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        const base64Image = buffer.toString('base64');
-        const extension = file.name.split('.').pop()?.toLowerCase() || 'png';
 
-        // --- Azure Content Safety & Vision Check ---
-        try {
-            // A: Harmful Content Safety 
-            const imageResult = await analyzeImageSafety(base64Image);
-            const flaggedCategories = getFlaggedCategories(imageResult);
+        // Use the unified helper for validation and upload
+        const imageUrl = await validateAndUploadTeamAvatar(buffer, file.name, 'team-avatars');
 
-            if (flaggedCategories.length > 0) {
-                return NextResponse.json({
-                    error: `Upload rejected. Image flagged for: ${flaggedCategories.join(', ')}`
-                }, { status: 400 });
-            }
-
-            // B: Contextual Accuracy (Ensure it is a logo/graphic)
-            const visionResult = await analyzeImageVision(buffer);
-            const validLogoTags = ['logo', 'icon', 'graphic', 'design', 'clipart', 'illustration', 'symbol', 'text', 'font', 'drawing', 'sports', 'esports', 'badge'];
-            const tagCheck = validateImageTags(visionResult, validLogoTags, 0.4);
-
-            if (!tagCheck.isValid) {
-                return NextResponse.json({
-                    error: `Image rejected. Please upload a valid logo or graphic icon.`
-                }, { status: 400 });
-            }
-        } catch (error) {
-            console.error('Failed to verify avatar content safety:', error);
-            return NextResponse.json({ error: 'Failed to verify image safety' }, { status: 500 });
-        }
-        // --- End Azure Content Safety Check ---
-
-        const originalBlobName = `${teamId}/original.${extension}`;
-        const compressedBlobName = `${teamId}/compressed-${Date.now()}.webp`;
-
-        // 1. Upload original uncompressed image first
-        await uploadToBlob('logos', originalBlobName, buffer, file.type || 'image/png');
-
-        // 2. Resize image using sharp for UI caching
-        const resizedBuffer = await sharp(buffer)
-            .resize(256, 256, {
-                fit: 'cover',
-                withoutEnlargement: true
-            })
-            .webp({ quality: 80 })
-            .toBuffer();
-
-        // 3. Upload the newly compressed WebP file
-        const fileUrl = await uploadToBlob('logos', compressedBlobName, resizedBuffer, 'image/webp');
-
-        // Update team avatar in Supabase
-        const { data: updatedTeam, error: updateError } = await supabase
+        // Update the team's avatar in the database
+        const { error: updateError } = await supabase
             .from('teams')
-            .update({ team_avatar: fileUrl })
-            .eq('id', teamId)
-            .select()
-            .single();
+            .update({ team_avatar: imageUrl })
+            .eq('id', teamId);
 
         if (updateError) {
-            console.error('Error updating team avatar:', updateError);
-            await logApiMetric(request, { endpoint: '/api/teams/upload-avatar', method: 'POST', statusCode: 500, responseTimeMs: Date.now() - startTime });
-            return NextResponse.json({ error: 'Failed to update avatar in database' }, { status: 500 });
+            return NextResponse.json({ error: updateError.message }, { status: 500 });
         }
 
         await logApiMetric(request, { endpoint: '/api/teams/upload-avatar', method: 'POST', statusCode: 200, responseTimeMs: Date.now() - startTime });
-        return NextResponse.json({ success: true, url: fileUrl, team: updatedTeam });
-    } catch (error) {
-        console.error('Error uploading avatar:', error);
-        await logApiMetric(request, { endpoint: '/api/teams/upload-avatar', method: 'POST', statusCode: 500, responseTimeMs: Date.now() - startTime });
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+
+        return NextResponse.json({
+            imageUrl,
+            message: 'Avatar updated successfully'
+        });
+    } catch (error: any) {
+        console.error('Error in upload-avatar API:', error);
+        return NextResponse.json({
+            error: error.message || 'Internal server error'
+        }, { status: error.message?.includes('rejected') ? 400 : 500 });
     }
 }

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
-import sharp from 'sharp';
-import { analyzeTextSafety, analyzeImageSafety, getFlaggedCategories, analyzeImageVision, validateImageTags } from '@/lib/azure/content-safety';
-import { uploadToBlob } from '@/lib/azure/storage';
+import { analyzeTextSafety, getFlaggedCategories } from '@/lib/azure/content-safety';
+import { validateAndUploadTeamAvatar } from '@/lib/azure/image-validation';
 
 // Validation schema
 const createTeamSchema = z.object({
@@ -95,8 +94,7 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get('content-type') || '';
     let body: any = {};
     let file: File | null = null;
-    let base64Image: string | null = null;
-    let fileType: string | null = null;
+    let imageBuffer: Buffer | null = null;
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -131,37 +129,14 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
 
-      // 2. Validate Image (if provided)
+      // 2. Validate Image (if provided) - we will do this later after initial name validation
       if (file) {
+        // Just prepare for later use
         const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        base64Image = buffer.toString('base64');
-        fileType = file.type;
-
-        // A: Content Safety Verification (Hate/Sexual/etc)
-        const imageResult = await analyzeImageSafety(base64Image);
-        let imgFlaggedCats = getFlaggedCategories(imageResult);
-
-        if (imgFlaggedCats.length > 0) {
-          return NextResponse.json({
-            error: `Upload rejected. Image flagged for: ${imgFlaggedCats.join(', ')}`
-          }, { status: 400 });
-        }
-
-        // B: Ensure it is actually a logo/graphic
-        const visionResult = await analyzeImageVision(buffer);
-        const validLogoTags = ['logo', 'icon', 'graphic', 'design', 'clipart', 'illustration', 'symbol', 'text', 'font', 'drawing', 'sports', 'esports', 'badge'];
-        const tagCheck = validateImageTags(visionResult, validLogoTags, 0.4);
-
-        if (!tagCheck.isValid) {
-          return NextResponse.json({
-            error: `Image rejected. Please upload a valid logo or graphic icon.`
-          }, { status: 400 });
-        }
+        imageBuffer = Buffer.from(arrayBuffer);
       }
-    } catch (safetyError) {
-      console.error('Content Safety API error:', safetyError);
-      return NextResponse.json({ error: 'Failed to verify content safety' }, { status: 500 });
+    } catch (safetyError: any) {
+      return NextResponse.json({ error: safetyError.message || 'Failed to verify content safety' }, { status: 400 });
     }
     // --- End Content Safety Validation ---
 
@@ -237,36 +212,19 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Upload Avatar strictly after DB creation ---
-    if (file && base64Image) {
+    if (file && imageBuffer) {
       try {
-        const extension = file.name.split('.').pop()?.toLowerCase() || 'png';
-        const teamId = data.id;
-        const originalBlobName = `${teamId}/original.${extension}`;
-        const compressedBlobName = `${teamId}/compressed-${Date.now()}.webp`;
-
-        const buffer = Buffer.from(base64Image, 'base64');
-
-        await uploadToBlob('logos', originalBlobName, buffer, fileType || 'image/png');
-
-        const resizedBuffer = await sharp(buffer)
-          .resize(256, 256, {
-            fit: 'cover',
-            withoutEnlargement: true
-          })
-          .webp({ quality: 80 })
-          .toBuffer();
-
-        const fileUrl = await uploadToBlob('logos', compressedBlobName, resizedBuffer, 'image/webp');
+        const fileUrl = await validateAndUploadTeamAvatar(imageBuffer, file.name, 'logos');
 
         await supabase
           .from('teams')
           .update({ team_avatar: fileUrl })
-          .eq('id', teamId);
+          .eq('id', data.id);
 
         data.team_avatar = fileUrl;
-      } catch (uploadError) {
-        console.error('Failed to upload blob:', uploadError);
-        // Note: The team was successfully created but avatar failed. They can fix it in 'Manage Team'.
+      } catch (uploadError: any) {
+        console.error('Failed to validate/upload avatar:', uploadError);
+        return NextResponse.json({ error: uploadError.message || 'Failed to process avatar' }, { status: 400 });
       }
     }
 
