@@ -26,56 +26,50 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    let query = supabase.from('teams')
-      .select('*, captain:players!captain_id(*)')
-      .or('is_bot.is.null,is_bot.eq.false');
-
-    // Apply filters
-    if (recruiting) {
-      query = query.eq('recruiting_status', recruiting);
-    }
-    if (role) {
-      query = query.contains('open_positions', [role]);
-    }
-
-    query = query.order('created_at', { ascending: false });
-
-    // Get total count for pagination
+    // Parallelize the data query and count query
     let countQuery = supabase.from('teams')
       .select('*', { count: 'exact', head: true })
       .or('is_bot.is.null,is_bot.eq.false');
-    if (recruiting) {
-      countQuery = countQuery.eq('recruiting_status', recruiting);
-    }
-    if (role) {
-      countQuery = countQuery.contains('open_positions', [role]);
-    }
-    const { count: totalCount } = await countQuery;
+    if (recruiting) countQuery = countQuery.eq('recruiting_status', recruiting);
+    if (role) countQuery = countQuery.contains('open_positions', [role]);
 
-    // Apply pagination
+    let dataQuery = supabase.from('teams')
+      .select('id, name, captain_id, open_positions, team_size, recruiting_status, team_avatar, created_at, is_bot, captain:players!captain_id(summoner_name)')
+      .or('is_bot.is.null,is_bot.eq.false');
+    if (recruiting) dataQuery = dataQuery.eq('recruiting_status', recruiting);
+    if (role) dataQuery = dataQuery.contains('open_positions', [role]);
+    dataQuery = dataQuery.order('created_at', { ascending: false });
+
     const offset = (page - 1) * limit;
-    query = query.range(offset, offset + limit - 1);
+    dataQuery = dataQuery.range(offset, offset + limit - 1);
 
-    const { data, error } = await query;
+    // Fire BOTH in parallel — saves one full round-trip
+    const [{ count: totalCount }, { data, error }] = await Promise.all([countQuery, dataQuery]);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Add member count to each team
-    const teamsWithCounts = await Promise.all(
-      (data || []).map(async (team) => {
-        const { count } = await supabase
-          .from('players')
-          .select('*', { count: 'exact', head: true })
-          .eq('team_id', team.id);
+    // Get member counts in ONE query using .in() instead of N separate queries
+    const teamIds = (data || []).map(t => t.id);
+    let memberCounts: Record<string, number> = {};
 
-        return {
-          ...team,
-          member_count: count || 0,
-        };
-      })
-    );
+    if (teamIds.length > 0) {
+      const { data: members } = await supabase
+        .from('players')
+        .select('team_id')
+        .in('team_id', teamIds);
+
+      // Count in JS (instant, no extra DB calls)
+      members?.forEach(m => {
+        memberCounts[m.team_id] = (memberCounts[m.team_id] || 0) + 1;
+      });
+    }
+
+    const teamsWithCounts = (data || []).map(team => ({
+      ...team,
+      member_count: memberCounts[team.id] || 0,
+    }));
 
     return NextResponse.json({
       data: teamsWithCounts,

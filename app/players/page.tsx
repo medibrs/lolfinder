@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
-import { getProfileIconUrl } from '@/lib/ddragon'
 import RoleIcon from '@/components/RoleIcon'
 import { Skeleton } from '@/components/ui/skeleton'
+
+// DDragon version is stable - avoid async fetch
+const DDRAGON_VERSION = '15.23.1'
 import {
   Tooltip,
   TooltipContent,
@@ -56,68 +58,30 @@ export default function PlayersPage() {
   const [sendingInvite, setSendingInvite] = useState<string | null>(null)
   const [sentInvites, setSentInvites] = useState<Record<string, string>>({})
   const [cancellingInvite, setCancellingInvite] = useState<string | null>(null)
-  const [profileIconUrls, setProfileIconUrls] = useState<Record<string, string>>({})
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
   const [profileChecked, setProfileChecked] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
-    checkAuthAndFetchPlayers()
+    fetchPlayers(1)
 
-    // Refetch invitations when page becomes visible (to catch rejected/accepted invites)
-    const handleVisibilityChange = async () => {
-      if (!document.hidden) {
-        // Only refresh invitation status, don't clear players (prevents flash)
-        refreshInvitations()
-      }
+    const handleVisibilityChange = () => {
+      if (!document.hidden) refreshInvitations()
     }
-
     document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
 
-  const checkAuthAndFetchPlayers = async () => {
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-
-    if (!authUser) {
-      router.push('/auth')
-      return
-    }
-
-    fetchPlayers(1)
-  }
-
-  const fetchProfileIconUrls = async (players: Player[]) => {
-    const newUrls: Record<string, string> = {};
-
-    for (const player of players) {
-      if (player.profile_icon_id) {
-        try {
-          const url = await getProfileIconUrl(player.profile_icon_id);
-          newUrls[player.id] = url;
-        } catch (error) {
-
-        }
-      }
-    }
-
-    // Merge with existing URLs instead of replacing
-    setProfileIconUrls(prev => ({ ...prev, ...newUrls }));
-  };
-
-  // Silently refresh invitation status without clearing players
+  // Silently refresh invitation status using local session (3ms, no network auth call)
   const refreshInvitations = async () => {
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) return
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
 
       const { data: teamData } = await supabase
         .from('teams')
         .select('id')
-        .eq('captain_id', authUser.id)
+        .eq('captain_id', session.user.id)
         .single()
 
       if (teamData) {
@@ -128,52 +92,52 @@ export default function PlayersPage() {
           .eq('status', 'pending')
 
         const inviteMap: Record<string, string> = {}
-        invitations?.forEach(inv => {
-          inviteMap[inv.invited_player_id] = inv.id
-        })
+        invitations?.forEach(inv => { inviteMap[inv.invited_player_id] = inv.id })
         setSentInvites(inviteMap)
       }
-    } catch (error) {
-
-    }
+    } catch (error) { }
   }
 
   const fetchPlayers = async (page: number = 1, reset: boolean = false) => {
     try {
-      // Get current user
-      const { data: { user: authUser } } = await supabase.auth.getUser()
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '50'
+      })
+      if (selectedRole) params.append('role', selectedRole)
+      if (showLFTOnly) params.append('lookingForTeam', 'true')
+
+      // Fire ALL heavy fetches in parallel — getUser + player API + player profile + team captain check
+      const apiPromise = fetch(`/api/players?${params}`)
+      const userPromise = supabase.auth.getUser()
+      const profilePromise = supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.user) return { data: null, error: 'no session' } as any;
+        return supabase.from('players').select('team_id').eq('id', session.user.id).single();
+      })
+      const teamCaptainPromise = supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.user) return { data: null } as any;
+        return supabase.from('teams').select('id, name').eq('captain_id', session.user.id).single();
+      })
+
+      const [response, { data: { user: authUser } }, profileResult, teamResult] = await Promise.all([
+        apiPromise, userPromise, profilePromise, teamCaptainPromise
+      ])
+
       setUser(authUser)
 
-      // Check if user is a team captain
       if (authUser) {
-        // First check if user has a player profile
-        const { data: playerData, error: playerError } = await supabase
-          .from('players')
-          .select('team_id')
-          .eq('id', authUser.id)
-          .single()
-
-
-
-        if (playerError) {
-
+        if (profileResult?.error || !profileResult?.data) {
           setHasPlayerProfile(false)
-          setProfileChecked(true)
         } else {
-
           setHasPlayerProfile(true)
-          setProfileChecked(true)
         }
+        setProfileChecked(true)
 
-        const { data: teamData } = await supabase
-          .from('teams')
-          .select('*')
-          .eq('captain_id', authUser.id)
-          .single()
-
+        const teamData = teamResult?.data
         setUserTeam(teamData)
 
-        // Fetch pending invitations sent by this team
+        // Fetch pending invitations if user is a captain
         if (teamData) {
           const { data: invitations } = await supabase
             .from('team_invitations')
@@ -182,37 +146,15 @@ export default function PlayersPage() {
             .eq('status', 'pending')
 
           const inviteMap: Record<string, string> = {}
-          invitations?.forEach(inv => {
-            inviteMap[inv.invited_player_id] = inv.id
-          })
+          invitations?.forEach(inv => { inviteMap[inv.invited_player_id] = inv.id })
           setSentInvites(inviteMap)
         }
       } else {
-        // No authenticated user
         setProfileChecked(true)
       }
 
-      // Build query parameters
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '50'
-      })
-
-      if (selectedRole) {
-        params.append('role', selectedRole)
-      }
-      if (showLFTOnly) {
-        params.append('lookingForTeam', 'true')
-      }
-
-      // Fetch paginated data
-      const response = await fetch(`/api/players?${params}`)
       const result = await response.json()
-
-      if (!response.ok) {
-
-        return
-      }
+      if (!response.ok) return
 
       const newPlayers = result.data || []
       const pagination = result.pagination || {}
@@ -226,11 +168,6 @@ export default function PlayersPage() {
 
       setHasMore(pagination.hasMore || false)
       setCurrentPage(page)
-
-      // Fetch profile icon URLs for new players
-      if (newPlayers.length > 0) {
-        await fetchProfileIconUrls(newPlayers)
-      }
     } catch (error) {
 
     } finally {
@@ -274,7 +211,6 @@ export default function PlayersPage() {
     }
     setCurrentPage(1)
     setPlayers([])
-    setProfileIconUrls({}) // Clear icon URLs when filters change
     setHasMore(true)
     fetchPlayers(1, true)
   }, [selectedRole, showLFTOnly])
@@ -474,7 +410,7 @@ export default function PlayersPage() {
                     <div className="relative">
                       {player.profile_icon_id ? (
                         <Image
-                          src={profileIconUrls[player.id] || ''}
+                          src={`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${player.profile_icon_id}.png`}
                           alt="Profile Icon"
                           width={64}
                           height={64}

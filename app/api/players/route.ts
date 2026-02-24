@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
     query = query.range(offset, offset + limit - 1);
 
+    // Fire both in parallel
     const { data, error } = await query;
 
     if (error) {

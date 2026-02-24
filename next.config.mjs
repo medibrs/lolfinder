@@ -1,12 +1,15 @@
 /** @type {import('next').NextConfig} */
-const isDev = process.env.NODE_ENV === 'development'
+// On Vercel, image optimization works natively. Locally (especially WSL), DNS resolves
+// ddragon.leagueoflegends.com to NAT64 private IPs which Next.js blocks. Disable locally.
+const isLocal = !process.env.VERCEL
 
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: isDev,
+    unoptimized: isLocal,
+    dangerouslyAllowSVG: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -16,7 +19,7 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'lolfinderassets.blob.core.windows.net',
-        pathname: '/logos/**',
+        pathname: '/**',
       },
     ],
   },

@@ -15,7 +15,8 @@ import { TeamAvatar } from '@/components/ui/team-avatar'
 import Image from 'next/image'
 import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
-import { getLatestDDragonVersion } from '@/lib/ddragon'
+// DDragon version is stable - hardcode to avoid network fetch blocking render
+const DDRAGON_VERSION = '15.23.1'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -55,9 +56,9 @@ export default function TeamsPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    checkAuthAndFetchTeams()
+    // getUser() is ~190ms round-trip to Supabase Auth - call it exactly once
+    fetchTeams(1)
 
-    // Refetch join request status when page becomes visible (no flash)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         refreshJoinRequests()
@@ -65,33 +66,20 @@ export default function TeamsPage() {
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
-
-  const checkAuthAndFetchTeams = async () => {
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-
-    if (!authUser) {
-      router.push('/auth')
-      return
-    }
-
-    fetchTeams(1)
-  }
 
   // Silently refresh join request status without clearing teams
   const refreshJoinRequests = async () => {
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) return
+      // getSession() is local (3ms) - fine for non-security-critical UI refreshes
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
 
       const { data: requests } = await supabase
         .from('team_join_requests')
         .select('id, team_id')
-        .eq('player_id', authUser.id)
+        .eq('player_id', session.user.id)
         .eq('status', 'pending')
 
       const pendingMap: Record<string, string> = {}
@@ -99,65 +87,13 @@ export default function TeamsPage() {
         pendingMap[r.team_id] = r.id
       })
       setPendingRequests(pendingMap)
-    } catch (error) {
-
-    }
+    } catch (error) { }
   }
 
   const fetchTeams = async (page: number = 1, reset: boolean = false) => {
     try {
       if (page > 1) {
         setLoadingMore(true)
-      }
-
-      // Get current user
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      setUser(authUser)
-
-      // Check if user is in a team (either as captain or member)
-      if (authUser) {
-        // First check if user is a player and get their team
-        const { data: playerData, error: playerError } = await supabase
-          .from('players')
-          .select('team_id')
-          .eq('id', authUser.id)
-          .single()
-
-
-        if (playerError) {
-          setHasPlayerProfile(false)
-          setProfileChecked(true)
-        } else {
-          setHasPlayerProfile(true)
-          setProfileChecked(true)
-
-          // If player has a team, fetch the team data
-          if (playerData?.team_id) {
-            const { data: teamData } = await supabase
-              .from('teams')
-              .select('*')
-              .eq('id', playerData.team_id)
-              .single()
-
-            setUserTeam(teamData)
-          }
-
-          // Fetch user's pending join requests
-          const { data: requests } = await supabase
-            .from('team_join_requests')
-            .select('id, team_id')
-            .eq('player_id', authUser.id)
-            .eq('status', 'pending')
-
-          const pendingMap: Record<string, string> = {}
-          requests?.forEach(r => {
-            pendingMap[r.team_id] = r.id
-          })
-          setPendingRequests(pendingMap)
-        }
-      } else {
-        // No authenticated user
-        setProfileChecked(true)
       }
 
       // Build query parameters for paginated API
@@ -170,56 +106,100 @@ export default function TeamsPage() {
         params.append('role', selectedRole)
       }
 
-      // Fetch teams data from API
-      const response = await fetch(`/api/teams?${params}`)
+      // Fire all three in parallel: teams list, user auth verification, and player profile
+      const apiPromise = fetch(`/api/teams?${params}`);
+      const userPromise = supabase.auth.getUser();
+      const playerProfilePromise = supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.user) return { data: null, error: null };
+        return supabase.from('players').select('team_id').eq('id', session.user.id).single();
+      });
+
+      const [response, { data: { user: authUser } }, { data: playerData, error: playerError }] = await Promise.all([
+        apiPromise,
+        userPromise,
+        playerProfilePromise,
+      ]);
+
+      setUser(authUser)
+
+      // Process player profile results (already fetched in parallel above)
+      if (authUser) {
+        if (playerError || !playerData) {
+          setHasPlayerProfile(false)
+          setProfileChecked(true)
+        } else {
+          setHasPlayerProfile(true)
+          setProfileChecked(true)
+
+          // Fetch team data and join requests in parallel (if player is in a team)
+          const teamPromise = playerData?.team_id
+            ? supabase.from('teams').select('id, captain_id').eq('id', playerData.team_id).single()
+            : Promise.resolve({ data: null });
+          const requestsPromise = supabase.from('team_join_requests').select('id, team_id').eq('player_id', authUser.id).eq('status', 'pending');
+
+          const [{ data: teamData }, { data: requests }] = await Promise.all([teamPromise, requestsPromise]);
+
+          if (teamData) setUserTeam(teamData);
+
+          const pendingMap: Record<string, string> = {}
+          requests?.forEach(r => { pendingMap[r.team_id] = r.id })
+          setPendingRequests(pendingMap)
+        }
+      } else {
+        setProfileChecked(true)
+      }
+
       const result = await response.json()
 
       if (!response.ok) {
-
         return
       }
-
-      const ddragonVersion = await getLatestDDragonVersion()
 
       const newTeams = result.data || []
       const pagination = result.pagination || {}
 
-      // Fetch member details for each team
-      const teamsWithMembers = await Promise.all(
-        newTeams.map(async (team: any) => {
-          const { data: members } = await supabase
-            .from('players')
-            .select('id, summoner_name, main_role, tier, profile_icon_id, is_bot')
-            .eq('team_id', team.id)
-            .or('is_bot.is.null,is_bot.eq.false')
+      // SINGLE query to fetch ALL members for ALL teams at once (eliminates N+1)
+      const teamIds = newTeams.map((t: any) => t.id)
+      const { data: allMembers } = teamIds.length > 0
+        ? await supabase
+          .from('players')
+          .select('id, summoner_name, main_role, tier, profile_icon_id, is_bot, team_id')
+          .in('team_id', teamIds)
+          .or('is_bot.is.null,is_bot.eq.false')
+        : { data: [] }
 
-          const membersWithIcons = members?.map(m => ({
-            ...m,
-            profileIconUrl: m.profile_icon_id
-              ? `https://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/profileicon/${m.profile_icon_id}.png`
-              : null
-          })) || []
-
-          // Calculate average rank
-          const rankOrder = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
-          const memberRanks = members?.map(m => {
-            const tierBase = m.tier?.split(' ')[0]
-            return rankOrder.indexOf(tierBase)
-          }).filter(r => r >= 0) || []
-
-          const avgRankIndex = memberRanks.length > 0
-            ? Math.round(memberRanks.reduce((a, b) => a + b, 0) / memberRanks.length)
-            : -1
-          const averageRank = avgRankIndex >= 0 ? rankOrder[avgRankIndex] : null
-
-          return {
-            ...team,
-            current_members: members?.length || 0,
-            members: membersWithIcons,
-            average_rank: averageRank
-          }
+      // Group members by team_id (pure JS, zero network cost)
+      const membersByTeam: Record<string, any[]> = {}
+      allMembers?.forEach(m => {
+        if (!membersByTeam[m.team_id]) membersByTeam[m.team_id] = []
+        membersByTeam[m.team_id].push({
+          ...m,
+          profileIconUrl: m.profile_icon_id
+            ? `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${m.profile_icon_id}.png`
+            : null
         })
-      )
+      })
+
+      const rankOrder = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger']
+
+      const teamsWithMembers = newTeams.map((team: any) => {
+        const members = membersByTeam[team.id] || []
+        const memberRanks = members.map((m: any) => {
+          const tierBase = m.tier?.split(' ')[0]
+          return rankOrder.indexOf(tierBase)
+        }).filter((r: number) => r >= 0)
+
+        const avgRankIndex = memberRanks.length > 0
+          ? Math.round(memberRanks.reduce((a: number, b: number) => a + b, 0) / memberRanks.length)
+          : -1
+
+        return {
+          ...team,
+          current_members: members.length,
+          members,
+          average_rank: avgRankIndex >= 0 ? rankOrder[avgRankIndex] : null
+        }
+      })
 
       // Update state
       if (reset || page === 1) {
