@@ -15,6 +15,7 @@ import { TeamAvatar } from '@/components/ui/team-avatar'
 import Image from 'next/image'
 import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
+import { getCached, setCache } from '@/lib/cache'
 // DDragon version is stable - hardcode to avoid network fetch blocking render
 const DDRAGON_VERSION = '15.23.1'
 
@@ -56,15 +57,18 @@ export default function TeamsPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    // getUser() is ~190ms round-trip to Supabase Auth - call it exactly once
-    fetchTeams(1)
+    // Check cache first — if we have stale data, show it immediately (no skeleton)
+    const { data: cached, isFresh } = getCached<any[]>('teams_page_1')
+    if (cached) {
+      setTeams(cached)
+      setInitialLoad(false)
+    }
+    // Always fetch fresh data (even if we showed cache)
+    if (!isFresh) fetchTeams(1)
 
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        refreshJoinRequests()
-      }
+      if (!document.hidden) refreshJoinRequests()
     }
-
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
@@ -204,6 +208,7 @@ export default function TeamsPage() {
       // Update state
       if (reset || page === 1) {
         setTeams(teamsWithMembers)
+        setCache('teams_page_1', teamsWithMembers)
       } else {
         setTeams(prev => [...prev, ...teamsWithMembers])
       }

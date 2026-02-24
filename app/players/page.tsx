@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getCached, setCache } from '@/lib/cache'
 
 // DDragon version is stable - avoid async fetch
 const DDRAGON_VERSION = '15.23.1'
@@ -63,7 +64,14 @@ export default function PlayersPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    fetchPlayers(1)
+    // Check cache first — instant render on return visits
+    const { data: cached, isFresh } = getCached<Player[]>('players_page_1')
+    if (cached) {
+      setPlayers(cached)
+      setInitialLoad(false)
+      setLoading(false)
+    }
+    if (!isFresh) fetchPlayers(1)
 
     const handleVisibilityChange = () => {
       if (!document.hidden) refreshInvitations()
@@ -162,6 +170,7 @@ export default function PlayersPage() {
       // Update state
       if (reset || page === 1) {
         setPlayers(newPlayers)
+        setCache('players_page_1', newPlayers)
       } else {
         setPlayers(prev => [...prev, ...newPlayers])
       }
