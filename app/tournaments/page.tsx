@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CheckCircle, XCircle, Calendar, Clock, Trophy, Users, User, Coins } from 'lucide-react'
 import Link from 'next/link'
+import { useToast } from '@/hooks/use-toast'
 
 interface Tournament {
   id: string
@@ -24,6 +25,7 @@ interface Tournament {
   created_at: string
   updated_at: string
   tournament_participants?: { count: number }[]
+  format?: string
 }
 
 export default function TournamentsPage() {
@@ -35,10 +37,9 @@ export default function TournamentsPage() {
   const [userTeam, setUserTeam] = useState<any>(null)
   const [registrationStatuses, setRegistrationStatuses] = useState<Record<string, string>>({})
   const [registering, setRegistering] = useState<string | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string>('')
-  const [successMessage, setSuccessMessage] = useState<string>('')
   const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
   const [profileChecked, setProfileChecked] = useState(false)
+  const { toast } = useToast()
   const supabase = createClient()
 
   // Generate URL-friendly slug from tournament name
@@ -161,8 +162,6 @@ export default function TournamentsPage() {
     if (registering === tournamentId) return
 
     setRegistering(tournamentId)
-    setErrorMessage('')
-    setSuccessMessage('')
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -182,10 +181,11 @@ export default function TournamentsPage() {
       if (response.ok) {
         // Add to registration statuses as pending
         setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
-        setSuccessMessage('Registration submitted! Your team registration is pending admin approval.')
 
-        // Clear success message after 5 seconds
-        setTimeout(() => setSuccessMessage(''), 5000)
+        toast({
+          title: "Registration Submitted",
+          description: "Your team registration is pending admin approval.",
+        })
       } else {
         const error = await response.json()
 
@@ -194,10 +194,18 @@ export default function TournamentsPage() {
           setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
         }
 
-        setErrorMessage(error.error || "Failed to register for tournament.")
+        toast({
+          title: "Registration Failed",
+          description: error.error || "Failed to register for tournament.",
+          variant: "destructive",
+        })
       }
     } catch (error: any) {
-      setErrorMessage(error.message || "An unexpected error occurred.")
+      toast({
+        title: "Error",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      })
     } finally {
       setRegistering(null)
     }
@@ -250,26 +258,6 @@ export default function TournamentsPage() {
               </Button>
             </div>
           </div>
-        )}
-
-        {/* Success Message */}
-        {successMessage && (
-          <Alert className="mb-6 bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
-            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-            <AlertDescription className="text-green-800 dark:text-green-200">
-              {successMessage}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Error Message */}
-        {errorMessage && (
-          <Alert className="mb-6 bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800">
-            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-            <AlertDescription className="text-red-800 dark:text-red-200">
-              {errorMessage}
-            </AlertDescription>
-          </Alert>
         )}
 
         {initialLoad ? (
@@ -366,11 +354,12 @@ export default function TournamentsPage() {
                           </div>
                         </div>
 
-                        {/* Stat 4: Format / Server */}
+                        {/* Stat 4: Format */}
                         <div className="flex flex-col">
-                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Server</span>
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Format</span>
                           <div className="flex items-center gap-2 text-xs md:text-sm text-slate-200 font-bold uppercase">
-                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" /> EUW
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+                            {tournament.format ? tournament.format.replace(/_/g, ' ') : 'Single Elim'}
                           </div>
                         </div>
                       </div>
@@ -397,7 +386,7 @@ export default function TournamentsPage() {
                                 backgroundImage: `url(${registering === tournament.id ? '/tournament_assets/regester_button_pressed_small.png' : '/tournament_assets/regester_button_small.png'})`,
                                 backgroundSize: '100% 100%'
                               }}
-                              className="group/btn relative h-14 w-52 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-125 disabled:grayscale"
+                              className="group/btn relative h-14 w-52 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-125"
                             >
                               <span className="text-slate-950 font-bold text-xs tracking-[0.15em] uppercase drop-shadow-sm mt-0.5 group-active/btn:mt-1 group-active/btn:text-slate-900 transition-all">
                                 {registering === tournament.id ? 'TRANSMITTING' : 'Register Squad'}
@@ -428,6 +417,6 @@ export default function TournamentsPage() {
           </div>
         )}
       </div>
-    </main>
+    </main >
   )
 }
