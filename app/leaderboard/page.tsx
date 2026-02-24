@@ -183,7 +183,7 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <main className="min-h-screen pt-24 pb-12 bg-[#060a13] text-white font-sans">
+    <main className="min-h-screen pt-24 pb-12 bg-background text-white font-sans">
       <div className="max-w-6xl mx-auto px-4">
         {/* League Client Styled Header */}
         <div className="relative mb-20 text-center">
@@ -202,15 +202,38 @@ export default function LeaderboardPage() {
         </div>
 
         {loading ? (
-          <div className="space-y-4 max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-64 bg-slate-800/50 rounded-xl" />
+          <div className="space-y-16">
+            {/* Podium Skeleton */}
+            <div className="flex flex-col md:flex-row items-end justify-center gap-2 lg:gap-3 px-4 max-w-6xl mx-auto">
+              {/* Rank 2 Skeleton */}
+              <div className="relative w-full md:w-[280px] h-[110px] bg-slate-800/40 rounded-sm skew-x-[-1deg] animate-pulse">
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-slate-700/50" />
+              </div>
+
+              {/* Rank 1 Skeleton */}
+              <div className="relative w-full md:w-[480px] h-[180px] md:h-[220px] bg-slate-800/60 rounded-sm animate-pulse mb-8 md:mb-0">
+                <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-24 h-24 rounded-full bg-slate-700/60" />
+                <div className="absolute top-1/2 right-8 w-32 h-6 bg-slate-700/40 rounded" />
+              </div>
+
+              {/* Rank 3 Skeleton */}
+              <div className="relative w-full md:w-[280px] h-[110px] bg-slate-800/40 rounded-sm skew-x-[1deg] animate-pulse">
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-slate-700/50" />
+              </div>
+            </div>
+
+            {/* List Skeleton */}
+            <div className="max-w-6xl mx-auto px-4 space-y-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-16 bg-slate-800/20 border border-slate-700/10 flex items-center px-6 gap-6 animate-pulse">
+                  <div className="w-6 h-6 bg-slate-700/30 rounded" />
+                  <div className="w-10 h-10 rounded-full bg-slate-700/50" />
+                  <div className="flex-1 max-w-[200px] h-4 bg-slate-700/30 rounded" />
+                  <div className="hidden md:block flex-1 h-2 bg-slate-700/10 rounded-full max-w-md" />
+                  <div className="w-24 h-8 bg-slate-700/40 rounded-lg" />
+                </div>
               ))}
             </div>
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-20 bg-slate-800/50 rounded-lg" />
-            ))}
           </div>
         ) : (
           <>
@@ -302,15 +325,11 @@ export default function LeaderboardPage() {
                           <Image src={getRankImage(players[0].tier)} alt="" width={24} height={24} className="object-contain" />
                           <p className="text-[10px] md:text-[12px] font-black text-slate-300 uppercase tracking-widest leading-none">{players[0].tier}</p>
                         </div>
-                        <div className="flex items-baseline justify-end gap-2">
-                          <span className="text-2xl md:text-4xl font-black text-white tracking-widest">{players[0].league_points}S</span>
-                          <span className="text-[12px] md:text-[16px] font-black text-[#c9aa71] uppercase tracking-tighter">LP</span>
-                        </div>
+
                       </div>
 
-                      {/* Fixed "KING OF THE RIFT" positioning - Bottom Corner */}
-                      <div className="absolute bottom-4 right-4 md:bottom-4 md:right-10 z-20">
-                        <p className="text-[8px] md:text-[11px] font-black text-[#c9aa71]/80 uppercase tracking-[0.6em] animate-pulse whitespace-nowrap border-t border-[#c9aa71]/20 pt-1 md:pt-2 px-2 md:px-4 shadow-sm bg-[#0c121d]/40">
+                      <div className="absolute bottom-4 right-10 md:bottom-4 md:right-10 z-20">
+                        <p className="text-[8px] md:text-[11px]  text-[#c9aa71]/80 uppercase tracking-[0.6em]  whitespace-nowrap border-t border-[#c9aa71]/20 pt-1 md:pt-2 px-2 md:px-4 shadow-sm bg-[#0c121d]/40">
                           KING OF THE RIFT
                         </p>
                       </div>
