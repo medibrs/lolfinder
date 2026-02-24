@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trophy, Users, Target, Zap, Shield, Crown, Bell, Settings, Plus, Search, Calendar, User, Medal } from 'lucide-react'
+import { Trophy, Users, Target, Zap, Shield, Crown, Bell, Settings, User, Medal } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Footer from '@/components/footer'
 
@@ -340,54 +340,88 @@ export default function Home() {
     <>
       <main className="pt-16 min-h-screen bg-black text-gray-100">
         {/* Hero Welcome Section */}
-        <section className="relative bg-gradient-to-br from-purple-950 via-black to-black px-4 py-16 text-white overflow-hidden">
-          {/* Background Banner Image */}
+        {/* Hero Welcome Section */}
+        <section className="relative bg-black px-4 py-24 text-white overflow-hidden min-h-[450px] flex items-center">
+          {/* Background Banner Image with improved Vignette */}
           <div className="absolute inset-0">
             <img
               src="/home-page-banner.jpg"
               alt="League of Legends Banner"
-              className="w-full h-full object-cover opacity-30"
+              className="w-full h-full object-cover opacity-40 scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-950 via-black to-black opacity-70"></div>
+            {/* Ambient Particles Overlay */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute top-1/4 left-1/4 w-1.5 h-1.5 bg-yellow-400 rounded-full animate-magic-float shadow-[0_0_15px_rgba(234,179,8,1)]" style={{ animationDelay: '0s' }}></div>
+              <div className="absolute top-1/2 left-1/3 w-2 h-2 bg-blue-400 rounded-full animate-magic-float shadow-[0_0_20px_rgba(37,99,235,1)]" style={{ animationDelay: '2s' }}></div>
+              <div className="absolute top-3/4 left-2/3 w-1.5 h-1.5 bg-purple-400 rounded-full animate-magic-float shadow-[0_0_15px_rgba(147,51,234,1)]" style={{ animationDelay: '4s' }}></div>
+              <div className="absolute top-1/3 left-3/4 w-2 h-2 bg-yellow-200 rounded-full animate-magic-float shadow-[0_0_18px_rgba(254,240,138,1)]" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute top-2/3 left-1/5 w-1 h-1 bg-cyan-400 rounded-full animate-magic-float shadow-[0_0_12px_rgba(34,211,238,1)]" style={{ animationDelay: '3s' }}></div>
+              <div className="absolute top-1/5 left-4/5 w-1.5 h-1.5 bg-red-400 rounded-full animate-magic-float shadow-[0_0_15px_rgba(239,68,68,1)]" style={{ animationDelay: '5s' }}></div>
+            </div>
+            {/* The Gradient/Vignette layers */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-950/40 via-black/60 to-black"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_black_85%)]"></div>
           </div>
 
           <div className="relative z-10 max-w-6xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Welcome back, {playerProfile?.riot_games_name || 'Summoner'}!
+            <h1 className="text-4xl md:text-7xl font-bold mb-6 font-beaufort tracking-tight">
+              <span className="text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)] font-beaufort">
+                Welcome Back, {playerProfile?.riot_games_name || 'Summoner'}!
+              </span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 mb-12">
-              Get ready to dominate the Rift!
+            <p className="text-xl md:text-2xl text-gray-400 mb-16 uppercase tracking-[0.5em] font-beaufort drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+              Get ready to dominate the Rift
             </p>
 
-            {/* Navigation Buttons */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-row gap-4 justify-center items-center max-w-md mx-auto sm:max-w-none">
-              <Button asChild variant="secondary" size="lg" className="bg-gray-900/80 hover:bg-gray-800 text-gray-100 border border-gray-800 backdrop-blur-sm">
-                <Link href="/teams" className="flex flex-col items-center gap-2 h-auto py-4">
-                  <Users className="w-6 h-6" />
-                  <span>Browse Teams</span>
-                </Link>
-              </Button>
+            {/* Hextech Glassmorphic Navigation Panels */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 justify-center items-center max-w-lg md:max-w-5xl mx-auto">
+              {/* Browse Teams */}
+              <Link
+                href="/teams"
+                className="group relative flex flex-col items-center justify-center gap-4 bg-slate-900/40 backdrop-blur-md border border-slate-800 rounded-xl py-8 px-6 hover:border-cyan-500/50 hover:bg-slate-900/60 transition-all duration-300 hover:-translate-y-2 shadow-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
+              >
+                <div className="p-3 bg-slate-800/50 rounded-lg group-hover:bg-cyan-500/20 transition-colors">
+                  <Users className="w-8 h-8 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+                </div>
+                <span className="text-sm font-bold uppercase tracking-widest text-slate-400 group-hover:text-white">Browse Teams</span>
+                <div className="absolute bottom-0 left-0 h-1 bg-cyan-500 w-0 group-hover:w-full transition-all duration-500"></div>
+              </Link>
 
-              <Button asChild variant="secondary" size="lg" className="bg-gray-900/80 hover:bg-gray-800 text-gray-100 border border-gray-800 backdrop-blur-sm">
-                <Link href="/tournaments" className="flex flex-col items-center gap-2 h-auto py-4">
-                  <Trophy className="w-6 h-6" />
-                  <span>Tournaments</span>
-                </Link>
-              </Button>
+              {/* Tournaments */}
+              <Link
+                href="/tournaments"
+                className="group relative flex flex-col items-center justify-center gap-4 bg-slate-900/40 backdrop-blur-md border border-slate-800 rounded-xl py-8 px-6 hover:border-yellow-500/50 hover:bg-slate-900/60 transition-all duration-300 hover:-translate-y-2 shadow-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
+              >
+                <div className="p-3 bg-slate-800/50 rounded-lg group-hover:bg-yellow-500/20 transition-colors">
+                  <Trophy className="w-8 h-8 text-slate-400 group-hover:text-yellow-500 transition-colors" />
+                </div>
+                <span className="text-sm font-bold uppercase tracking-widest text-slate-400 group-hover:text-white">Tournaments</span>
+                <div className="absolute bottom-0 left-0 h-1 bg-yellow-500 w-0 group-hover:w-full transition-all duration-500"></div>
+              </Link>
 
-              <Button asChild variant="secondary" size="lg" className="bg-gray-900/80 hover:bg-gray-800 text-gray-100 border border-gray-800 backdrop-blur-sm">
-                <Link href="/players" className="flex flex-col items-center gap-2 h-auto py-4">
-                  <User className="w-6 h-6" />
-                  <span>Find Players</span>
-                </Link>
-              </Button>
+              {/* Find Players */}
+              <Link
+                href="/players"
+                className="group relative flex flex-col items-center justify-center gap-4 bg-slate-900/40 backdrop-blur-md border border-slate-800 rounded-xl py-8 px-6 hover:border-blue-500/50 hover:bg-slate-900/60 transition-all duration-300 hover:-translate-y-2 shadow-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
+              >
+                <div className="p-3 bg-slate-800/50 rounded-lg group-hover:bg-blue-500/20 transition-colors">
+                  <User className="w-8 h-8 text-slate-400 group-hover:text-blue-400 transition-colors" />
+                </div>
+                <span className="text-sm font-bold uppercase tracking-widest text-slate-400 group-hover:text-white">Find Players</span>
+                <div className="absolute bottom-0 left-0 h-1 bg-blue-500 w-0 group-hover:w-full transition-all duration-500"></div>
+              </Link>
 
-              <Button asChild variant="secondary" size="lg" className="bg-gray-900/80 hover:bg-gray-800 text-gray-100 border border-gray-800 backdrop-blur-sm">
-                <Link href="/leaderboard" className="flex flex-col items-center gap-2 h-auto py-4">
-                  <Medal className="w-6 h-6" />
-                  <span>Leaderboard</span>
-                </Link>
-              </Button>
+              {/* Leaderboard */}
+              <Link
+                href="/leaderboard"
+                className="group relative flex flex-col items-center justify-center gap-4 bg-slate-900/40 backdrop-blur-md border border-slate-800 rounded-xl py-8 px-6 hover:border-purple-500/50 hover:bg-slate-900/60 transition-all duration-300 hover:-translate-y-2 shadow-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
+              >
+                <div className="p-3 bg-slate-800/50 rounded-lg group-hover:bg-purple-500/20 transition-colors">
+                  <Medal className="w-8 h-8 text-slate-400 group-hover:text-purple-400 transition-colors" />
+                </div>
+                <span className="text-sm font-bold uppercase tracking-widest text-slate-400 group-hover:text-white">Leaderboard</span>
+                <div className="absolute bottom-0 left-0 h-1 bg-purple-500 w-0 group-hover:w-full transition-all duration-500"></div>
+              </Link>
             </div>
           </div>
         </section>
@@ -422,36 +456,50 @@ export default function Home() {
             {!userTeam && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
                 {/* Create Team Card */}
-                <Card className="bg-gray-900 border border-gray-800 shadow-2xl overflow-hidden group hover:shadow-3xl transition-all duration-300">
-                  <div className="p-8 text-gray-100 text-center">
-                    <div className="w-24 h-24 mx-auto mb-6 bg-gray-800 rounded-full flex items-center justify-center">
-                      <Plus className="w-12 h-12 text-gray-400" />
+                <Link href="/create-team" className="group relative overflow-hidden rounded-2xl border border-slate-800 border-t-4 border-t-purple-500 bg-black p-8 hover:border-purple-500/50 transition-all duration-300">
+                  <div className="relative z-10 flex flex-col items-center text-center py-4">
+                    {/* The Icon Container - Borderless & Maximized with Backlight */}
+                    <div className="mb-2 flex h-48 w-48 items-center justify-center group-hover:rotate-6 transition-all duration-700 transform relative">
+                      {/* Ambient Backlight */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-purple-600/30 blur-[60px] rounded-full group-hover:bg-purple-500/50 transition-all duration-500" />
+                      <img src="/gemstone.webp" alt="Gemstone" className="relative z-10 h-40 w-40 object-contain group-hover:scale-110 transition-all duration-500" />
                     </div>
-                    <h3 className="text-2xl font-bold mb-4 text-gray-100">Create a Team</h3>
-                    <p className="text-gray-500 mb-8 text-lg">
-                      Start your own team and recruit players to dominate the Rift
+
+                    <h3 className="text-3xl font-bold text-white group-hover:text-purple-400 transition-colors tracking-tight">
+                      Create a Team
+                    </h3>
+                    <p className="mt-4 text-slate-400 text-lg max-w-sm leading-relaxed">
+                      Start your own team and recruit players to dominate the Rift. Lead your squad to victory.
                     </p>
-                    <Button asChild size="lg" className="bg-gray-800 text-gray-100 hover:bg-gray-700 font-semibold px-8 py-3 text-lg border border-gray-700">
-                      <Link href="/create-team">Start</Link>
-                    </Button>
+
+                    <div className="mt-8 px-8 py-3 rounded-lg bg-purple-600/10 border border-purple-600/30 text-purple-500 font-bold group-hover:bg-purple-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(147,51,234,0.4)] transition-all duration-300 tracking-wide">
+                      Start Your Team
+                    </div>
                   </div>
-                </Card>
+                </Link>
 
                 {/* Join Team Card */}
-                <Card className="bg-gray-900 border border-gray-800 shadow-2xl overflow-hidden group hover:shadow-3xl transition-all duration-300">
-                  <div className="p-8 text-gray-100 text-center">
-                    <div className="w-24 h-24 mx-auto mb-6 bg-gray-800 rounded-full flex items-center justify-center">
-                      <Search className="w-12 h-12 text-gray-400" />
+                <Link href="/teams" className="group relative overflow-hidden rounded-2xl border border-slate-800 border-t-4 border-t-yellow-500 bg-black p-8 hover:border-yellow-500/50 transition-all duration-300">
+                  <div className="relative z-10 flex flex-col items-center text-center py-4">
+                    {/* The Icon Container - Borderless & Maximized with Backlight */}
+                    <div className="mb-2 flex h-48 w-48 items-center justify-center group-hover:-rotate-6 transition-all duration-700 transform relative">
+                      {/* Ambient Backlight */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-yellow-600/20 blur-[60px] rounded-full group-hover:bg-yellow-500/40 transition-all duration-500" />
+                      <img src="/key-fragment.png" alt="Key Fragment" className="relative z-10 h-40 w-40 object-contain group-hover:scale-110 transition-all duration-500" />
                     </div>
-                    <h3 className="text-2xl font-bold mb-4 text-gray-100">Join a Team</h3>
-                    <p className="text-gray-500 mb-8 text-lg">
-                      Find existing teams looking for players like you
+
+                    <h3 className="text-3xl font-bold text-white group-hover:text-yellow-400 transition-colors tracking-tight">
+                      Join a Team
+                    </h3>
+                    <p className="mt-4 text-slate-400 text-lg max-w-sm leading-relaxed">
+                      Find existing teams looking for players like you. Become the missing key to their success.
                     </p>
-                    <Button asChild size="lg" className="bg-gray-800 text-gray-100 hover:bg-gray-700 font-semibold px-8 py-3 text-lg border border-gray-700">
-                      <Link href="/teams">Join Now</Link>
-                    </Button>
+
+                    <div className="mt-8 px-8 py-3 rounded-lg bg-transparent border border-slate-500 text-slate-300 font-bold group-hover:bg-yellow-600 group-hover:text-white group-hover:border-yellow-600 group-hover:shadow-[0_0_20px_rgba(234,179,8,0.4)] transition-all duration-300 tracking-wide">
+                      Join Now
+                    </div>
                   </div>
-                </Card>
+                </Link>
               </div>
             )}
 
@@ -527,56 +575,77 @@ export default function Home() {
         </section>
 
         {/* Recent Activity */}
-        <section className="px-4 py-16 bg-black">
+        <section className="px-4 py-32 bg-black">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12 text-gray-100">What's New</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="bg-gray-900 shadow-lg border border-gray-800 hover:border-gray-700 transition-all">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center">
-                    <Calendar className="w-8 h-8 text-gray-400" />
+            <h2 className="text-5xl font-bold text-center mb-24 text-white tracking-tight drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">What's New</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+              {/* Upcoming Tournaments */}
+              <Card className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 border-none border-t-2 border-t-yellow-500 shadow-2xl relative overflow-visible group mt-10">
+                <CardHeader className="text-center pb-4 pt-20 relative z-10">
+                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40">
+                    {/* Ambient Glow */}
+                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-full bg-yellow-500/20 blur-[50px] rounded-full group-hover:bg-yellow-500/40 transition-all duration-500" />
+                    <img
+                      src="/Hextech_Crafting_Masterwork_Chest.webp"
+                      alt="Tournaments"
+                      className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(234,179,8,0.7)] group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500 transform"
+                    />
                   </div>
-                  <CardTitle className="text-xl text-gray-100">Upcoming Tournaments</CardTitle>
+                  <CardTitle className="text-3xl font-bold text-white tracking-tight">Upcoming Tournaments</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-gray-500 mb-6">
-                    Check out the latest tournaments you can join with your team.
+                <CardContent className="text-center relative z-10">
+                  <p className="text-slate-400 mb-8 text-lg leading-relaxed">
+                    Check out the latest tournaments you can join with your team and win exclusive rewards.
                   </p>
-                  <Button asChild variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 bg-transparent">
+                  <Button asChild variant="outline" className="border-slate-600 text-slate-300 hover:bg-yellow-600 hover:border-yellow-600 hover:text-white transition-all px-8 py-6 text-sm font-bold tracking-wide bg-transparent">
                     <Link href="/tournaments">View All</Link>
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-900 shadow-lg border border-gray-800 hover:border-gray-700 transition-all">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center">
-                    <Target className="w-8 h-8 text-gray-400" />
+              {/* Looking for Players */}
+              <Card className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 border-none border-t-2 border-t-cyan-500 shadow-2xl relative overflow-visible group mt-10">
+                <CardHeader className="text-center pb-4 pt-20 relative z-10">
+                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40">
+                    {/* Ambient Glow */}
+                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-full bg-cyan-500/20 blur-[50px] rounded-full group-hover:bg-cyan-500/40 transition-all duration-500" />
+                    <img
+                      src="/LoR_Rare_Wildcard_icon.webp"
+                      alt="Players"
+                      className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(34,211,238,0.7)] group-hover:scale-110 group-hover:-translate-y-2 rotate-12 group-hover:rotate-6 transition-all duration-500 transform"
+                    />
                   </div>
-                  <CardTitle className="text-xl text-gray-100">Looking for Players</CardTitle>
+                  <CardTitle className="text-3xl font-bold text-white tracking-tight">Looking for Players</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-gray-500 mb-6">
-                    Teams are actively looking for players in your rank range.
+                <CardContent className="text-center relative z-10">
+                  <p className="text-slate-400 mb-8 text-lg leading-relaxed">
+                    Teams are actively looking for players in your rank range. Find your perfect squad today.
                   </p>
-                  <Button asChild variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 bg-transparent">
+                  <Button asChild variant="outline" className="border-slate-600 text-slate-300 hover:bg-cyan-600 hover:border-cyan-600 hover:text-white transition-all px-8 py-6 text-sm font-bold tracking-wide bg-transparent">
                     <Link href="/teams">Find Teams</Link>
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-900 shadow-lg border border-gray-800 hover:border-gray-700 transition-all">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center">
-                    <Zap className="w-8 h-8 text-gray-400" />
+              {/* Recent Matches */}
+              <Card className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 border-none border-t-2 border-t-red-500 shadow-2xl relative overflow-visible group mt-10">
+                <CardHeader className="text-center pb-4 pt-20 relative z-10">
+                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40">
+                    {/* Ambient Glow */}
+                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-full bg-red-500/20 blur-[50px] rounded-full group-hover:bg-red-500/40 transition-all duration-500" />
+                    <img
+                      src="/LoR_Blue_Nexus.webp"
+                      alt="Matches"
+                      className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(239,68,68,0.7)] group-hover:scale-125 group-hover:-translate-y-4 transition-all duration-500 transform"
+                    />
                   </div>
-                  <CardTitle className="text-xl text-gray-100">Recent Matches</CardTitle>
+                  <CardTitle className="text-3xl font-bold text-white tracking-tight">Recent Matches</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-gray-500 mb-6">
-                    Stay updated with the latest tournament results and matches.
+                <CardContent className="text-center relative z-10">
+                  <p className="text-slate-400 mb-8 text-lg leading-relaxed">
+                    Stay updated with the latest tournament results, match replays, and team performance.
                   </p>
-                  <Button asChild variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 bg-transparent">
+                  <Button asChild variant="outline" className="border-slate-600 text-slate-300 hover:bg-red-600 hover:border-red-600 hover:text-white transition-all px-8 py-5 text-sm font-bold tracking-wide bg-transparent">
                     <Link href="/tournaments">View Results</Link>
                   </Button>
                 </CardContent>

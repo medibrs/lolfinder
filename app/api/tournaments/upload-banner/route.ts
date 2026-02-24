@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
         // Resize/compress banner for better performance
         const processedBuffer = await sharp(buffer)
-            .resize(2000, 800, {
+            .resize(2320, 720, {
                 fit: 'cover',
                 position: 'center',
                 withoutEnlargement: true

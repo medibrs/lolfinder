@@ -3,16 +3,17 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Shield, Users, Trophy, Search, Crown } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Shield, Users, Trophy, Search, Crown, Target, User } from 'lucide-react'
 import { TeamAvatar } from '@/components/ui/team-avatar'
 import Image from 'next/image'
+import Link from 'next/link'
 import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
 import { getCached, setCache } from '@/lib/cache'
@@ -114,11 +115,11 @@ export default function TeamsPage() {
       const apiPromise = fetch(`/api/teams?${params}`);
       const userPromise = supabase.auth.getUser();
       const playerProfilePromise = supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session?.user) return { data: null, error: null };
-        return supabase.from('players').select('team_id').eq('id', session.user.id).single();
+        if (!session?.user) return { data: null, error: null } as any;
+        return supabase.from('players').select('team_id').eq('id', session.user.id).single() as any;
       });
 
-      const [response, { data: { user: authUser } }, { data: playerData, error: playerError }] = await Promise.all([
+      const [response, { data: { user: authUser } }, profileResult] = await Promise.all([
         apiPromise,
         userPromise,
         playerProfilePromise,
@@ -126,15 +127,15 @@ export default function TeamsPage() {
 
       setUser(authUser)
 
-      // Process player profile results (already fetched in parallel above)
       if (authUser) {
-        if (playerError || !playerData) {
+        if (!profileResult || profileResult.error || !profileResult.data) {
           setHasPlayerProfile(false)
           setProfileChecked(true)
         } else {
           setHasPlayerProfile(true)
           setProfileChecked(true)
 
+          const playerData = profileResult.data as any;
           // Fetch team data and join requests in parallel (if player is in a team)
           const teamPromise = playerData?.team_id
             ? supabase.from('teams').select('id, captain_id').eq('id', playerData.team_id).single()
@@ -346,85 +347,107 @@ export default function TeamsPage() {
 
   return (
     <main className="min-h-screen pt-24 pb-12 bg-gradient-to-b from-background to-secondary/20">
-      <div className="max-w-6xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4 mt-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <div>
+            <h1 className="text-5xl font-bold mb-3 font-beaufort tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+              Team Directory
+            </h1>
+            <p className="text-gray-400 uppercase tracking-[0.3em] font-beaufort text-sm">
+              Find your perfect squad and dominate the Rift
+            </p>
+          </div>
+          <div className="flex gap-4">
+            {userTeam ? (
+              <Button asChild className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold px-8 py-6 rounded-lg shadow-[0_0_15px_rgba(202,138,4,0.3)] transition-all font-beaufort tracking-widest uppercase">
+                <Link href={userTeam.captain_id === user?.id ? "/manage-team" : `/teams/${userTeam.id}`}>
+                  {userTeam.captain_id === user?.id ? "Manage Team" : "View My Team"}
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-6 rounded-lg shadow-[0_0_15px_rgba(8,145,178,0.3)] transition-all font-beaufort tracking-widest uppercase text-sm">
+                <Link href="/create-team">Form New Squad</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+
         {/* Profile Setup Banner */}
         {user && !hasPlayerProfile && profileChecked && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+          <div className="mb-8 p-6 bg-slate-900/60 backdrop-blur-md border border-cyan-500/30 rounded-xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-transparent pointer-events-none"></div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-cyan-500/10 rounded-full flex items-center justify-center border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-all">
+                  <User className="w-6 h-6 text-cyan-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900">Complete Your Player Profile</h3>
-                  <p className="text-sm text-blue-700">Create your profile to join teams and participate in tournaments</p>
+                  <h3 className="text-xl font-bold text-white font-beaufort tracking-wide">Complete Your Profile</h3>
+                  <p className="text-slate-400 text-sm">Unlock invitations and team recruitment tools.</p>
                 </div>
               </div>
-              <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                <a href="/setup-profile">Set Up Profile</a>
+              <Button asChild className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-6 rounded-lg shadow-[0_0_15px_rgba(8,145,178,0.3)] transition-all">
+                <Link href="/setup-profile">Set Up Profile Now</Link>
               </Button>
             </div>
           </div>
         )}
 
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Teams</h1>
-              <p className="text-muted-foreground">Find your perfect team and climb the ranks together</p>
-            </div>
-          </div>
-          {userTeam ? (
-            userTeam.captain_id === user?.id ? (
-              <Button asChild className="bg-yellow-600 hover:bg-yellow-700">
-                <a href="/manage-team">Manage Team</a>
-              </Button>
-            ) : (
-              <Button asChild className="bg-primary hover:bg-primary/90">
-                <a href={`/teams/${userTeam.id}`}>View Team</a>
-              </Button>
-            )
-          ) : (
-            <Button asChild className="bg-primary hover:bg-primary/90">
-              <a href="/create-team">Create Team</a>
-            </Button>
-          )}
-        </div>
-
-        <div className="mb-8 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="mb-12 space-y-6">
+          <div className="relative group">
             <Input
               placeholder="Search teams by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-input border-border"
+              className="bg-slate-900/50 border-slate-800 focus:border-yellow-500/50 h-14 pl-6 text-lg rounded-xl backdrop-blur-sm transition-all text-white placeholder:text-slate-500"
             />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-yellow-500 transition-colors">
+              <Target className="w-6 h-6" />
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setSelectedRole(null)}
-              className={selectedRole === null ? 'bg-primary' : ''}
-            >
-              All Roles
-            </Button>
-            {ROLES.map(role => (
-              <Button
-                key={role}
-                variant={selectedRole === role ? 'default' : 'outline'}
-                onClick={() => setSelectedRole(role)}
-                className={selectedRole === role ? 'bg-primary' : ''}
-              >
-                {role}
-              </Button>
-            ))}
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-slate-400 uppercase tracking-widest text-xs font-bold mr-2">Filter Roles:</span>
+              <TooltipProvider>
+                <div className="flex gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setSelectedRole(null)}
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border ${selectedRole === null
+                          ? 'bg-yellow-500/20 border-yellow-500 shadow-[0_0_15_rgba(234,179,8,0.3)]'
+                          : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'
+                          }`}
+                      >
+                        <span className={`text-xs font-bold ${selectedRole === null ? 'text-yellow-500' : 'text-slate-400'}`}>ALL</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>All Roles</TooltipContent>
+                  </Tooltip>
+                  {ROLES.map(role => (
+                    <Tooltip key={role}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setSelectedRole(role)}
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border ${selectedRole === role
+                            ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.3)]'
+                            : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'
+                            }`}
+                        >
+                          <RoleIcon
+                            role={role}
+                            size={24}
+                            className={selectedRole === role ? 'brightness-0 invert-[1] sepia-[1] saturate-[10] hue-rotate-[160deg]' : 'opacity-40 grayscale group-hover:opacity-100'}
+                          />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>{role}</TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </TooltipProvider>
+            </div>
           </div>
         </div>
 
@@ -452,226 +475,185 @@ export default function TeamsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTeams.length > 0 ? (
-              filteredTeams.map((team) => (
-                <Card
-                  key={team.id}
-                  className="relative h-full bg-zinc-900 border-zinc-800/50 overflow-hidden hover:border-primary/50 transition-all duration-500 group cursor-pointer shadow-2xl flex flex-col"
-                  onClick={() => router.push(`/teams/${team.id}`)}
-                >
-                  {/* Card Background Accent */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl transition-colors group-hover:bg-primary/10" />
+              filteredTeams.map((team) => {
+                const rankColor = (tier: string) => {
+                  if (!tier) return 'text-slate-300';
+                  const t = tier.toLowerCase();
+                  if (t.includes('iron')) return 'text-zinc-500';
+                  if (t.includes('bronze')) return 'text-amber-800';
+                  if (t.includes('silver')) return 'text-slate-400';
+                  if (t.includes('gold')) return 'text-yellow-500';
+                  if (t.includes('platinum')) return 'text-cyan-400';
+                  if (t.includes('emerald')) return 'text-emerald-500';
+                  if (t.includes('diamond')) return 'text-blue-400';
+                  if (t.includes('master')) return 'text-purple-500';
+                  if (t.includes('grandmaster')) return 'text-red-500';
+                  if (t.includes('challenger')) return 'text-cyan-300';
+                  return 'text-slate-300';
+                };
 
-                  <div className="p-6 relative z-10 flex flex-col h-full">
-                    {/* Header Info */}
-                    <div className="flex items-start gap-4 mb-6">
-                      <div className="relative">
-                        <TeamAvatar
-                          team={team}
-                          size="lg"
-                          showTooltip={false}
-                        />
-                        {/* Status Badge Over Avatar */}
-                        <div className="absolute -bottom-1 -right-1">
-                          <Badge className={cn(
-                            "h-5 w-5 rounded-full p-0 flex items-center justify-center border-2 border-zinc-900",
-                            team.recruiting_status === 'Open' ? 'bg-green-500' : 'bg-zinc-500'
-                          )}>
-                            <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-bold text-white mb-1 truncate" title={team.name}>
-                          {team.name}
-                        </h3>
-                        <div className="flex items-center gap-2 text-zinc-400">
-                          <Crown className="h-3 w-3 text-yellow-500" />
-                          <span className="text-xs font-medium truncate">
-                            {team.captain?.summoner_name || 'Unknown'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Stats Strip */}
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div className="bg-zinc-800/30 rounded-xl p-3 border border-white/5">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Users className="h-3 w-3 text-primary" />
-                          <span className="text-[10px] uppercase tracking-wider font-bold text-zinc-500">Size</span>
-                        </div>
-                        <div className="text-sm font-bold text-zinc-200">
-                          {team.current_members} <span className="text-zinc-600">/ {team.team_size}</span>
-                        </div>
-                      </div>
-
-                      <div className="bg-zinc-800/30 rounded-xl p-3 border border-white/5">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Trophy className="h-3 w-3 text-orange-400" />
-                          <span className="text-[10px] uppercase tracking-wider font-bold text-zinc-500">Rank</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {team.average_rank ? (
-                            <>
-                              <Image
-                                src={getRankImage(team.average_rank)}
-                                alt={team.average_rank}
-                                width={14}
-                                height={14}
-                                className="object-contain"
-                              />
-                              <span className="text-sm font-bold text-zinc-200">
-                                {team.average_rank?.split(' ')[0]}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-sm font-bold text-zinc-600">N/A</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Open Roles */}
-                    <div className="mt-auto">
-                      <div className="flex flex-wrap gap-1.5 min-h-[24px]">
-                        {team.open_positions?.slice(0, 5).map((role: string) => (
-                          <div key={role} className="p-1 rounded bg-zinc-800 border border-white/5">
-                            <RoleIcon role={role} size={14} />
-                          </div>
-                        ))}
-                        {team.open_positions?.length > 5 && (
-                          <span className="text-[10px] font-bold text-zinc-500 flex items-center px-1">
-                            +{team.open_positions.length - 5}
-                          </span>
+                return (
+                  <Card
+                    key={team.id}
+                    className="relative bg-slate-900/40 backdrop-blur-md border border-slate-800 hover:border-yellow-500/50 transition-all duration-500 overflow-hidden group shadow-xl flex flex-col"
+                    onClick={() => router.push(`/teams/${team.id}`)}
+                  >
+                    {/* Identity Header */}
+                    <div className="relative p-6 pb-2">
+                      {/* Rank Watermark */}
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 pointer-events-none translate-x-10 -translate-y-10 group-hover:translate-x-8 group-hover:-translate-y-8 transition-all duration-700">
+                        {team.average_rank && (
+                          <Image
+                            src={getRankImage(team.average_rank)}
+                            alt=""
+                            width={128}
+                            height={128}
+                            className="object-contain"
+                          />
                         )}
                       </div>
-                    </div>
 
-                    {/* Bottom Action Button (Non-hover state) */}
-                    <div className="mt-6">
-                      {user && team.captain_id === user.id ? (
-                        <Button className="w-full bg-yellow-600/10 border border-yellow-600/20 text-yellow-500 hover:bg-yellow-600 hover:text-white transition-all rounded-xl h-11" onClick={(e) => { e.stopPropagation(); router.push('/manage-team') }}>
-                          Manage Team
-                        </Button>
-                      ) : user && userTeam?.id === team.id ? (
-                        <Button className="w-full bg-green-600/10 border border-green-600/20 text-green-500 hover:bg-green-600 hover:text-white transition-all rounded-xl h-11" onClick={(e) => { e.stopPropagation(); router.push(`/teams/${team.id}`) }}>
-                          View Team
-                        </Button>
-                      ) : (
-                        <Button variant="secondary" className="w-full bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5 rounded-xl h-11" onClick={(e) => e.stopPropagation()}>
-                          View Details
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ──── HOVER ROSTER OVERLAY ──── */}
-                  <div className="absolute inset-0 bg-zinc-950/95 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col p-6 z-20 pointer-events-none group-hover:pointer-events-auto">
-                    <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Users className="h-4 w-4 text-primary" />
-                        Team Roster
-                      </h4>
-                      <Badge variant="outline" className="border-zinc-700 text-zinc-400">
-                        {team.members?.length || 0} Members
-                      </Badge>
-                    </div>
-
-                    {/* Members Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto max-h-[160px] pr-1">
-                      {team.members?.map((member: any) => (
-                        <div key={member.id} className="relative group/member flex flex-col items-center">
-                          <div className="relative mb-2">
-                            <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-zinc-800 bg-zinc-900">
-                              {member.profileIconUrl ? (
-                                <Image
-                                  src={member.profileIconUrl}
-                                  alt={member.summoner_name}
-                                  fill
-                                  className="object-cover"
-                                />
+                      <div className="relative z-10 flex items-center gap-4">
+                        <div className="relative">
+                          <TeamAvatar team={team} size="lg" showTooltip={false} className="border-none group-hover:scale-105 transition-transform" />
+                          <div className="absolute -bottom-1 -right-1">
+                            <div className={cn(
+                              "h-4 w-4 rounded-full border-2 border-slate-950",
+                              team.recruiting_status === 'Open' ? 'bg-green-500' : 'bg-slate-500'
+                            )} />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-2xl font-bold font-beaufort tracking-tight text-white mb-0.5 truncate uppercase">
+                            {team.name}
+                          </h3>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 text-slate-400">
+                              <Crown className="h-3 w-3 text-yellow-500" />
+                              <span className="text-[10px] font-bold font-beaufort tracking-widest uppercase">
+                                {team.captain?.summoner_name || 'Captain Unknown'}
+                              </span>
+                            </div>
+                            {/* Minimized Skill Tier beside Captain */}
+                            <div className="w-px h-3 bg-slate-800" />
+                            <div className="flex items-center gap-1.5 min-w-fit">
+                              {team.average_rank ? (
+                                <>
+                                  <Image
+                                    src={getRankImage(team.average_rank)}
+                                    alt=""
+                                    width={16}
+                                    height={16}
+                                    className="object-contain opacity-80"
+                                  />
+                                  <span className={`text-[10px] font-bold font-beaufort uppercase tracking-widest ${rankColor(team.average_rank)}`}>
+                                    {team.average_rank.split(' ')[0]}
+                                  </span>
+                                </>
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500">
-                                  ?
-                                </div>
+                                <span className="text-[10px] font-bold text-slate-600 font-beaufort uppercase tracking-widest">Unranked</span>
                               )}
                             </div>
-                            {/* Role Icon Overlay */}
-                            <div className="absolute -bottom-1 -right-1 bg-zinc-900 border border-zinc-800 p-1 rounded-md shadow-lg">
-                              <RoleIcon role={member.main_role} size={12} />
-                            </div>
-                            {/* Rank Overlay */}
-                            <div className="absolute -top-1 -left-1">
-                              <Image
-                                src={getRankImage(member.tier)}
-                                alt={member.tier}
-                                width={18}
-                                height={18}
-                                className="object-contain"
-                              />
-                            </div>
                           </div>
                         </div>
-                      ))}
-
-                      {/* Empty slots placeholders */}
-                      {[...Array(Math.max(0, parseInt(team.team_size) - (team.members?.length || 0)))].map((_, i) => (
-                        <div key={`empty-${i}`} className="flex flex-col items-center opacity-30">
-                          <div className="w-14 h-14 rounded-xl border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-700">
-                            <Shield className="h-6 w-6" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-auto space-y-2">
-                      <div className="w-full h-px bg-zinc-800" />
-                      <div className="pt-2">
-                        {user && team.captain_id === user.id ? (
-                          <Button className="w-full bg-yellow-600 hover:bg-yellow-700 font-bold uppercase tracking-widest text-xs h-12" onClick={(e) => { e.stopPropagation(); router.push('/manage-team') }}>
-                            Team Management
-                          </Button>
-                        ) : user && userTeam?.id === team.id ? (
-                          <Button className="w-full bg-green-600 hover:bg-green-700 font-bold uppercase tracking-widest text-xs h-12" onClick={(e) => { e.stopPropagation(); router.push(`/teams/${team.id}`) }}>
-                            Our Home
-                          </Button>
-                        ) : user && userTeam ? (
-                          <Button disabled className="w-full h-12 bg-zinc-800 border border-zinc-700 text-zinc-500">
-                            Already in a team
-                          </Button>
-                        ) : team.current_members >= parseInt(team.team_size) ? (
-                          <Button disabled className="w-full h-12 bg-zinc-800 border border-zinc-700 text-zinc-500">
-                            Roster Full
-                          </Button>
-                        ) : user && pendingRequests[team.id] ? (
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCancelRequest(team.id)
-                            }}
-                            disabled={cancellingRequest === team.id}
-                            className="w-full bg-orange-600 hover:bg-orange-700 font-bold uppercase tracking-widest text-xs h-12 animate-pulse"
-                          >
-                            {cancellingRequest === team.id ? 'Cancelling...' : 'Revoke Request'}
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleRequestToJoin(team.id, team.name)
-                            }}
-                            disabled={sendingRequest === team.id}
-                            className="w-full bg-primary hover:bg-primary/90 font-black uppercase tracking-widest text-xs h-12 shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:shadow-[0_0_30px_rgba(var(--primary),0.5)] transition-all"
-                          >
-                            {sendingRequest === team.id ? 'Processing...' : 'Request to Join'}
-                          </Button>
-                        )}
                       </div>
                     </div>
-                  </div>
-                </Card>
-              ))
+
+                    <CardContent className="px-5 py-4 flex-1 flex flex-col space-y-6 relative z-10">
+                      {/* Integrated Roster & Recruiting Slots (5 Boxes) */}
+                      <div className="flex items-center justify-center gap-2.5 scale-110 py-2">
+                        <TooltipProvider>
+                          {(() => {
+                            // Logic: Members first, then Open Positions, then Empty Slots - Cap at 5 total.
+                            const members = team.members || [];
+                            const openPos = team.open_positions || [];
+                            const slots = [];
+
+                            // 1. Fill with active members
+                            for (let i = 0; i < members.length && slots.length < 5; i++) {
+                              slots.push({ type: 'member', data: members[i] });
+                            }
+
+                            // 2. Fill with recruiting roles
+                            for (let i = 0; i < openPos.length && slots.length < 5; i++) {
+                              slots.push({ type: 'recruiting', role: openPos[i] });
+                            }
+
+                            // 3. Fill remaining with empty
+                            while (slots.length < 5) {
+                              slots.push({ type: 'empty' });
+                            }
+
+                            return slots.map((slot, i) => {
+                              if (slot.type === 'member') {
+                                const member = slot.data;
+                                return (
+                                  <Tooltip key={`member-${member.id}`}>
+                                    <TooltipTrigger asChild>
+                                      <div className="relative w-11 h-11 rounded-lg overflow-hidden bg-slate-900 shadow-xl transition-all cursor-default flex-shrink-0 group/avatar">
+                                        <Image
+                                          src={member.profileIconUrl || `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/0.png`}
+                                          alt={member.summoner_name}
+                                          fill
+                                          className="object-cover group-hover/avatar:scale-110 transition-transform"
+                                        />
+                                        <div className="absolute bottom-0 right-0 p-0.5 bg-slate-950/80 rounded-tl-md border-tl border-slate-800">
+                                          <RoleIcon role={member.main_role} size={8} className="brightness-200" />
+                                        </div>
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-slate-900 border-slate-800 text-white p-3 shadow-2xl backdrop-blur-md">
+                                      <div className="flex items-center gap-3">
+                                        <div className="relative w-8 h-8 rounded border border-slate-700 overflow-hidden">
+                                          <Image src={member.profileIconUrl || ""} alt="" fill className="object-cover" />
+                                        </div>
+                                        <div>
+                                          <p className="font-bold font-beaufort tracking-wide">{member.summoner_name}</p>
+                                          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{member.main_role} • {member.tier}</p>
+                                        </div>
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                );
+                              } else if (slot.type === 'recruiting') {
+                                return (
+                                  <Tooltip key={`recruiting-${i}`}>
+                                    <TooltipTrigger asChild>
+                                      <div className="w-11 h-11 rounded-lg border-2 border-dashed border-cyan-500/20 bg-cyan-500/5 flex items-center justify-center flex-shrink-0 group/role relative overflow-hidden transition-all hover:bg-cyan-500/10 hover:border-cyan-500/40">
+                                        <RoleIcon role={slot.role!} size={18} className="opacity-40 brightness-0 invert group-hover/role:opacity-100 group-hover/role:scale-110 transition-all duration-300" />
+                                        <div className="absolute inset-0 bg-cyan-400/5 animate-pulse pointer-events-none" />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-slate-900 border-slate-800 text-white font-bold font-beaufort tracking-widest uppercase text-xs">
+                                      RECRUITING: {slot.role}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                );
+                              } else {
+                                return (
+                                  <div key={`empty-${i}`} className="w-11 h-11 rounded-lg border-2 border-dashed border-slate-800 bg-slate-900/10 flex items-center justify-center flex-shrink-0">
+                                    <Users className="h-4 w-4 text-slate-800" />
+                                  </div>
+                                );
+                              }
+                            });
+                          })()}
+                        </TooltipProvider>
+                      </div>
+
+                      {/* Compact Action Button */}
+                      <div className="pt-2">
+                        <Button
+                          className="w-full bg-slate-800/40 hover:bg-gradient-to-r hover:from-yellow-600 hover:to-amber-700 text-slate-400 hover:text-white border border-slate-700/30 hover:border-yellow-500/50 transition-all duration-300 rounded-lg h-11 font-beaufort tracking-[0.2em] uppercase font-bold text-[10px]"
+                          onClick={(e) => { e.stopPropagation(); router.push(`/teams/${team.id}`) }}
+                        >
+                          View Squad Details
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })
             ) : (
               <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground">No teams found looking for players.</p>

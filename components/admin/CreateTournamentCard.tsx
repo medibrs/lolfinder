@@ -146,7 +146,7 @@ export default function CreateTournamentCard() {
           <Label>Tournament Banner</Label>
           <div className="relative group">
             {bannerPreview ? (
-              <div className="relative aspect-[5/2] w-full rounded-lg overflow-hidden border border-border bg-muted">
+              <div className="relative aspect-[29/9] w-full rounded-lg overflow-hidden border border-border bg-muted">
                 <Image
                   src={bannerPreview}
                   alt="Banner Preview"
@@ -169,7 +169,7 @@ export default function CreateTournamentCard() {
             ) : (
               <Label
                 htmlFor="banner-upload"
-                className="flex flex-col items-center justify-center aspect-[5/2] w-full rounded-lg border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group"
+                className="flex flex-col items-center justify-center aspect-[29/9] w-full rounded-lg border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group"
               >
                 <div className="flex flex-col items-center gap-2">
                   <div className="p-3 rounded-full bg-primary/10 text-primary group-hover:scale-110 transition-transform">
@@ -177,7 +177,7 @@ export default function CreateTournamentCard() {
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-medium">Upload Banner Image</p>
-                    <p className="text-xs text-muted-foreground">Recommend 2000x800 (Max 5MB)</p>
+                    <p className="text-xs text-muted-foreground">Recommend 2320x720 (Max 5MB)</p>
                   </div>
                 </div>
               </Label>

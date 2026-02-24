@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/react'
 import Navigation from '@/components/navigation'
 import NotificationPermission from '@/components/NotificationPermission'
@@ -9,6 +10,43 @@ import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
+
+const beaufort = localFont({
+  src: [
+    {
+      path: '../public/fonts/Beaufort-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Beaufort-Bold.ttf',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Beaufort-Italic.ttf',
+      weight: '400',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-beaufort',
+})
+
+const spiegel = localFont({
+  src: [
+    {
+      path: '../public/fonts/Spiegel-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/Spiegel-Italic.ttf',
+      weight: '400',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-spiegel',
+})
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://teamfinder.gg'
 
@@ -260,7 +298,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`font-sans antialiased`} suppressHydrationWarning={true}>
+      <body className={`font-beaufort antialiased ${beaufort.variable} ${spiegel.variable}`} suppressHydrationWarning={true}>
         <Suspense fallback={<div className="h-16 w-full bg-background/80 border-b border-border fixed top-0 z-50" />}>
           <Navigation />
         </Suspense>

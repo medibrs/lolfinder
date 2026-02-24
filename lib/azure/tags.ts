@@ -18,7 +18,9 @@ export const AVATAR_TAGS = [
     'typography',
     'esports',
     'sports',
-    'design'
+    'design',
+    'branding',
+    'poster'
 ];
 
 export const AVATAR_TAG_THRESHOLD = 0.2

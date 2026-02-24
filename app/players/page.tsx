@@ -3,13 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
 import { Skeleton } from '@/components/ui/skeleton'
+import Link from 'next/link'
+import { User, Target } from 'lucide-react'
 import { getCached, setCache } from '@/lib/cache'
 
 // DDragon version is stable - avoid async fetch
@@ -323,67 +325,103 @@ export default function PlayersPage() {
 
   return (
     <main className="min-h-screen pt-24 pb-12">
-      <div className="max-w-6xl mx-auto px-4">
-        <h1 className="text-4xl font-bold mb-2">Player Directory</h1>
-        <p className="text-muted-foreground mb-8">Browse all registered players looking for teams</p>
+      <div className="max-w-6xl mx-auto px-4 mt-8">
+        <h1 className="text-5xl font-bold mb-3 font-beaufort tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+          Player Directory
+        </h1>
+        <p className="text-gray-400 mb-10 uppercase tracking-[0.3em] font-beaufort text-sm">
+          Recruit the best talent for your squad
+        </p>
 
         {/* Profile Setup Banner */}
         {user && !hasPlayerProfile && profileChecked && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+          <div className="mb-8 p-6 bg-slate-900/60 backdrop-blur-md border border-cyan-500/30 rounded-xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-transparent pointer-events-none"></div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-cyan-500/10 rounded-full flex items-center justify-center border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-all">
+                  <User className="w-6 h-6 text-cyan-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900">Complete Your Player Profile</h3>
-                  <p className="text-sm text-blue-700">Create your profile to join teams and participate in tournaments</p>
+                  <h3 className="text-xl font-bold text-white font-beaufort tracking-wide">Complete Your Profile</h3>
+                  <p className="text-slate-400">Unlock invitations and team recruitment tools.</p>
                 </div>
               </div>
-              <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                <a href="/setup-profile">Set Up Profile</a>
+              <Button asChild className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-6 rounded-lg shadow-[0_0_15px_rgba(8,145,178,0.3)] transition-all">
+                <Link href="/setup-profile">Set Up Profile Now</Link>
               </Button>
             </div>
           </div>
         )}
 
-        <div className="mb-8 space-y-4">
-          <Input
-            placeholder="Search by summoner name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-input border-border"
-          />
+        <div className="mb-12 space-y-6">
+          <div className="relative group">
+            <Input
+              placeholder="Search by summoner name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-slate-900/50 border-slate-800 focus:border-yellow-500/50 h-14 pl-6 text-lg rounded-xl backdrop-blur-sm transition-all text-white placeholder:text-slate-500"
+            />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-yellow-500 transition-colors">
+              <Target className="w-6 h-6" />
+            </div>
+          </div>
 
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setSelectedRole(null)}
-                className={selectedRole === null ? 'bg-primary' : ''}
-              >
-                All
-              </Button>
-              {ROLES.map(role => (
-                <Button
-                  key={role}
-                  variant={selectedRole === role ? 'default' : 'outline'}
-                  onClick={() => setSelectedRole(role)}
-                  className={selectedRole === role ? 'bg-primary' : ''}
-                >
-                  {role}
-                </Button>
-              ))}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-slate-400 uppercase tracking-widest text-xs font-bold mr-2">Filter Roles:</span>
+              <TooltipProvider>
+                <div className="flex gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setSelectedRole(null)}
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border ${selectedRole === null
+                          ? 'bg-yellow-500/20 border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]'
+                          : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'
+                          }`}
+                      >
+                        <span className={`text-xs font-bold ${selectedRole === null ? 'text-yellow-500' : 'text-slate-400'}`}>ALL</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>All Roles</TooltipContent>
+                  </Tooltip>
+                  {ROLES.map(role => (
+                    <Tooltip key={role}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setSelectedRole(role)}
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border ${selectedRole === role
+                            ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.3)]'
+                            : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'
+                            }`}
+                        >
+                          <RoleIcon
+                            role={role}
+                            size={24}
+                            className={selectedRole === role ? 'brightness-0 invert-[1] sepia-[1] saturate-[10] hue-rotate-[160deg]' : 'opacity-40 grayscale group-hover:opacity-100'}
+                          />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>{role}</TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </TooltipProvider>
             </div>
 
             <Button
               variant={showLFTOnly ? 'default' : 'outline'}
               onClick={() => setShowLFTOnly(!showLFTOnly)}
-              className={showLFTOnly ? 'bg-green-600 hover:bg-green-700 w-full sm:w-auto' : 'w-full sm:w-auto'}
+              className={`h-12 px-6 rounded-xl font-bold tracking-widest uppercase text-xs transition-all ${showLFTOnly
+                ? 'bg-green-500 border-green-400 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]'
+                : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:border-slate-600'
+                }`}
             >
-              {showLFTOnly ? '✓ LFT Only' : 'LFT Only'}
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${showLFTOnly ? 'bg-white animate-pulse' : 'bg-slate-600'}`}></div>
+                {showLFTOnly ? 'Recruiting Only' : 'Show Recruiting Only'}
+              </div>
             </Button>
           </div>
         </div>
@@ -412,192 +450,164 @@ export default function PlayersPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPlayers.length > 0 ? (
-              filteredPlayers.map(player => (
-                <Card key={player.id} className="bg-card border-border p-6 hover:border-primary transition">
-                  <div className="flex items-start gap-4 mb-4">
-                    {/* Profile Icon */}
-                    <div className="relative">
-                      {player.profile_icon_id ? (
-                        <Image
-                          src={`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${player.profile_icon_id}.png`}
-                          alt="Profile Icon"
-                          width={64}
-                          height={64}
-                          className="rounded-full border-2 border-border"
-                          onError={(e) => {
-                            // Fallback to question mark if image fails to load
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent) {
-                              const fallback = parent.querySelector('.fallback-icon');
-                              if (fallback) {
-                                (fallback as HTMLElement).style.display = 'flex';
-                              }
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
-                          <span className="text-2xl">?</span>
-                        </div>
-                      )}
-                      {/* Fallback icon */}
-                      <div className="fallback-icon w-16 h-16 bg-muted rounded-full flex items-center justify-center" style={{ display: 'none' }}>
-                        <span className="text-2xl">?</span>
-                      </div>
-                      {/* Rank Badge */}
-                      <div className="absolute -bottom-1 -right-1">
+              filteredPlayers.map(player => {
+                const winRate = player.wins !== undefined && player.losses !== undefined && (player.wins + player.losses) > 0
+                  ? Math.round((player.wins / (player.wins + player.losses)) * 100)
+                  : 0;
+
+                const rankColor = (tier: string) => {
+                  const t = tier.toLowerCase();
+                  if (t.includes('iron')) return 'text-zinc-500';
+                  if (t.includes('bronze')) return 'text-amber-800';
+                  if (t.includes('silver')) return 'text-slate-400';
+                  if (t.includes('gold')) return 'text-yellow-500';
+                  if (t.includes('platinum')) return 'text-cyan-400';
+                  if (t.includes('emerald')) return 'text-emerald-500';
+                  if (t.includes('diamond')) return 'text-blue-400';
+                  if (t.includes('master')) return 'text-purple-500';
+                  if (t.includes('grandmaster')) return 'text-red-500';
+                  if (t.includes('challenger')) return 'text-cyan-300';
+                  return 'text-slate-300';
+                };
+
+                return (
+                  <Card key={player.id} className="bg-slate-900/40 backdrop-blur-md border-slate-800 hover:border-yellow-500/50 transition-all duration-500 overflow-hidden group shadow-xl">
+                    {/* Identity Header with subtle background blur/gradient */}
+                    <div className="relative p-6 pb-4">
+                      <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 to-transparent opacity-50"></div>
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 pointer-events-none translate-x-10 -translate-y-10 group-hover:translate-x-8 group-hover:-translate-y-8 transition-all duration-700">
                         <Image
                           src={getRankImage(player.tier)}
-                          alt={player.tier}
-                          width={24}
-                          height={24}
+                          alt=""
+                          width={128}
+                          height={128}
                           className="object-contain"
                         />
                       </div>
-                    </div>
 
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold mb-1 truncate" title={player.summoner_name}>
-                        {player.summoner_name.split('#')[0]}
-                        <span className="text-muted-foreground font-normal ml-1">#{player.summoner_name.split('#')[1]}</span>
-                      </h3>
-                      <div className="flex items-center gap-2 mb-2">
-                        <TooltipProvider>
-                          <div className="flex items-center gap-1">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div>
-                                  <RoleIcon role={player.main_role} size={16} />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{player.main_role}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            {player.secondary_role && (
-                              <>
-                                <span className="text-muted-foreground">/</span>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div>
-                                      <RoleIcon role={player.secondary_role} size={16} />
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{player.secondary_role}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </>
+                      <div className="relative z-10 flex items-center gap-4">
+                        {/* Profile Icon with Glow */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-yellow-500/20 blur-[15px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                          {player.profile_icon_id ? (
+                            <Image
+                              src={`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${player.profile_icon_id}.png`}
+                              alt="Profile Icon"
+                              width={72}
+                              height={72}
+                              className="rounded-full border-2 border-slate-700 relative z-10 group-hover:border-yellow-500/50 transition-colors"
+                            />
+                          ) : (
+                            <div className="w-[72px] h-[72px] bg-slate-800 rounded-full flex items-center justify-center border-2 border-slate-700 relative z-10">
+                              <span className="text-3xl font-beaufort text-slate-500">?</span>
+                            </div>
+                          )}
+                          <div className="absolute -bottom-1 -right-1 bg-slate-950 p-1 rounded-full border border-slate-800 z-20">
+                            <Image
+                              src={getRankImage(player.tier)}
+                              alt={player.tier}
+                              width={24}
+                              height={24}
+                              className="object-contain"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-2xl font-bold font-beaufort tracking-tight text-white truncate mb-0.5">
+                            {player.summoner_name.split('#')[0]}
+                            <span className="text-slate-500 font-normal text-sm ml-1 self-end mb-1 inline-block">#{player.summoner_name.split('#')[1]}</span>
+                          </h3>
+                          <div className="flex items-center gap-3">
+                            <span className={`text-sm font-bold font-beaufort uppercase tracking-widest ${rankColor(player.tier)}`}>
+                              {player.tier} {player.rank || ''}
+                            </span>
+                            {player.summoner_level && (
+                              <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-slate-400 font-bold">LVL {player.summoner_level}</span>
                             )}
                           </div>
-                        </TooltipProvider>
+                        </div>
                       </div>
+                    </div>
 
-                      {/* Enhanced Rank Display */}
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-muted-foreground">Rank:</span>
-                        <span className="text-sm font-semibold">
-                          {player.tier}
-                          {player.rank && player.rank !== null && (
-                            <span className="ml-1">{player.rank}</span>
-                          )}
-                        </span>
-                        {player.league_points !== undefined && player.league_points > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            ({player.league_points} LP)
-                          </span>
+                    <CardContent className="px-6 py-4 space-y-6">
+                      {/* Roles */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                          <RoleIcon role={player.main_role} size={16} className="opacity-80" />
+                          <span className="text-xs font-bold text-slate-300 uppercase tracking-tighter">{player.main_role}</span>
+                        </div>
+                        {player.secondary_role && (
+                          <div className="flex items-center gap-1.5 bg-slate-800/30 px-3 py-1.5 rounded-lg border border-slate-700/30">
+                            <RoleIcon role={player.secondary_role} size={16} className="opacity-60" />
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{player.secondary_role}</span>
+                          </div>
                         )}
                       </div>
 
-                      {/* Summoner Level */}
-                      {player.summoner_level && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-muted-foreground">Level:</span>
-                          <span className="text-sm font-semibold">{player.summoner_level}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Win/Loss Stats */}
-                  {(player.wins !== undefined || player.losses !== undefined) && (
-                    <div className="flex items-center justify-center gap-4 mb-4 p-2 bg-muted/50 rounded">
-                      {player.wins !== undefined && (
-                        <div className="text-center">
-                          <span className="text-green-600 font-bold text-sm">{player.wins}</span>
-                          <span className="text-xs text-muted-foreground block">W</span>
-                        </div>
-                      )}
-                      {(player.wins !== undefined && player.losses !== undefined) && (
-                        <span className="text-muted-foreground">/</span>
-                      )}
-                      {player.losses !== undefined && (
-                        <div className="text-center">
-                          <span className="text-red-600 font-bold text-sm">{player.losses}</span>
-                          <span className="text-xs text-muted-foreground block">L</span>
-                        </div>
-                      )}
-                      {player.wins !== undefined && player.losses !== undefined && player.wins + player.losses > 0 && (
-                        <div className="text-center">
-                          <span className="text-blue-600 font-bold text-sm">
-                            {Math.round((player.wins / (player.wins + player.losses)) * 100)}%
+                      {/* WinRate Bar Redesign */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-end mb-1">
+                          <div className="flex gap-3 text-[10px] font-bold tracking-widest uppercase">
+                            <span className="text-green-500">{player.wins || 0}W</span>
+                            <span className="text-red-500">{player.losses || 0}L</span>
+                          </div>
+                          <span className={`text-lg font-bold font-beaufort ${winRate >= 60 ? 'text-cyan-400' : winRate >= 50 ? 'text-yellow-500' : 'text-slate-400'}`}>
+                            {winRate}% <span className="text-[10px] uppercase font-sans tracking-normal opacity-60">WR</span>
                           </span>
-                          <span className="text-xs text-muted-foreground block">WR</span>
                         </div>
-                      )}
-                    </div>
-                  )}
+                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden flex border border-slate-700/30">
+                          <div
+                            className={`h-full transition-all duration-1000 ${winRate >= 60 ? 'bg-cyan-500' : winRate >= 50 ? 'bg-yellow-500' : 'bg-slate-500'}`}
+                            style={{ width: `${winRate}%` }}
+                          ></div>
+                        </div>
+                      </div>
 
-                  {user && userTeam && player.id !== user.id ? (
-                    <div className="space-y-2">
-                      {player.team_id ? (
-                        <Button disabled className="w-full">
-                          Already in a Team
-                        </Button>
-                      ) : sentInvites[player.id] ? (
-                        <Button
-                          onClick={() => handleCancelInvite(player.id)}
-                          disabled={cancellingInvite === player.id}
-                          className="w-full bg-orange-600 hover:bg-orange-700"
-                        >
-                          {cancellingInvite === player.id ? 'Cancelling...' : 'Cancel Invite'}
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => handleInvitePlayer(player.id)}
-                          disabled={sendingInvite === player.id}
-                          className="w-full bg-yellow-600 hover:bg-yellow-700"
-                        >
-                          {sendingInvite === player.id ? 'Sending...' : 'Invite to Team'}
-                        </Button>
-                      )}
-                      {player.opgg_url && player.opgg_url.trim() !== '' ? (
-                        <Button asChild variant="outline" className="w-full">
-                          <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
-                            View OP.GG
-                          </a>
-                        </Button>
-                      ) : (
-                        <Button disabled variant="outline" className="w-full">
-                          No OP.GG Linked
-                        </Button>
-                      )}
-                    </div>
-                  ) : player.opgg_url && player.opgg_url.trim() !== '' ? (
-                    <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                      <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
-                        View OP.GG
-                      </a>
-                    </Button>
-                  ) : (
-                    <Button disabled className="w-full">
-                      No OP.GG Linked
-                    </Button>
-                  )}
-                </Card>
-              ))
+                      {/* Buttons */}
+                      <div className="space-y-3 pt-2">
+                        {user && userTeam && player.id !== user.id ? (
+                          <>
+                            {player.team_id ? (
+                              <Button disabled className="w-full bg-slate-800/50 text-slate-500 border-none cursor-not-allowed opacity-50">
+                                Already in a Team
+                              </Button>
+                            ) : sentInvites[player.id] ? (
+                              <Button
+                                onClick={() => handleCancelInvite(player.id)}
+                                disabled={cancellingInvite === player.id}
+                                className="w-full bg-red-900/40 hover:bg-red-800/60 text-red-400 border border-red-500/30 transition-all font-bold font-beaufort tracking-widest uppercase"
+                              >
+                                {cancellingInvite === player.id ? 'Cancelling...' : 'Cancel Invite'}
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={() => handleInvitePlayer(player.id)}
+                                disabled={sendingInvite === player.id}
+                                className="w-full bg-gradient-to-r from-yellow-600 to-amber-700 hover:from-yellow-500 hover:to-amber-600 text-white font-bold font-beaufort tracking-[0.15em] uppercase shadow-[0_4px_15px_rgba(180,120,0,0.2)] hover:shadow-[0_4px_20px_rgba(180,120,0,0.4)] hover:-translate-y-0.5 transition-all"
+                              >
+                                {sendingInvite === player.id ? 'Sending...' : 'Invite to Team'}
+                              </Button>
+                            )}
+                          </>
+                        ) : null}
+
+                        {player.opgg_url && player.opgg_url.trim() !== '' ? (
+                          <Button asChild variant="outline" className="w-full border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest bg-transparent">
+                            <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
+                              View OP.GG
+                            </a>
+                          </Button>
+                        ) : (
+                          <div className="w-full py-2 text-center border border-slate-800/50 rounded-md">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 italic">No OP.GG History</span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })
             ) : (
               <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground">No players found matching your criteria.</p>

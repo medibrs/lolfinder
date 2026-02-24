@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CheckCircle, XCircle, Calendar, Clock, Trophy, Users } from 'lucide-react'
+import { CheckCircle, XCircle, Calendar, Clock, Trophy, Users, User, Coins } from 'lucide-react'
+import Link from 'next/link'
 
 interface Tournament {
   id: string
@@ -95,14 +96,10 @@ export default function TournamentsPage() {
           .eq('id', authUser.id)
           .single()
 
-
-
         if (playerError) {
-
           setHasPlayerProfile(false)
           setProfileChecked(true)
         } else {
-
           setHasPlayerProfile(true)
           setProfileChecked(true)
         }
@@ -147,13 +144,11 @@ export default function TournamentsPage() {
         .order('created_at', { ascending: false })
 
       if (error) {
-
         return
       }
 
       setTournaments(data || [])
     } catch (error) {
-
     } finally {
       setInitialLoad(false) // Mark initial load as complete
     }
@@ -194,7 +189,6 @@ export default function TournamentsPage() {
       } else {
         const error = await response.json()
 
-
         // If it's a duplicate registration error, update the status to pending
         if (error.error?.includes('pending') || error.error?.includes('already')) {
           setRegistrationStatuses(prev => ({ ...prev, [tournamentId]: 'pending' }))
@@ -203,7 +197,6 @@ export default function TournamentsPage() {
         setErrorMessage(error.error || "Failed to register for tournament.")
       }
     } catch (error: any) {
-
       setErrorMessage(error.message || "An unexpected error occurred.")
     } finally {
       setRegistering(null)
@@ -225,28 +218,35 @@ export default function TournamentsPage() {
   }
 
   return (
-    <main className="min-h-screen pt-24 pb-12 bg-background">
-      <div className="max-w-6xl mx-auto px-4">
-        <h1 className="text-4xl font-bold mb-2">Tournaments</h1>
-        <p className="text-muted-foreground mb-8">Browse and register for upcoming tournaments</p>
+    <main className="min-h-screen pt-24 pb-12 bg-gradient-to-b from-background to-secondary/20 text-white">
+      <div className="max-w-6xl mx-auto px-4 mt-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <div>
+            <h1 className="text-5xl font-bold mb-3 font-beaufort tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] uppercase">
+              Tournament Arena
+            </h1>
+            <p className="text-gray-400 uppercase tracking-[0.3em] font-beaufort text-sm">
+              Forge your legacy and compete for elite rewards
+            </p>
+          </div>
+        </div>
 
         {/* Profile Setup Banner */}
         {user && !hasPlayerProfile && profileChecked && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+          <div className="mb-8 p-6 bg-slate-900/60 backdrop-blur-md border border-cyan-500/30 rounded-xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-transparent pointer-events-none"></div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-cyan-500/10 rounded-full flex items-center justify-center border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-all">
+                  <User className="w-6 h-6 text-cyan-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900">Complete Your Player Profile</h3>
-                  <p className="text-sm text-blue-700">Create your profile to join teams and participate in tournaments</p>
+                  <h3 className="text-xl font-bold text-white font-beaufort tracking-wide">Complete Your Profile</h3>
+                  <p className="text-slate-400 text-sm">Unlock registration for upcoming competitive events.</p>
                 </div>
               </div>
-              <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                <a href="/setup-profile">Set Up Profile</a>
+              <Button asChild className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-6 rounded-lg shadow-[0_0_15px_rgba(8,145,178,0.3)] transition-all">
+                <Link href="/setup-profile">Set Up Profile Now</Link>
               </Button>
             </div>
           </div>
@@ -273,30 +273,23 @@ export default function TournamentsPage() {
         )}
 
         {initialLoad ? (
-          <div className="grid grid-cols-1 gap-4">
-            {/* Skeleton loaders for tournaments - matching card preview design */}
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="relative border-zinc-800/50 overflow-hidden group p-0 min-h-[300px] md:min-h-[360px] flex flex-col justify-between bg-zinc-900/50">
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/70 pointer-events-none" />
-
-                {/* Header Skeleton */}
-                <div className="relative p-6 md:p-8 z-10 w-full">
-                  <div className="flex items-start justify-between gap-4">
-                    <Skeleton className="h-10 w-2/3 md:w-1/2 bg-white/10 rounded-lg" />
-                    <Skeleton className="h-8 w-24 bg-white/10 rounded-full" />
+          <div className="flex flex-col gap-10">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="flex flex-col border-slate-800 bg-slate-900/40 backdrop-blur-md overflow-hidden">
+                <Skeleton className="w-full aspect-[29/9] bg-slate-800" />
+                <div className="px-6 lg:px-10 py-6 flex flex-row items-center justify-between gap-8">
+                  <div className="flex gap-12">
+                    <Skeleton className="h-10 w-24 bg-slate-800 rounded" />
+                    <Skeleton className="h-10 w-24 bg-slate-800 rounded" />
+                    <Skeleton className="h-10 w-24 bg-slate-800 rounded" />
                   </div>
-                </div>
-
-                {/* Footer Skeleton */}
-                <div className="relative p-6 md:p-8 z-10 flex flex-col xl:flex-row xl:items-end justify-between gap-6 mt-auto">
-                  <Skeleton className="h-[76px] w-full xl:w-[450px] bg-white/5 rounded-2xl" />
-                  <Skeleton className="h-[60px] w-full xl:w-[200px] bg-white/10 rounded-2xl" />
+                  <Skeleton className="h-10 w-32 bg-slate-800 rounded mt-auto" />
                 </div>
               </Card>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="flex flex-col gap-6">
             {tournaments.length > 0 ? (
               tournaments.map(tournament => {
                 const participantCount = tournament.tournament_participants?.[0]?.count || 0
@@ -307,135 +300,119 @@ export default function TournamentsPage() {
                 return (
                   <Card
                     key={tournament.id}
-                    className="relative border-zinc-800/50 overflow-hidden hover:border-primary/50 transition-all duration-500 group p-0 cursor-pointer shadow-2xl min-h-[300px] md:min-h-[360px] flex flex-col justify-between"
+                    className="flex flex-col w-full border-slate-800 bg-slate-900 overflow-hidden hover:border-yellow-500/50 transition-all duration-300 group cursor-pointer shadow-2xl relative p-0 gap-0"
                     onClick={() => handleTournamentClick(tournament)}
                   >
-                    {/* Full Card Background Image */}
-                    <div
-                      className="absolute inset-0 bg-cover bg-center pointer-events-none transition-transform duration-1000 group-hover:scale-105"
-                      style={{
-                        backgroundImage: `url(${tournament.banner_image || '/leet_lol_header.jpg'})`,
-                        filter: 'brightness(0.7) contrast(1.15) saturate(1.1)'
-                      }}
-                    />
+                    {/* TOP SECTION: Cinematic Ultrawide Image (29:9) */}
+                    <div className="relative w-full aspect-[2.5/1] md:aspect-[29/9] overflow-hidden bg-slate-950 flex-shrink-0">
+                      <img
+                        src={tournament.banner_image || '/leet_lol_header.jpg'}
+                        alt={tournament.name}
+                        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 opacity-80 group-hover:opacity-100"
+                      />
 
-                    {/* Gradient Overlay for Text Legibility */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/70 pointer-events-none" />
+                      {/* Floating Status Badge (Top Right - Flushed Top) */}
+                      <div className="absolute top-0 right-20 z-20">
+                        {tournamentStatus.status === 'upcoming' && (
+                          <img src="/tournament_assets/upcoming_small.png" alt="Upcoming" className="h-[100px] w-auto drop-shadow-2xl" />
+                        )}
+                        {tournamentStatus.status === 'in-progress' && (
+                          <img src="/tournament_assets/live_small.png" alt="Live Now" className="h-[100px] w-auto drop-shadow-2xl animate-pulse" />
+                        )}
+                        {tournamentStatus.status === 'completed' && (
+                          <img src="/tournament_assets/ended_small.png" alt="Completed" className="h-[100px] w-auto opacity-80" />
+                        )}
+                      </div>
 
-                    {/* Tournament Header Content */}
-                    <div className="relative p-6 md:p-8 z-10 pointer-events-none w-full">
-                      <div className="flex items-start justify-between gap-4">
-                        <h3 className="text-2xl md:text-4xl font-black text-white group-hover:text-primary transition-colors tracking-tight line-clamp-2 drop-shadow-2xl max-w-[70%] md:max-w-[80%] leading-tight">
+                      {/* FIXED TITLE: Left-aligned with proper inset and scaled down */}
+                      <div className="absolute bottom-0 left-0 w-full px-8 pb-3 md:pb-4 z-10 text-left">
+                        <h2 className="text-base md:text-xl lg:text-2xl font-bold text-white uppercase tracking-wider font-beaufort drop-shadow-[0_4px_12px_rgba(0,0,0,1)] group-hover:text-yellow-500 transition-colors leading-tight">
                           {tournament.name}
-                        </h3>
-                        <div className="flex-shrink-0">
-                          {tournamentStatus.status === 'upcoming' && (
-                            <span className="px-4 py-1.5 rounded-full font-bold text-xs bg-orange-500 text-white uppercase tracking-widest shadow-[0_0_15px_rgba(249,115,22,0.4)]">
-                              Upcoming
-                            </span>
-                          )}
-                          {tournamentStatus.status === 'in-progress' && (
-                            <span className="px-4 py-1.5 rounded-full font-bold text-xs bg-green-500 text-white uppercase tracking-widest shadow-[0_0_15px_rgba(34,197,94,0.4)] flex items-center gap-2 animate-pulse">
-                              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                              Live
-                            </span>
-                          )}
-                          {tournamentStatus.status === 'completed' && (
-                            <span className="px-4 py-1.5 rounded-full font-bold text-xs bg-zinc-700 text-zinc-200 uppercase tracking-widest shadow-md">
-                              Finished
-                            </span>
-                          )}
-                        </div>
+                        </h2>
                       </div>
                     </div>
 
-                    {/* Bottom Stats & Actions */}
-                    <div className="relative p-6 md:p-8 z-10 flex flex-col xl:flex-row xl:items-end justify-between gap-6 pointer-events-none mt-auto">
-                      {/* Stats Unified Bar */}
-                      <div className="bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl p-1 flex items-center gap-1 flex-wrap sm:flex-nowrap shadow-2xl pointer-events-auto">
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
-                          <div className="p-2.5 bg-orange-500/20 rounded-xl shadow-inner">
-                            <Calendar className="h-5 w-5 text-orange-400" />
-                          </div>
+                    {/* BOTTOM SECTION: Rigid Stats Strip - Consistent inset */}
+                    <div className="w-full px-8 py-3 bg-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4 border-t-0">
+
+                      {/* Stats Flex Grid */}
+                      <div className="flex flex-row flex-wrap items-center gap-8 lg:gap-16">
+                        {/* Stat 1: Date */}
+                        <div className="flex flex-row items-center gap-3">
+                          <Calendar className="h-5 w-5 text-slate-500" />
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-widest mb-0.5">Start</span>
-                            <span className="text-sm font-bold text-white whitespace-nowrap">
-                              {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Date</span>
+                            <span className="text-xs md:text-sm text-slate-200 font-bold uppercase tracking-wide">
+                              {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </span>
                           </div>
                         </div>
 
-                        <div className="hidden sm:block w-px h-10 bg-white/10 mx-1" />
-
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
-                          <div className="p-2.5 bg-yellow-500/20 rounded-xl shadow-inner">
-                            <Trophy className="h-5 w-5 text-yellow-400" />
-                          </div>
+                        {/* Stat 2: Prize Pool */}
+                        <div className="flex flex-row items-center gap-3">
+                          <img src="/tournament_assets/trophy_small.png" alt="Prize" className="h-5 w-auto" />
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-widest mb-0.5">Prize</span>
-                            <span className="text-sm font-bold text-white whitespace-nowrap">{tournament.prize_pool || 'TBD'}</span>
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Prize Pool</span>
+                            <span className="text-xs md:text-sm text-yellow-500 font-bold">{tournament.prize_pool || 'TBD'}</span>
                           </div>
                         </div>
 
-                        <div className="hidden sm:block w-px h-10 bg-white/10 mx-1" />
-
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors">
-                          <div className="p-2.5 bg-blue-500/20 rounded-xl shadow-inner">
-                            <Users className="h-5 w-5 text-blue-400" />
-                          </div>
+                        {/* Stat 3: Contestants */}
+                        <div className="flex flex-row items-center gap-3">
+                          <img src="/tournament_assets/teams_small.png" alt="Teams" className="h-5 w-auto" />
                           <div className="flex flex-col">
-                            <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-widest mb-0.5">Entry</span>
-                            <span className="text-sm font-bold text-white whitespace-nowrap">
-                              {participantCount} <span className="text-zinc-500">/ {tournament.max_teams}</span>
-                            </span>
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Teams</span>
+                            <span className="text-xs md:text-sm text-slate-200 font-bold">{participantCount} / {tournament.max_teams}</span>
+                          </div>
+                        </div>
+
+                        {/* Stat 4: Format / Server */}
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Server</span>
+                          <div className="flex items-center gap-2 text-xs md:text-sm text-slate-200 font-bold uppercase">
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" /> EUW
                           </div>
                         </div>
                       </div>
 
-                      {/* Registration Action */}
-                      <div className="pointer-events-auto shrink-0 w-full xl:w-auto">
+                      {/* Call to Action Button */}
+                      <div className="md:ml-auto">
                         {user && userTeam ? (
                           registrationStatuses[tournament.id] === 'approved' ? (
-                            <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-green-500/10 border border-green-500/30 text-green-400 font-black text-sm text-center flex items-center justify-center gap-2 shadow-lg uppercase tracking-widest">
-                              <CheckCircle className="h-5 w-5" /> REGISTERED
+                            <div className="px-6 py-2 rounded bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-[10px] uppercase tracking-widest shadow-inner">
+                              <CheckCircle className="h-3.5 w-3.5 inline mr-2" /> Confirmed
                             </div>
                           ) : registrationStatuses[tournament.id] === 'pending' ? (
-                            <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-black text-sm text-center flex items-center justify-center gap-2 shadow-lg uppercase tracking-widest">
-                              <Clock className="h-5 w-5" /> PENDING APPROVAL
+                            <div className="px-6 py-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 font-bold text-[10px] uppercase tracking-widest shadow-inner">
+                              <Clock className="h-3.5 w-3.5 inline mr-2" /> Pending
                             </div>
-                          ) : registrationStatuses[tournament.id] === 'rejected' ? (
-                            <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-500 font-black text-sm text-center flex items-center justify-center gap-2 shadow-lg uppercase tracking-widest">
-                              <XCircle className="h-5 w-5" /> DECLINED
-                            </div>
-                          ) : tournamentStatus.status === 'upcoming' ? (
-                            <Button
+                          ) : (
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handleRegister(tournament.id)
                               }}
                               disabled={registering === tournament.id}
-                              className="w-full xl:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-black text-sm px-10 py-7 rounded-2xl shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:shadow-[0_0_30px_rgba(var(--primary),0.5)] transition-all duration-300 hover:-translate-y-1 active:translate-y-0 uppercase tracking-widest"
+                              style={{
+                                backgroundImage: `url(${registering === tournament.id ? '/tournament_assets/regester_button_pressed_small.png' : '/tournament_assets/regester_button_small.png'})`,
+                                backgroundSize: '100% 100%'
+                              }}
+                              className="group/btn relative h-14 w-52 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-125 disabled:grayscale"
                             >
-                              {registering === tournament.id ? 'REGISTERING...' : 'REGISTER NOW'}
-                            </Button>
-                          ) : (
-                            <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-zinc-800/80 border border-white/5 text-zinc-400 font-black text-sm text-center shadow-lg uppercase tracking-widest">
-                              CLOSED
-                            </div>
+                              <span className="text-slate-950 font-bold text-xs tracking-[0.15em] uppercase drop-shadow-sm mt-0.5 group-active/btn:mt-1 group-active/btn:text-slate-900 transition-all">
+                                {registering === tournament.id ? 'TRANSMITTING' : 'Register Squad'}
+                              </span>
+                            </button>
                           )
-                        ) : user ? (
-                          <div className="w-full xl:w-auto py-4 px-8 rounded-2xl bg-zinc-900/80 backdrop-blur border border-white/10 text-zinc-400 font-black text-sm text-center shadow-lg uppercase tracking-widest">
-                            JOIN A TEAM TO PLAY
-                          </div>
                         ) : (
                           <Button
+                            className="px-8 py-3 bg-transparent border border-slate-700 text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-yellow-500 hover:text-yellow-500 transition-all font-beaufort"
                             onClick={(e) => {
                               e.stopPropagation()
                               router.push('/auth')
                             }}
-                            className="w-full xl:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-black text-sm px-10 py-7 rounded-2xl shadow-xl transition-all duration-300 hover:-translate-y-1 active:translate-y-0 uppercase tracking-widest"
                           >
-                            LOGIN TO REGISTER
+                            Login to Compete
                           </Button>
                         )}
                       </div>

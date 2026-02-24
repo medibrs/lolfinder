@@ -288,10 +288,16 @@ export default async function TournamentEventPage({ params }: Props) {
           <div className="max-w-7xl mx-auto px-4 pb-6">
             {/* Status + number */}
             <div className="flex items-center gap-3 mb-3">
-              <Badge className={`${tournamentStatus.color} text-white text-xs px-2.5 py-1 font-semibold shadow-lg`}>
-                {tournamentStatus.text}
-              </Badge>
-              <span className="text-zinc-500 text-sm font-mono">#{tournament.tournament_number}</span>
+              {tournamentStatus.status === 'upcoming' && (
+                <img src="/tournament_assets/upcoming_small.png" alt="Upcoming" className="h-8 w-auto drop-shadow-lg" />
+              )}
+              {tournamentStatus.status === 'live' && (
+                <img src="/tournament_assets/live_small.png" alt="Live Now" className="h-8 w-auto drop-shadow-lg animate-pulse" />
+              )}
+              {tournamentStatus.status === 'completed' && (
+                <img src="/tournament_assets/ended_small.png" alt="Completed" className="h-8 w-auto opacity-80" />
+              )}
+              <span className="text-zinc-500 text-sm font-mono ml-2">#{tournament.tournament_number}</span>
             </div>
             {/* Title */}
             <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-5 drop-shadow-lg">
@@ -316,16 +322,16 @@ export default async function TournamentEventPage({ params }: Props) {
                 </div>
               </div>
               <div className="w-px h-8 bg-white/10 hidden md:block" />
-              <div className="flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-yellow-400" />
+              <div className="flex items-center gap-3">
+                <img src="/tournament_assets/trophy_small.png" alt="Prize" className="h-5 w-auto" />
                 <div>
                   <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Prize</p>
                   <p className="text-xs md:text-sm font-semibold text-white">{tournament.prize_pool || 'TBD'}</p>
                 </div>
               </div>
               <div className="w-px h-8 bg-white/10 hidden md:block" />
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-blue-400" />
+              <div className="flex items-center gap-3">
+                <img src="/tournament_assets/teams_small.png" alt="Teams" className="h-5 w-auto" />
                 <div>
                   <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Teams</p>
                   <p className="text-xs md:text-sm font-semibold text-orange-400">{registeredTeams.length}/{tournament.max_teams}</p>
