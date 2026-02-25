@@ -207,8 +207,8 @@ interface MatchGroupArrowsProps {
 }
 
 export function MatchGroupArrows({
-  winnerColor = 'green',
-  loserColor = 'red',
+  winnerColor = 'zinc',
+  loserColor = 'zinc',
   size = 'md',
   straight = false,
   className

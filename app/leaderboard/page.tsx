@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { Trophy, Medal, Award, TrendingUp, ExternalLink, ChevronRight, Target } from 'lucide-react'
+import { TrophyIcon, FirstPlaceTrophyIcon, SecondPlaceMedalIcon, ThirdPlaceMedalIcon } from '@/components/TournamentIcons'
 
 // Rank order for sorting (higher index = higher rank)
 const RANK_ORDER = [
@@ -142,22 +143,22 @@ export default function LeaderboardPage() {
   const getRankBadge = (index: number) => {
     if (index === 0) {
       return (
-        <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
-          <Trophy className="w-5 h-5 text-white" />
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
+          <TrophyIcon size={20} />
         </div>
       )
     }
     if (index === 1) {
       return (
-        <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center shadow-lg">
-          <Medal className="w-5 h-5 text-white" />
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
+          <SecondPlaceMedalIcon size={24} />
         </div>
       )
     }
     if (index === 2) {
       return (
-        <div className="w-8 h-8 bg-amber-700 rounded-full flex items-center justify-center shadow-lg">
-          <Award className="w-5 h-5 text-white" />
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
+          <ThirdPlaceMedalIcon size={24} />
         </div>
       )
     }
@@ -267,7 +268,7 @@ export default function LeaderboardPage() {
 
                       {/* Bleeding Medal - Responsive Positioning */}
                       <div className={`absolute ${isMobile ? '-left-4 -top-4 w-[110px]' : '-left-10 -top-10 w-[150px]'} z-10 opacity-90 pointer-events-none`}>
-                        <Image src="/tournament_assets/second_place_medal.png" alt="" width={isMobile ? 110 : 150} height={isMobile ? 110 : 150} className="object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
+                        <SecondPlaceMedalIcon size={isMobile ? 110 : 150} className="drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
                       </div>
 
                       <div className={`flex flex-col z-30 text-right pr-2 ${isMobile ? 'pl-20' : 'pl-24 md:pl-0'}`}>
@@ -279,8 +280,8 @@ export default function LeaderboardPage() {
                           <Image src={getRankImage(players[1].tier)} alt="" width={14} height={14} className="object-contain" />
                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">{players[1].tier}</p>
                         </div>
-                        <p className="text-sm font-black text-slate-300 tracking-wider transition-colors group-hover/p2:text-cyan-400">
-                          {players[1].league_points}S <span className="text-[10px] opacity-60">LP</span>
+                        <p className="text-sm font-black tracking-wider transition-colors group-hover/p2:text-cyan-400">
+                          <span className="text-slate-300 group-hover/p2:text-cyan-400">{players[1].league_points}</span> <span className="text-[10px] text-slate-500 uppercase tracking-normal">LP</span>
                         </p>
                       </div>
                       <div className="absolute top-0 left-0 w-3 h-3 border-l border-t border-slate-500/50"></div>
@@ -312,8 +313,8 @@ export default function LeaderboardPage() {
                       <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[#c9aa71]/10 to-transparent"></div>
 
                       {/* Giant Bleeding Trophy - Responsive */}
-                      <div className={`absolute ${isMobile ? '-left-8 -top-1 w-[200px]' : '-left-20 -top-31 w-[340px]'} z-10 opacity-100 pointer-events-none`}>
-                        <Image src="/tournament_assets/first_place_trophy.png" alt="" width={isMobile ? 150 : 340} height={isMobile ? 150 : 340} className="object-contain drop-shadow-[0_40px_60px_rgba(0,0,0,0.9)]" />
+                      <div className={`absolute ${isMobile ? '-left-8 -top-1 w-[200px]' : '-left-20 -top-[132px] w-[340px]'} z-50 opacity-100 pointer-events-none`}>
+                        <FirstPlaceTrophyIcon size={isMobile ? 150 : 340} className="drop-shadow-[0_40px_60px_rgba(0,0,0,0.9)]" />
                       </div>
 
                       <div className={`flex flex-col z-30 text-right pt-2 pb-6 md:pb-6 ${isMobile ? 'pl-28' : 'pl-32 md:pl-0'}`}>
@@ -324,6 +325,10 @@ export default function LeaderboardPage() {
                         <div className="flex items-center justify-end gap-2 mb-3 md:mb-4">
                           <Image src={getRankImage(players[0].tier)} alt="" width={24} height={24} className="object-contain" />
                           <p className="text-[10px] md:text-[12px] font-black text-slate-300 uppercase tracking-widest leading-none">{players[0].tier}</p>
+                        </div>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <span className="text-lg md:text-xl font-black text-[#c9aa71]">{players[0].league_points}</span>
+                          <span className="text-[10px] md:text-[12px] font-bold text-slate-500 uppercase tracking-wider">LP</span>
                         </div>
 
                       </div>
@@ -355,7 +360,7 @@ export default function LeaderboardPage() {
 
                       {/* Bleeding Medal - Responsive Positioning */}
                       <div className={`absolute ${isMobile ? '-left-4 -top-4 w-[110px]' : '-left-10 -top-10 w-[150px]'} z-10 opacity-90 pointer-events-none`}>
-                        <Image src="/tournament_assets/third_place_medal.png" alt="" width={isMobile ? 110 : 150} height={isMobile ? 110 : 150} className="object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
+                        <ThirdPlaceMedalIcon size={isMobile ? 110 : 150} className="drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
                       </div>
 
                       <div className={`flex flex-col z-30 text-right pr-2 ${isMobile ? 'pl-20' : 'pl-24 md:pl-0'}`}>
@@ -367,8 +372,8 @@ export default function LeaderboardPage() {
                           <Image src={getRankImage(players[2].tier)} alt="" width={14} height={14} className="object-contain" />
                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">{players[2].tier}</p>
                         </div>
-                        <p className="text-sm font-black text-slate-300 tracking-wider group-hover/p3:text-orange-500 transition-colors">
-                          {players[2].league_points}S <span className="text-[10px] opacity-60">LP</span>
+                        <p className="text-sm font-black tracking-wider group-hover/p3:text-orange-500 transition-colors">
+                          <span className="text-slate-300 group-hover/p3:text-orange-500">{players[2].league_points}</span> <span className="text-[10px] text-slate-500 uppercase tracking-normal">LP</span>
                         </p>
                       </div>
                       <div className="absolute top-0 left-0 w-3 h-3 border-l border-t border-amber-700/50"></div>
@@ -380,13 +385,13 @@ export default function LeaderboardPage() {
             </div>
 
             {/* Leaderboard Table Header */}
-            <div className="max-w-4xl mx-auto mb-4 px-6 flex items-center text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-              <div className="w-12">#</div>
-              <div className="flex-1">Player</div>
-              <div className="w-40 hidden md:block text-center px-4">Performance</div>
-              <div className="w-32 text-center">Rank</div>
-              <div className="w-24 text-center">Standing</div>
-              <div className="w-32 ml-4"></div>
+            <div className="max-w-4xl mx-auto mb-4 px-6 grid grid-cols-[48px_1fr_120px_100px_80px_120px] md:grid-cols-[48px_1fr_160px_120px_96px_128px] items-center text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+              <div className="text-left">#</div>
+              <div className="text-left pl-4">Player</div>
+              <div className="hidden md:block text-center">Performance</div>
+              <div className="text-center">Rank</div>
+              <div className="text-center">Standing</div>
+              <div className="hidden sm:block text-right">Action</div>
             </div>
 
             {/* Leaderboard List */}
@@ -399,17 +404,17 @@ export default function LeaderboardPage() {
                   return (
                     <div
                       key={player.id}
-                      className="group relative flex items-center gap-4 p-3 bg-[#0c121d]/60 border border-slate-800/60 hover:border-cyan-500/50 transition-all duration-300 rounded-lg overflow-hidden group/row shadow-sm hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] hover:translate-x-1"
+                      className="group relative grid grid-cols-[48px_1fr_120px_100px_80px_120px] md:grid-cols-[48px_1fr_160px_120px_96px_128px] items-center p-3 bg-[#0c121d]/60 border border-slate-800/60 hover:border-cyan-500/50 transition-all duration-300 rounded-lg overflow-hidden group/row shadow-sm hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] hover:translate-x-1"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/[0.02] to-transparent opacity-0 group-hover/row:opacity-100 pointer-events-none" />
 
                       {/* Rank Number */}
-                      <div className="w-12 text-center font-beaufort font-black text-slate-500 group-hover/row:text-cyan-400 transition-colors">
+                      <div className="text-center font-beaufort font-black text-slate-500 group-hover/row:text-cyan-400 transition-colors">
                         {actualRank}
                       </div>
 
                       {/* Avatar & Name */}
-                      <div className="flex-1 flex items-center gap-4 min-w-0">
+                      <div className="flex items-center gap-4 min-w-0 pl-4">
                         <div className="relative">
                           {profileIconUrls[player.id] ? (
                             <Image
@@ -438,7 +443,7 @@ export default function LeaderboardPage() {
                       </div>
 
                       {/* Performance (Winrate Bar) */}
-                      <div className="w-40 hidden md:block flex flex-col gap-1.5 px-4">
+                      <div className="hidden md:flex flex-col gap-1.5 px-4">
                         <div className="flex justify-between text-[9px] font-black uppercase tracking-wider opacity-60">
                           <span className="text-green-500">{player.wins}W</span>
                           <span className="text-slate-400">{winRate}%</span>
@@ -451,7 +456,7 @@ export default function LeaderboardPage() {
                       </div>
 
                       {/* Rank Crest */}
-                      <div className="w-32 flex flex-col items-center justify-center opacity-80 group-hover/row:opacity-100 transition-opacity">
+                      <div className="flex flex-col items-center justify-center opacity-80 group-hover/row:opacity-100 transition-opacity">
                         <Image
                           src={getRankImage(player.tier)}
                           alt={player.tier}
@@ -465,14 +470,14 @@ export default function LeaderboardPage() {
                       </div>
 
                       {/* LP Standing */}
-                      <div className="w-24 text-center">
-                        <span className="text-sm font-black text-cyan-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.2)]">
-                          {player.league_points} <span className="text-[10px] opacity-60 ml-0.5">LP</span>
+                      <div className="text-center">
+                        <span className="text-sm font-black text-[#c9aa71] group-hover/row:text-[#e5c48b] drop-shadow-[0_0_8px_rgba(201,170,113,0.2)] transition-colors">
+                          {player.league_points} <span className="text-[10px] text-slate-500 font-bold uppercase ml-0.5">LP</span>
                         </span>
                       </div>
 
                       {/* View Button */}
-                      <div className="w-32 hidden sm:block">
+                      <div className="hidden sm:block text-right">
                         <Button
                           asChild
                           variant="ghost"

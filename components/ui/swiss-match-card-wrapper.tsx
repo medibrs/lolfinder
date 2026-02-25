@@ -20,15 +20,15 @@ interface SwissMatchCardWrapperProps {
   children?: React.ReactNode
 }
 
-export function SwissMatchCardWrapper({ 
-  title, 
+export function SwissMatchCardWrapper({
+  title,
   teamPairs,
   arrowStyle = 'none',
   children,
-  className 
+  className
 }: SwissMatchCardWrapperProps) {
   const isMobile = useIsMobile()
-  
+
   // For straight arrows (last round), we need a different layout
   // Arrows come from top and bottom, not from the right
   if (arrowStyle === 'straight') {
@@ -36,9 +36,9 @@ export function SwissMatchCardWrapper({
       <div className={cn("flex flex-col items-center", className)}>
         {/* Top arrow - pointing up to winners */}
         <div className={cn("flex justify-center", isMobile ? "mb-1" : "mb-2")}>
-          <BracketArrow direction={270} color="green" size="md" glowIntensity={2} />
+          <BracketArrow direction={270} color="zinc" size="md" glowIntensity={1} />
         </div>
-        
+
         {/* Match Group Content */}
         <div className="flex flex-col w-full">
           {/* Title */}
@@ -65,15 +65,15 @@ export function SwissMatchCardWrapper({
             </div>
           )}
         </div>
-        
+
         {/* Bottom arrow - pointing down to losers */}
         <div className={cn("flex justify-center", isMobile ? "mt-1" : "mt-2")}>
-          <BracketArrow direction={90} color="red" size="md" glowIntensity={2} />
+          <BracketArrow direction={90} color="zinc" size="md" glowIntensity={1} />
         </div>
       </div>
     )
   }
-  
+
   // Normal layout - arrows on the right side
   return (
     <div className={cn("flex items-stretch", className)}>
@@ -103,7 +103,7 @@ export function SwissMatchCardWrapper({
           </div>
         )}
       </div>
-      
+
       {/* Curved arrows on the right side */}
       {arrowStyle === 'curved' && (
         <MatchGroupArrows />

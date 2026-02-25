@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CheckCircle, XCircle, Calendar, Clock, Trophy, Users, User, Coins } from 'lucide-react'
+import { Share2, CheckCircle, XCircle, User, Coins } from 'lucide-react'
+import { CalendarIcon, ClockIcon, TrophyIcon, TeamsIcon, UpcomingIcon, LiveIcon, EndedIcon } from '@/components/TournamentIcons'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 
@@ -302,13 +303,13 @@ export default function TournamentsPage() {
                       {/* Floating Status Badge (Top Right - Flushed Top) */}
                       <div className="absolute top-0 right-20 z-20">
                         {tournamentStatus.status === 'upcoming' && (
-                          <img src="/tournament_assets/upcoming_small.png" alt="Upcoming" className="h-[100px] w-auto drop-shadow-2xl" />
+                          <UpcomingIcon size={100} className="drop-shadow-2xl" />
                         )}
                         {tournamentStatus.status === 'in-progress' && (
-                          <img src="/tournament_assets/live_small.png" alt="Live Now" className="h-[100px] w-auto drop-shadow-2xl animate-pulse" />
+                          <LiveIcon size={100} className="drop-shadow-2xl animate-pulse" />
                         )}
                         {tournamentStatus.status === 'completed' && (
-                          <img src="/tournament_assets/ended_small.png" alt="Completed" className="h-[100px] w-auto opacity-80" />
+                          <EndedIcon size={100} className="opacity-80" />
                         )}
                       </div>
 
@@ -327,7 +328,7 @@ export default function TournamentsPage() {
                       <div className="flex flex-row flex-wrap items-center gap-8 lg:gap-16">
                         {/* Stat 1: Date */}
                         <div className="flex flex-row items-center gap-3">
-                          <Calendar className="h-5 w-5 text-slate-500" />
+                          <CalendarIcon size={20} className="opacity-50" />
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Date</span>
                             <span className="text-xs md:text-sm text-slate-200 font-bold uppercase tracking-wide">
@@ -338,7 +339,7 @@ export default function TournamentsPage() {
 
                         {/* Stat 2: Prize Pool */}
                         <div className="flex flex-row items-center gap-3">
-                          <img src="/tournament_assets/trophy_small.png" alt="Prize" className="h-5 w-auto" />
+                          <TrophyIcon size={20} />
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Prize Pool</span>
                             <span className="text-xs md:text-sm text-yellow-500 font-bold">{tournament.prize_pool || 'TBD'}</span>
@@ -347,7 +348,7 @@ export default function TournamentsPage() {
 
                         {/* Stat 3: Contestants */}
                         <div className="flex flex-row items-center gap-3">
-                          <img src="/tournament_assets/teams_small.png" alt="Teams" className="h-5 w-auto" />
+                          <TeamsIcon size={20} />
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Teams</span>
                             <span className="text-xs md:text-sm text-slate-200 font-bold">{participantCount} / {tournament.max_teams}</span>
@@ -373,7 +374,7 @@ export default function TournamentsPage() {
                             </div>
                           ) : registrationStatuses[tournament.id] === 'pending' ? (
                             <div className="px-6 py-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 font-bold text-[10px] uppercase tracking-widest shadow-inner">
-                              <Clock className="h-3.5 w-3.5 inline mr-2" /> Pending
+                              <ClockIcon size={14} className="inline mr-2" /> Pending
                             </div>
                           ) : (
                             <button

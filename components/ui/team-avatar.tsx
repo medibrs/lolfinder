@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Shield } from 'lucide-react'
+import { Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -78,7 +78,7 @@ export function TeamAvatar({
         sizeClass,
         className
       )}>
-        <Shield className={cn("text-zinc-600", iconSize)} />
+        <Users className={cn("text-zinc-600", iconSize)} />
       </div>
     )
   }
@@ -105,7 +105,7 @@ export function TeamAvatar({
           />
         ) : (
           <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-            <Shield className={cn("text-zinc-400", iconSize)} />
+            <Users className={cn("text-zinc-400", iconSize)} />
           </div>
         )}
       </div>

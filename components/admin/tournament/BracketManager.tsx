@@ -68,8 +68,11 @@ export default function BracketManager({
   const [canEditSeeding, setCanEditSeeding] = useState(true)
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
+  const [dragOverItem, setDragOverItem] = useState<number | null>(null)
   const [approvedCount, setApprovedCount] = useState(0)
   const [matchData, setMatchData] = useState<any[]>([])
+  const [editingSeed, setEditingSeed] = useState<string | null>(null)
+  const [newSeedValue, setNewSeedValue] = useState<string>('')
 
   useEffect(() => {
     fetchSeeding()
@@ -196,27 +199,10 @@ export default function BracketManager({
     }
   }
 
-  const attemptAutoRegenerateIfSafe = async () => {
-    if (!bracketGenerated || !tournament?.current_round || !matchData) return false;
-    if (tournamentFormat === 'Single_Elimination' && tournament.current_round !== 1) return false;
-
-    const isSwiss = tournamentFormat === 'Swiss';
-    const currentRoundMatches = matchData.filter(m => m.bracket?.round_number === tournament.current_round);
-    const matchesToCheck = isSwiss ? currentRoundMatches : matchData;
-
-    if (matchesToCheck.length === 0 || matchesToCheck.some(m => m.status !== 'Scheduled')) return false;
-
-    try {
-      const resp = await fetch(`/api/tournaments/${tournamentId}/bracket`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'regenerate_round' })
-      });
-      return resp.ok;
-    } catch (e) { return false; }
-  }
 
   const handleSwapSeeds = async (team1Id: string, team2Id: string) => {
+    if (!team1Id || !team2Id) return;
+
     // Optimistic update
     const idx1 = participants.findIndex(p => p.team_id === team1Id)
     const idx2 = participants.findIndex(p => p.team_id === team2Id)
@@ -229,9 +215,10 @@ export default function BracketManager({
       setParticipants(newParticipants)
     }
 
+
     try {
-      const response = await fetch(`/api/tournaments/${tournamentId}/bracket`, {
-        method: 'PUT',
+      const response = await fetch(`/api/tournaments/${tournamentId}/seeding`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'swap_seeds', team1_id: team1Id, team2_id: team2Id })
       })
@@ -241,16 +228,11 @@ export default function BracketManager({
         throw new Error(errStr)
       }
 
-      // Try auto regenerating bracket changes (for SE completely, for Swiss current round)
-      const regenerated = await attemptAutoRegenerateIfSafe();
-
       // Refresh local state to ensure active buckets update properly
       await fetchSeeding(true)
       await fetchMatchData()
 
-      if (regenerated) {
-        toast({ title: 'Matches Updated', description: 'Bracket dynamically re-paired to match new seeding.' })
-      }
+      toast({ title: 'Matches Updated', description: 'Bracket dynamically re-paired to match new seeding.' })
     } catch (error: any) {
       console.error("Swap Error:", error)
       toast({ title: 'Error', description: String(error.message || error) || 'Failed to swap seeds', variant: 'destructive' })
@@ -258,47 +240,33 @@ export default function BracketManager({
     }
   }
 
-  const handleMoveSeed = async (teamId: string, direction: 'up' | 'down') => {
-    // Optimistic update
-    const currentIdx = participants.findIndex(p => p.team_id === teamId)
-    const targetIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1
+  const handleMoveToPosition = async (teamId: string, position: number) => {
+    if (position < 1 || position > participants.length) return;
 
-    if (currentIdx !== -1 && targetIdx >= 0 && targetIdx < participants.length) {
+    // Optimistic update - shift reorder
+    const oldIdx = participants.findIndex(p => p.team_id === teamId)
+    if (oldIdx !== -1) {
       const newParticipants = [...participants]
-      const currentSeed = newParticipants[currentIdx].seed_number
-      const targetSeed = newParticipants[targetIdx].seed_number
-      newParticipants[currentIdx] = { ...newParticipants[currentIdx], seed_number: targetSeed }
-      newParticipants[targetIdx] = { ...newParticipants[targetIdx], seed_number: currentSeed }
-      newParticipants.sort((a, b) => a.seed_number - b.seed_number)
-      setParticipants(newParticipants)
+      const [moved] = newParticipants.splice(oldIdx, 1)
+      newParticipants.splice(position - 1, 0, moved)
+      // Update all seed numbers
+      const updated = newParticipants.map((p, i) => ({ ...p, seed_number: i + 1 }))
+      setParticipants(updated)
     }
 
     try {
       const response = await fetch(`/api/tournaments/${tournamentId}/seeding`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: direction === 'up' ? 'move_up' : 'move_down', team_id: teamId })
+        body: JSON.stringify({ action: 'move_to_position', team_id: teamId, position })
       })
-      if (!response.ok) {
-        let errStr = "API error"
-        try { const err = await response.json(); errStr = err.error || errStr; } catch (e) { }
-        throw new Error(errStr)
-      }
+      if (!response.ok) throw new Error("Failed to move seed")
 
-      // Try auto regenerating bracket
-      const regenerated = await attemptAutoRegenerateIfSafe();
-
-      // Refresh local state
       await fetchSeeding(true)
       await fetchMatchData()
-
-      if (regenerated) {
-        toast({ title: 'Matches Updated', description: 'Bracket dynamically re-paired to match new seeding.' })
-      }
     } catch (error: any) {
-      console.error("Move Error:", error)
-      toast({ title: 'Error', description: String(error.message || error) || 'Failed to move seed', variant: 'destructive' })
-      fetchSeeding() // Revert on error
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+      fetchSeeding()
     }
   }
 
@@ -311,14 +279,16 @@ export default function BracketManager({
     setParticipants(reseeded)
 
     try {
-      const response = await fetch(`/api/tournaments/${tournamentId}/bracket`, {
-        method: 'PUT',
+      const response = await fetch(`/api/tournaments/${tournamentId}/seeding`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'randomize_seeds' })
       })
 
       if (response.ok) {
-        toast({ title: 'Success', description: 'Seeds randomized' })
+        await fetchSeeding(true)
+        await fetchMatchData()
+        toast({ title: 'Seeds Randomized', description: 'Bracket updated accordingly.' })
       } else {
         // Revert on error by re-fetching
         fetchSeeding()
@@ -345,10 +315,13 @@ export default function BracketManager({
 
       if (response.ok) {
         toast({ title: 'Success', description: 'Seeds ordered by tier' })
+        // Try auto regenerating bracket
+        await attemptAutoRegenerateIfSafe();
         // Use response data directly - already sorted by tier
         if (data.participants) {
           setParticipants(data.participants)
         }
+        await fetchMatchData()
       } else {
         toast({ title: 'Error', description: 'Failed to order by tier', variant: 'destructive' })
       }
@@ -371,31 +344,29 @@ export default function BracketManager({
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault()
+    setDragOverItem(index)
   }
 
   const handleDrop = async (e: React.DragEvent, targetIndex: number, targetTeamId?: string) => {
     e.preventDefault()
+    setDragOverItem(null)
 
-    // New team-id-based swap (works with filtered lists)
-    if (draggedTeamId && targetTeamId && draggedTeamId !== targetTeamId) {
-      await handleSwapSeeds(draggedTeamId, targetTeamId)
+    if (draggedTeamId && draggedTeamId !== targetTeamId) {
+      // Use reorder (shift) instead of swap
+      await handleMoveToPosition(draggedTeamId, targetIndex + 1)
       setDraggedTeamId(null)
       setDraggedItem(null)
       return
     }
 
-    // Legacy index-based swap (for pre-bracket seeding list)
     if (draggedItem === null || draggedItem === targetIndex) return
     if (!canEditSeeding) return
 
     const draggedParticipant = participants[draggedItem]
-    const targetParticipant = participants[targetIndex]
-
-    if (draggedParticipant && targetParticipant) {
-      await handleSwapSeeds(draggedParticipant.team_id, targetParticipant.team_id)
-    }
+    await handleMoveToPosition(draggedParticipant.team_id, targetIndex + 1)
 
     setDraggedItem(null)
+    setDragOverItem(null)
     setDraggedTeamId(null)
   }
 
@@ -748,9 +719,47 @@ export default function BracketManager({
                                     `}
                                   >
                                     <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
-                                      {participant.seed_number}
+                                    {/* Seed Number / Direct Edit */}
+                                    <div className="relative group/seed">
+                                      {editingSeed === participant.id ? (
+                                        <div className="flex items-center gap-1">
+                                          <input
+                                            autoFocus
+                                            type="number"
+                                            className="w-12 h-8 rounded border bg-background px-1 text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
+                                            value={newSeedValue}
+                                            onChange={(e) => setNewSeedValue(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                handleMoveToPosition(participant.team_id, parseInt(newSeedValue))
+                                                setEditingSeed(null)
+                                              } else if (e.key === 'Escape') {
+                                                setEditingSeed(null)
+                                              }
+                                            }}
+                                            onBlur={() => setEditingSeed(null)}
+                                          />
+                                        </div>
+                                      ) : (
+                                        <div
+                                          onClick={() => {
+                                            if (canEditSeeding) {
+                                              setEditingSeed(participant.id)
+                                              setNewSeedValue(participant.seed_number.toString())
+                                            }
+                                          }}
+                                          className={`
+                                              flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm flex-shrink-0 transition-all
+                                              ${canEditSeeding ? 'cursor-pointer hover:bg-primary hover:text-primary-foreground' : ''}
+                                              bg-primary/10 text-primary
+                                            `}
+                                          title={canEditSeeding ? "Click to edit seed number" : ""}
+                                        >
+                                          {participant.seed_number}
+                                        </div>
+                                      )}
                                     </div>
+
                                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                                       {participant.team?.team_avatar ? (
                                         <Image
@@ -759,8 +768,6 @@ export default function BracketManager({
                                           width={40}
                                           height={40}
                                           className="w-full h-full object-cover"
-                                          placeholder="blur"
-                                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
                                           unoptimized={process.env.NODE_ENV === 'development'}
                                         />
                                       ) : (
@@ -787,20 +794,24 @@ export default function BracketManager({
                                     </div>
                                     <div className="flex items-center gap-1 flex-shrink-0">
                                       <Button
-                                        size="icon" variant="ghost" className="h-8 w-8"
-                                        onClick={() => handleMoveSeed(participant.team_id, 'up')}
-                                        disabled={index === 0}
+                                        size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                                        onClick={() => handleMoveToPosition(participant.team_id, participant.seed_number - 1)}
+                                        disabled={participant.seed_number <= 1}
                                       >
                                         <ArrowUp className="h-4 w-4" />
                                       </Button>
                                       <Button
-                                        size="icon" variant="ghost" className="h-8 w-8"
-                                        onClick={() => handleMoveSeed(participant.team_id, 'down')}
-                                        disabled={index === bucketTeams.length - 1}
+                                        size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                                        onClick={() => handleMoveToPosition(participant.team_id, participant.seed_number + 1)}
+                                        disabled={participant.seed_number >= participants.length}
                                       >
                                         <ArrowDown className="h-4 w-4" />
                                       </Button>
                                     </div>
+                                    {/* Drop Indicator */}
+                                    {canEditSeeding && dragOverItem === bucketTeams.indexOf(participant) && draggedItem !== bucketTeams.indexOf(participant) && (
+                                      <div className="h-1 bg-primary rounded-full mx-8 -my-1.5 relative z-10 animate-pulse" />
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -897,14 +908,14 @@ export default function BracketManager({
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <Button
                               size="icon" variant="ghost" className="h-8 w-8"
-                              onClick={() => handleMoveSeed(participant.team_id, 'up')}
+                              onClick={() => handleSwapSeeds(participant.team_id, activeParticipants[index - 1].team_id)}
                               disabled={index === 0}
                             >
                               <ArrowUp className="h-4 w-4" />
                             </Button>
                             <Button
                               size="icon" variant="ghost" className="h-8 w-8"
-                              onClick={() => handleMoveSeed(participant.team_id, 'down')}
+                              onClick={() => handleSwapSeeds(participant.team_id, activeParticipants[index + 1].team_id)}
                               disabled={index === activeParticipants.length - 1}
                             >
                               <ArrowDown className="h-4 w-4" />
@@ -942,88 +953,127 @@ export default function BracketManager({
             ) : (
               <div className="space-y-2">
                 {participants.map((participant, index) => (
-                  <div
-                    key={participant.id}
-                    draggable={canEditSeeding}
-                    onDragStart={() => handleDragStart(index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDrop={(e) => handleDrop(e, index)}
-                    className={`
+                  <div key={participant.id}>
+                    <div
+                      draggable={canEditSeeding}
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                      className={`
                       flex items-center gap-3 p-3 rounded-lg border transition-all
                       ${canEditSeeding ? 'cursor-grab hover:border-primary/50 hover:bg-muted/50' : 'cursor-default'}
                       ${draggedItem === index ? 'opacity-50 border-primary' : 'border-border'}
                     `}
-                  >
-                    {/* Drag Handle */}
-                    {canEditSeeding && (
-                      <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    )}
-
-                    {/* Seed Number */}
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
-                      {participant.seed_number}
-                    </div>
-
-                    {/* Team Avatar */}
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      {participant.team?.team_avatar ? (
-                        <Image
-                          src={getTeamAvatarUrl(participant.team.team_avatar)!}
-                          alt=""
-                          width={40}
-                          height={40}
-                          className="w-full h-full object-cover"
-                          placeholder="blur"
-                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
-                          unoptimized={process.env.NODE_ENV === 'development'}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Users className="h-5 w-5 text-muted-foreground" />
-                        </div>
+                    >
+                      {/* Drag Handle */}
+                      {canEditSeeding && (
+                        <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                       )}
-                    </div>
 
-                    {/* Team Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{participant.team?.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {participant.team?.average_rank && (
+                      {/* Seed Number / Direct Edit */}
+                      <div className="relative group/seed">
+                        {editingSeed === participant.id ? (
                           <div className="flex items-center gap-1">
-                            <Image
-                              src={getRankImage(participant.team.average_rank)}
-                              alt={participant.team.average_rank}
-                              width={16}
-                              height={16}
+                            <input
+                              autoFocus
+                              type="number"
+                              className="w-12 h-8 rounded border bg-background px-1 text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
+                              value={newSeedValue}
+                              onChange={(e) => setNewSeedValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleMoveToPosition(participant.team_id, parseInt(newSeedValue))
+                                  setEditingSeed(null)
+                                } else if (e.key === 'Escape') {
+                                  setEditingSeed(null)
+                                }
+                              }}
+                              onBlur={() => setEditingSeed(null)}
                             />
-                            <span>{participant.team.average_rank}</span>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => {
+                              if (canEditSeeding) {
+                                setEditingSeed(participant.id)
+                                setNewSeedValue(participant.seed_number.toString())
+                              }
+                            }}
+                            className={`
+                            flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm flex-shrink-0 transition-all
+                            ${canEditSeeding ? 'cursor-pointer hover:bg-primary hover:text-primary-foreground' : ''}
+                            bg-primary/10 text-primary
+                          `}
+                            title={canEditSeeding ? "Click to edit seed number" : ""}
+                          >
+                            {participant.seed_number}
                           </div>
                         )}
                       </div>
-                    </div>
 
-                    {/* Move Buttons */}
-                    {canEditSeeding && (
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => handleMoveSeed(participant.team_id, 'up')}
-                          disabled={index === 0}
-                        >
-                          <ArrowUp className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => handleMoveSeed(participant.team_id, 'down')}
-                          disabled={index === participants.length - 1}
-                        >
-                          <ArrowDown className="h-4 w-4" />
-                        </Button>
+                      {/* Team Avatar */}
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        {participant.team?.team_avatar ? (
+                          <Image
+                            src={getTeamAvatarUrl(participant.team.team_avatar)!}
+                            alt=""
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                            unoptimized={process.env.NODE_ENV === 'development'}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Users className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
+
+                      {/* Team Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{participant.team?.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          {participant.team?.average_rank && (
+                            <div className="flex items-center gap-1">
+                              <Image
+                                src={getRankImage(participant.team.average_rank)}
+                                alt={participant.team.average_rank}
+                                width={16}
+                                height={16}
+                              />
+                              <span>{participant.team.average_rank}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Move Buttons */}
+                      {canEditSeeding && (
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                            onClick={() => handleMoveToPosition(participant.team_id, participant.seed_number - 1)}
+                            disabled={index === 0}
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                            onClick={() => handleMoveToPosition(participant.team_id, participant.seed_number + 1)}
+                            disabled={index === participants.length - 1}
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {/* Drop Indicator */}
+                    {dragOverItem === index && draggedItem !== index && (
+                      <div className="h-1 bg-primary rounded-full mx-8 -my-1.5 relative z-10 animate-pulse" />
                     )}
                   </div>
                 ))}

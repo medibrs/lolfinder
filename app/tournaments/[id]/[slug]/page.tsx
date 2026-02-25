@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { Calendar, Trophy, Users, Clock, DollarSign, Info, CheckCircle, XCircle, AlertCircle, Shield, Crown } from 'lucide-react';
+import { Share2, CheckCircle, XCircle, AlertCircle, Shield, Crown } from 'lucide-react';
+import { CalendarIcon, ClockIcon, TrophyIcon, TeamsIcon, InfoIcon, LiveIcon, UpcomingIcon, EndedIcon } from '@/components/TournamentIcons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { SwissBracketPreview } from '@/components/tournament/swiss-bracket-preview';
 import { SingleEliminationBracketPreview } from '@/components/tournament/single-elimination-bracket-preview';
 import { buildSwissBracketData } from '@/lib/swiss-bracket-data';
+import { TournamentRegistrationBtn } from '@/components/tournament/tournament-registration-btn';
 type Props = {
   params: Promise<{
     id: string;
@@ -289,54 +291,65 @@ export default async function TournamentEventPage({ params }: Props) {
             {/* Status + number */}
             <div className="flex items-center gap-3 mb-3">
               {tournamentStatus.status === 'upcoming' && (
-                <img src="/tournament_assets/upcoming_small.png" alt="Upcoming" className="h-8 w-auto drop-shadow-lg" />
+                <UpcomingIcon size={32} className="drop-shadow-lg" />
               )}
               {tournamentStatus.status === 'live' && (
-                <img src="/tournament_assets/live_small.png" alt="Live Now" className="h-8 w-auto drop-shadow-lg animate-pulse" />
+                <LiveIcon size={32} className="drop-shadow-lg animate-pulse" />
               )}
               {tournamentStatus.status === 'completed' && (
-                <img src="/tournament_assets/ended_small.png" alt="Completed" className="h-8 w-auto opacity-80" />
+                <EndedIcon size={32} className="opacity-80" />
               )}
               <span className="text-zinc-500 text-sm font-mono ml-2">#{tournament.tournament_number}</span>
             </div>
             {/* Title */}
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-5 drop-shadow-lg">
-              {tournament.name}
-            </h1>
+            {!(tournament.name === "1337 Leet E-Sports LoL Tournament" && (!tournament.banner_image || tournament.banner_image === '/leet_lol_header.jpg')) && (
+              <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-5 drop-shadow-lg">
+                {tournament.name}
+              </h1>
+            )}
 
             {/* Stats strip — glassmorphic */}
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl px-4 md:px-6 py-3 inline-flex items-center gap-4 md:gap-8 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-orange-400" />
-                <div>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Start</p>
-                  <p className="text-xs md:text-sm font-semibold text-white">{startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl px-4 md:px-6 py-3 flex items-center justify-between gap-4 md:gap-8 flex-wrap">
+              <div className="flex items-center gap-4 md:gap-8 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <CalendarIcon size={16} />
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Start</p>
+                    <p className="text-xs md:text-sm font-semibold text-white">{startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                  </div>
+                </div>
+                <div className="w-px h-8 bg-white/10 hidden md:block" />
+                <div className="flex items-center gap-2">
+                  <ClockIcon size={16} />
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">End</p>
+                    <p className="text-xs md:text-sm font-semibold text-white">{endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                  </div>
+                </div>
+                <div className="w-px h-8 bg-white/10 hidden md:block" />
+                <div className="flex items-center gap-3">
+                  <TrophyIcon size={20} />
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Prize</p>
+                    <p className="text-xs md:text-sm font-semibold text-white">{tournament.prize_pool || 'TBD'}</p>
+                  </div>
+                </div>
+                <div className="w-px h-8 bg-white/10 hidden md:block" />
+                <div className="flex items-center gap-3">
+                  <TeamsIcon size={20} />
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Teams</p>
+                    <p className="text-xs md:text-sm font-semibold text-orange-400">{registeredTeams.length}/{tournament.max_teams}</p>
+                  </div>
                 </div>
               </div>
-              <div className="w-px h-8 bg-white/10 hidden md:block" />
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-orange-400" />
-                <div>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">End</p>
-                  <p className="text-xs md:text-sm font-semibold text-white">{endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+
+              {/* Registration CTA - Far Right */}
+              {tournamentStatus.status === 'upcoming' && (
+                <div className="ml-auto">
+                  <TournamentRegistrationBtn tournamentId={tournament.id} />
                 </div>
-              </div>
-              <div className="w-px h-8 bg-white/10 hidden md:block" />
-              <div className="flex items-center gap-3">
-                <img src="/tournament_assets/trophy_small.png" alt="Prize" className="h-5 w-auto" />
-                <div>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Prize</p>
-                  <p className="text-xs md:text-sm font-semibold text-white">{tournament.prize_pool || 'TBD'}</p>
-                </div>
-              </div>
-              <div className="w-px h-8 bg-white/10 hidden md:block" />
-              <div className="flex items-center gap-3">
-                <img src="/tournament_assets/teams_small.png" alt="Teams" className="h-5 w-auto" />
-                <div>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider leading-none mb-0.5">Teams</p>
-                  <p className="text-xs md:text-sm font-semibold text-orange-400">{registeredTeams.length}/{tournament.max_teams}</p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -368,7 +381,7 @@ export default async function TournamentEventPage({ params }: Props) {
               ) : (
                 <Card className="border-zinc-800 bg-zinc-900/50">
                   <CardContent className="flex flex-col items-center justify-center py-12 text-center min-h-[300px]">
-                    <Trophy className="h-12 w-12 text-zinc-600 mb-4" />
+                    <TrophyIcon size={48} className="opacity-20 mb-4" />
                     <h3 className="text-xl font-medium text-white mb-2">{tournament.format?.replace(/_/g, ' ') || 'Single Elimination'} Bracket</h3>
                     <p className="text-sm text-zinc-400 max-w-sm">
                       The bracket preview will be available once the tournament begins or seeding is completed.
@@ -381,26 +394,23 @@ export default async function TournamentEventPage({ params }: Props) {
 
             {/* Rules & Regulations */}
             {ruleItems.length > 0 && (
-              <Card className="border-zinc-800 overflow-hidden border-l-2 border-l-orange-500/60 py-0 gap-0">
-                <CardHeader className="px-5 py-3 !pb-3 border-b border-zinc-800/50 bg-zinc-900/20">
-                  <CardTitle className="text-lg flex items-center gap-2">
+              <Card className="border-slate-800 bg-[#0b1221] overflow-hidden border-l-2 border-l-orange-500/60 py-0 gap-0 shadow-xl">
+                <CardHeader className="px-5 py-3 !pb-3 border-b border-slate-800/50 bg-white/5">
+                  <CardTitle className="text-sm uppercase tracking-wider font-bold text-slate-200 flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-orange-500/10">
                       <Shield className="h-4 w-4 text-orange-400" />
                     </div>
                     Rules & Regulations
                   </CardTitle>
-                  <CardDescription className="text-zinc-500 text-xs mt-1">
-                    All participants must follow these rules at all times
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="p-5">
                   <div className="space-y-3">
                     {ruleItems.map((rule: string, index: number) => (
-                      <div key={index} className="flex gap-3 items-start group">
-                        <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
-                          <span className="text-xs font-bold text-orange-400">{index + 1}</span>
+                      <div key={index} className="flex gap-4 items-start group">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/5 border border-slate-800 flex items-center justify-center group-hover:bg-orange-500/20 group-hover:border-orange-500/40 transition-all duration-300">
+                          <span className="text-xs font-bold text-slate-500 group-hover:text-orange-400">{index + 1}</span>
                         </div>
-                        <p className="text-sm text-zinc-300 leading-relaxed pt-1">
+                        <p className="text-sm text-zinc-400 leading-relaxed font-medium pt-1 group-hover:text-zinc-200 transition-colors">
                           {rule}
                         </p>
                       </div>
@@ -411,16 +421,16 @@ export default async function TournamentEventPage({ params }: Props) {
             )}
 
             {/* Teams Attending */}
-            <Card className="border-zinc-800 py-0 gap-0 overflow-hidden">
-              <CardHeader className="px-5 py-3 !pb-3 border-b border-zinc-800/50 bg-zinc-900/20">
-                <CardTitle className="text-lg flex items-center justify-between">
+            <Card className="border-slate-800 bg-[#0b1221] py-0 gap-0 overflow-hidden shadow-xl">
+              <CardHeader className="px-5 py-3 !pb-3 border-b border-slate-800/50 bg-white/5">
+                <CardTitle className="text-sm uppercase tracking-wider font-bold text-slate-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-primary/10">
-                      <Users className="h-4 w-4 text-primary" />
+                    <div className="p-1.5 rounded-lg bg-cyan-400/10">
+                      <TeamsIcon size={16} className="text-cyan-400" />
                     </div>
                     Teams Attending
                   </div>
-                  <Badge variant="secondary">{registeredTeams.length}/{tournament.max_teams}</Badge>
+                  <Badge variant="outline" className="text-[10px] font-bold border-slate-700 bg-white/5 text-slate-400">{registeredTeams.length}/{tournament.max_teams}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-5">
@@ -523,11 +533,11 @@ export default async function TournamentEventPage({ params }: Props) {
           <div className="space-y-4">
             {/* About / Description */}
             {descriptionParagraphs.length > 0 && (
-              <Card className="border-zinc-800 overflow-hidden py-0 gap-0">
-                <CardHeader className="px-4 py-2.5 !pb-2.5 border-b border-zinc-800/50 bg-zinc-900/20">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-blue-500/10">
-                      <Info className="h-4 w-4 text-blue-400" />
+              <Card className="border-slate-800 bg-[#0b1221] overflow-hidden py-0 gap-0 shadow-xl">
+                <CardHeader className="px-4 py-3 !pb-3 border-b border-slate-800/50 bg-white/5">
+                  <CardTitle className="text-xs uppercase tracking-wider font-bold text-slate-200 flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-cyan-400/10">
+                      <InfoIcon size={14} className="text-cyan-400" />
                     </div>
                     About
                   </CardTitle>
@@ -535,7 +545,7 @@ export default async function TournamentEventPage({ params }: Props) {
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     {descriptionParagraphs.map((paragraph: string, index: number) => (
-                      <p key={index} className="text-xs text-zinc-300 leading-relaxed">
+                      <p key={index} className="text-xs text-zinc-400 leading-relaxed">
                         {paragraph}
                       </p>
                     ))}
@@ -545,17 +555,19 @@ export default async function TournamentEventPage({ params }: Props) {
             )}
 
             {/* Tournament Format */}
-            <Card className="border-zinc-800 py-0 gap-0 overflow-hidden">
-              <CardHeader className="px-4 py-2.5 !pb-2.5 border-b border-zinc-800/50 bg-zinc-900/20">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-primary" />
+            <Card className="border-slate-800 bg-[#0b1221] py-0 gap-0 overflow-hidden shadow-xl">
+              <CardHeader className="px-4 py-3 !pb-3 border-b border-slate-800/50 bg-white/5">
+                <CardTitle className="text-xs uppercase tracking-wider font-bold text-slate-200 flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-amber-400/10">
+                    <TrophyIcon size={14} className="text-amber-400" />
+                  </div>
                   Format
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 p-4">
+              <CardContent className="space-y-4 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Type</span>
-                  <Badge variant="outline" className="font-medium">
+                  <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Type</span>
+                  <Badge variant="outline" className="font-bold border-slate-700 text-amber-500/80 bg-amber-500/5">
                     {tournament.format?.replace(/_/g, ' ') || 'Single Elimination'}
                   </Badge>
                 </div>
@@ -564,72 +576,75 @@ export default async function TournamentEventPage({ params }: Props) {
                 {tournament.format === 'Swiss' && (
                   <>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-400">Swiss Rounds</span>
-                      <span className="text-sm font-medium">{tournament.swiss_rounds || 5}</span>
+                      <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Swiss Rounds</span>
+                      <span className="text-sm font-bold text-slate-200">{tournament.swiss_rounds || 5}</span>
                     </div>
                     {tournament.enable_top_cut && (
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-zinc-400">Top Cut</span>
-                        <span className="text-sm font-medium">Top {tournament.top_cut_size || 8} → Playoffs</span>
+                        <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Top Cut</span>
+                        <span className="text-sm font-bold text-slate-200">Top {tournament.top_cut_size || 8} → Playoffs</span>
                       </div>
                     )}
                   </>
                 )}
 
-                <Separator className="bg-zinc-800" />
+                <Separator className="bg-slate-800/50" />
 
                 {/* Match Formats */}
-                <div className="space-y-2">
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Match Format</p>
+                <div className="space-y-3">
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">Match Format</p>
 
                   {tournament.format === 'Swiss' ? (
-                    <>
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-zinc-400">Opening</span>
-                        <span className="text-sm font-medium">Bo{tournament.opening_best_of || 1}</span>
+                        <span className="text-xs text-zinc-400">Opening</span>
+                        <span className="text-xs font-bold text-slate-300">Bo{tournament.opening_best_of || 1}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-zinc-400">Progression</span>
-                        <span className="text-sm font-medium">Bo{tournament.progression_best_of || 3}</span>
+                        <span className="text-xs text-zinc-400">Progression</span>
+                        <span className="text-xs font-bold text-slate-300">Bo{tournament.progression_best_of || 3}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-zinc-400">Elimination</span>
-                        <span className="text-sm font-medium">Bo{tournament.elimination_best_of || 3}</span>
+                        <span className="text-xs text-zinc-400">Elimination</span>
+                        <span className="text-xs font-bold text-slate-300">Bo{tournament.elimination_best_of || 3}</span>
                       </div>
-                    </>
+                    </div>
                   ) : (
-                    <>
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-zinc-400">Matches</span>
-                        <span className="text-sm font-medium">Bo{tournament.elimination_best_of || 3}</span>
+                        <span className="text-xs text-zinc-400">Matches</span>
+                        <span className="text-xs font-bold text-slate-300">Bo{tournament.elimination_best_of || 3}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-zinc-400">Grand Finals</span>
-                        <span className="text-sm font-medium">Bo{tournament.finals_best_of || 5}</span>
+                        <span className="text-xs text-zinc-400">Grand Finals</span>
+                        <span className="text-xs font-bold text-slate-300">Bo{tournament.finals_best_of || 5}</span>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
             {/* Quick Stats */}
-            <Card className="border-zinc-800 py-0 gap-0 overflow-hidden">
-              <CardHeader className="px-4 py-2.5 !pb-2.5 border-b border-zinc-800/50 bg-zinc-900/20">
-                <CardTitle className="text-sm">Quick Stats</CardTitle>
+            <Card className="border-slate-800 bg-[#0b1221] py-0 gap-0 overflow-hidden shadow-xl">
+              <CardHeader className="px-4 py-3 !pb-3 border-b border-slate-800/50 bg-white/5">
+                <CardTitle className="text-xs uppercase tracking-wider font-bold text-slate-200">Quick Stats</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 p-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-zinc-400">Total Teams</span>
-                  <span className="text-sm font-medium">{registeredTeams.length}</span>
+                  <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Total Teams</span>
+                  <span className="text-sm font-bold text-slate-200">{registeredTeams.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-zinc-400">Available Spots</span>
-                  <span className="text-sm font-medium text-orange-500">{tournament.max_teams - registeredTeams.length}</span>
+                  <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Available Spots</span>
+                  <span className="text-sm font-bold text-orange-400">{tournament.max_teams - registeredTeams.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-zinc-400">Registration</span>
-                  <Badge variant={tournamentStatus.status === 'upcoming' ? 'default' : 'secondary'} className="text-xs">
+                  <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Registration</span>
+                  <Badge variant={tournamentStatus.status === 'upcoming' ? 'default' : 'secondary'} className={cn(
+                    "text-[10px] font-bold uppercase tracking-widest",
+                    tournamentStatus.status === 'upcoming' ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/20" : "bg-slate-800 text-slate-400 border-slate-700"
+                  )}>
                     {tournamentStatus.status === 'upcoming' ? 'Open' : 'Closed'}
                   </Badge>
                 </div>
