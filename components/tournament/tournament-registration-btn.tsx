@@ -15,8 +15,10 @@ export function TournamentRegistrationBtn({ tournamentId }: TournamentRegistrati
     const router = useRouter()
     const [user, setUser] = useState<any>(null)
     const [userTeam, setUserTeam] = useState<any>(null)
+    const [hasPlayerProfile, setHasPlayerProfile] = useState(false)
     const [status, setStatus] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
+    const [initialLoading, setInitialLoading] = useState(true)
     const { toast } = useToast()
     const supabase = createClient()
 
@@ -26,6 +28,15 @@ export function TournamentRegistrationBtn({ tournamentId }: TournamentRegistrati
             setUser(authUser)
 
             if (authUser) {
+                // Check if user has a player profile
+                const { data: playerData } = await supabase
+                    .from('players')
+                    .select('id')
+                    .eq('id', authUser.id)
+                    .maybeSingle()
+
+                setHasPlayerProfile(!!playerData)
+
                 // Get user's team if captain
                 const { data: teamData } = await supabase
                     .from('teams')
@@ -50,6 +61,7 @@ export function TournamentRegistrationBtn({ tournamentId }: TournamentRegistrati
                     }
                 }
             }
+            setInitialLoading(false)
         }
 
         fetchData()
@@ -102,13 +114,39 @@ export function TournamentRegistrationBtn({ tournamentId }: TournamentRegistrati
         }
     }
 
-    if (!user || !userTeam) {
+    if (initialLoading) {
+        return <div className="h-10 w-32 bg-white/5 animate-pulse rounded-lg" />
+    }
+
+    if (!user) {
         return (
             <Button
-                className="px-6 py-2 bg-transparent border border-white/20 text-white/60 font-bold uppercase tracking-[0.2em] text-[10px] rounded-lg hover:border-yellow-500 hover:text-yellow-500 transition-all"
+                className="px-6 py-2 bg-slate-900/40 border border-white/10 text-white/50 font-bold uppercase tracking-[0.2em] text-[10px] rounded-lg hover:border-amber-500/50 hover:text-amber-400 hover:bg-amber-500/5 transition-all duration-300 shadow-none hover:shadow-[0_0_20px_rgba(245,158,11,0.1)]"
                 onClick={() => router.push('/auth')}
             >
                 Login to Register
+            </Button>
+        )
+    }
+
+    if (!hasPlayerProfile) {
+        return (
+            <Button
+                className="px-6 py-2 bg-slate-900/40 border border-cyan-500/20 text-cyan-500/80 font-bold uppercase tracking-[0.2em] text-[10px] rounded-lg hover:border-cyan-400 hover:text-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 shadow-none hover:shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+                onClick={() => router.push('/setup-profile')}
+            >
+                Setup Profile
+            </Button>
+        )
+    }
+
+    if (!userTeam) {
+        return (
+            <Button
+                className="px-6 py-2 bg-slate-900/40 border border-indigo-500/20 text-indigo-400/80 font-bold uppercase tracking-[0.2em] text-[10px] rounded-lg hover:border-indigo-400 hover:text-indigo-400 hover:bg-indigo-500/5 transition-all duration-300 shadow-none hover:shadow-[0_0_20px_rgba(129,140,248,0.1)]"
+                onClick={() => router.push('/create-team')}
+            >
+                Create Squad
             </Button>
         )
     }

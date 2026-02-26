@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
     // Remove player from team
     const { error: leaveError } = await supabase
       .from('players')
-      .update({ 
-        team_id: null, 
-        looking_for_team: true 
+      .update({
+        team_id: null,
+        looking_for_team: true
       })
       .eq('id', currentPlayer.id);
 
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         }
       }]);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'You have left the team successfully',
       team: team
     }, { status: 200 });

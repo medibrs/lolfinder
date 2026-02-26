@@ -201,8 +201,9 @@ export default function BracketManager({
 
 
   const handleSwapSeeds = async (team1Id: string, team2Id: string) => {
-    if (!team1Id || !team2Id) return;
+    if (!team1Id || !team2Id || actionLoading) return;
 
+    setActionLoading('seeding_update')
     // Optimistic update
     const idx1 = participants.findIndex(p => p.team_id === team1Id)
     const idx2 = participants.findIndex(p => p.team_id === team2Id)
@@ -237,12 +238,15 @@ export default function BracketManager({
       console.error("Swap Error:", error)
       toast({ title: 'Error', description: String(error.message || error) || 'Failed to swap seeds', variant: 'destructive' })
       fetchSeeding() // Revert on error
+    } finally {
+      setActionLoading(null)
     }
   }
 
   const handleMoveToPosition = async (teamId: string, position: number) => {
-    if (position < 1 || position > participants.length) return;
+    if (position < 1 || position > participants.length || actionLoading) return;
 
+    setActionLoading('seeding_update')
     // Optimistic update - shift reorder
     const oldIdx = participants.findIndex(p => p.team_id === teamId)
     if (oldIdx !== -1) {
@@ -264,9 +268,13 @@ export default function BracketManager({
 
       await fetchSeeding(true)
       await fetchMatchData()
+
+      toast({ title: 'Seeding Updated', description: 'Participant moved and bracket re-paired.' })
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' })
       fetchSeeding()
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -305,23 +313,16 @@ export default function BracketManager({
     setActionLoading('seed_by_rank')
 
     try {
-      const response = await fetch(`/api/tournaments/${tournamentId}/bracket`, {
-        method: 'PUT',
+      const response = await fetch(`/api/tournaments/${tournamentId}/seeding`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'seed_by_rank' })
       })
 
-      const data = await response.json()
-
       if (response.ok) {
-        toast({ title: 'Success', description: 'Seeds ordered by tier' })
-        // Try auto regenerating bracket
-        await attemptAutoRegenerateIfSafe();
-        // Use response data directly - already sorted by tier
-        if (data.participants) {
-          setParticipants(data.participants)
-        }
+        await fetchSeeding(true)
         await fetchMatchData()
+        toast({ title: 'Success', description: 'Seeds ordered by tier and matches updated.' })
       } else {
         toast({ title: 'Error', description: 'Failed to order by tier', variant: 'destructive' })
       }
@@ -689,240 +690,262 @@ export default function BracketManager({
                         )}
 
                         {/* Active buckets */}
-                        {sortedBuckets.map(([bucket, bucketTeams]) => {
-                          const [w, l] = bucket.split(':').map(Number)
-                          return (
-                            <div key={bucket}>
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-sm font-bold">
-                                  <span className="text-green-400">{w}</span>
-                                  <span className="text-muted-foreground mx-0.5">:</span>
-                                  <span className="text-red-400">{l}</span>
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  ({bucketTeams.length} team{bucketTeams.length > 1 ? 's' : ''})
-                                </span>
-                                <div className="flex-1 h-px bg-border" />
+                        <div className="relative">
+                          {actionLoading && ['seeding_update', 'generate_seeding', 'randomize', 'seed_by_rank'].includes(actionLoading) && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 rounded-lg backdrop-blur-[1px]">
+                              <div className="flex flex-col items-center gap-2 p-4 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl animate-in fade-in zoom-in duration-200">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <span className="text-xs font-medium text-muted-foreground animate-pulse">Syncing Bracket...</span>
                               </div>
-                              <div className="space-y-1.5">
-                                {bucketTeams.map((participant, index) => (
-                                  <div
-                                    key={participant.id}
-                                    draggable
-                                    onDragStart={() => handleDragStart(index, participant.team_id)}
-                                    onDragOver={(e) => handleDragOver(e, index)}
-                                    onDrop={(e) => handleDrop(e, index, participant.team_id)}
-                                    className={`
+                            </div>
+                          )}
+                          <div className={actionLoading && ['seeding_update', 'generate_seeding', 'randomize', 'seed_by_rank'].includes(actionLoading) ? 'pointer-events-none opacity-80 transition-opacity' : ''}>
+                            {sortedBuckets.map(([bucket, bucketTeams]) => {
+                              const [w, l] = bucket.split(':').map(Number)
+                              return (
+                                <div key={bucket}>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-sm font-bold">
+                                      <span className="text-green-400">{w}</span>
+                                      <span className="text-muted-foreground mx-0.5">:</span>
+                                      <span className="text-red-400">{l}</span>
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ({bucketTeams.length} team{bucketTeams.length > 1 ? 's' : ''})
+                                    </span>
+                                    <div className="flex-1 h-px bg-border" />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    {bucketTeams.map((participant, index) => (
+                                      <div
+                                        key={participant.id}
+                                        draggable
+                                        onDragStart={() => handleDragStart(index, participant.team_id)}
+                                        onDragOver={(e) => handleDragOver(e, index)}
+                                        onDrop={(e) => handleDrop(e, index, participant.team_id)}
+                                        className={`
                                       flex items-center gap-3 p-3 rounded-lg border transition-all
                                       cursor-grab hover:border-primary/50 hover:bg-muted/50
                                       ${draggedTeamId === participant.team_id ? 'opacity-50 border-primary' : 'border-border'}
                                     `}
-                                  >
-                                    <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                    {/* Seed Number / Direct Edit */}
-                                    <div className="relative group/seed">
-                                      {editingSeed === participant.id ? (
-                                        <div className="flex items-center gap-1">
-                                          <input
-                                            autoFocus
-                                            type="number"
-                                            className="w-12 h-8 rounded border bg-background px-1 text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
-                                            value={newSeedValue}
-                                            onChange={(e) => setNewSeedValue(e.target.value)}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter') {
-                                                handleMoveToPosition(participant.team_id, parseInt(newSeedValue))
-                                                setEditingSeed(null)
-                                              } else if (e.key === 'Escape') {
-                                                setEditingSeed(null)
-                                              }
-                                            }}
-                                            onBlur={() => setEditingSeed(null)}
-                                          />
-                                        </div>
-                                      ) : (
-                                        <div
-                                          onClick={() => {
-                                            if (canEditSeeding) {
-                                              setEditingSeed(participant.id)
-                                              setNewSeedValue(participant.seed_number.toString())
-                                            }
-                                          }}
-                                          className={`
+                                      >
+                                        <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                        {/* Seed Number / Direct Edit */}
+                                        <div className="relative group/seed">
+                                          {editingSeed === participant.id ? (
+                                            <div className="flex items-center gap-1">
+                                              <input
+                                                autoFocus
+                                                type="number"
+                                                className="w-12 h-8 rounded border bg-background px-1 text-sm font-bold focus:ring-1 focus:ring-primary outline-none"
+                                                value={newSeedValue}
+                                                onChange={(e) => setNewSeedValue(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                  if (e.key === 'Enter') {
+                                                    handleMoveToPosition(participant.team_id, parseInt(newSeedValue))
+                                                    setEditingSeed(null)
+                                                  } else if (e.key === 'Escape') {
+                                                    setEditingSeed(null)
+                                                  }
+                                                }}
+                                                onBlur={() => setEditingSeed(null)}
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div
+                                              onClick={() => {
+                                                if (canEditSeeding) {
+                                                  setEditingSeed(participant.id)
+                                                  setNewSeedValue(participant.seed_number.toString())
+                                                }
+                                              }}
+                                              className={`
                                               flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm flex-shrink-0 transition-all
                                               ${canEditSeeding ? 'cursor-pointer hover:bg-primary hover:text-primary-foreground' : ''}
                                               bg-primary/10 text-primary
                                             `}
-                                          title={canEditSeeding ? "Click to edit seed number" : ""}
-                                        >
-                                          {participant.seed_number}
+                                              title={canEditSeeding ? "Click to edit seed number" : ""}
+                                            >
+                                              {participant.seed_number}
+                                            </div>
+                                          )}
                                         </div>
-                                      )}
-                                    </div>
 
-                                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                                      {participant.team?.team_avatar ? (
-                                        <Image
-                                          src={getTeamAvatarUrl(participant.team.team_avatar)!}
-                                          alt=""
-                                          width={40}
-                                          height={40}
-                                          className="w-full h-full object-cover"
-                                          unoptimized={process.env.NODE_ENV === 'development'}
-                                        />
-                                      ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                          <Users className="h-5 w-5 text-muted-foreground" />
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-medium truncate">{participant.team?.name}</p>
-                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        {participant.team?.average_rank && (
-                                          <div className="flex items-center gap-1">
+                                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                          {participant.team?.team_avatar ? (
                                             <Image
-                                              src={getRankImage(participant.team.average_rank)}
-                                              alt={participant.team.average_rank}
-                                              width={16}
-                                              height={16}
+                                              src={getTeamAvatarUrl(participant.team.team_avatar)!}
+                                              alt=""
+                                              width={40}
+                                              height={40}
+                                              className="w-full h-full object-cover"
+                                              unoptimized={process.env.NODE_ENV === 'development'}
                                             />
-                                            <span>{participant.team.average_rank}</span>
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                              <Users className="h-5 w-5 text-muted-foreground" />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-medium truncate">{participant.team?.name}</p>
+                                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            {participant.team?.average_rank && (
+                                              <div className="flex items-center gap-1">
+                                                <Image
+                                                  src={getRankImage(participant.team.average_rank)}
+                                                  alt={participant.team.average_rank}
+                                                  width={16}
+                                                  height={16}
+                                                />
+                                                <span>{participant.team.average_rank}</span>
+                                              </div>
+                                            )}
                                           </div>
+                                        </div>
+                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                          <Button
+                                            size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                                            onClick={() => handleMoveToPosition(participant.team_id, participant.seed_number - 1)}
+                                            disabled={participant.seed_number <= 1 || !!actionLoading}
+                                          >
+                                            <ArrowUp className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                                            onClick={() => handleMoveToPosition(participant.team_id, participant.seed_number + 1)}
+                                            disabled={participant.seed_number >= participants.length || !!actionLoading}
+                                          >
+                                            <ArrowDown className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                        {/* Drop Indicator */}
+                                        {canEditSeeding && dragOverItem === bucketTeams.indexOf(participant) && draggedItem !== bucketTeams.indexOf(participant) && (
+                                          <div className="h-1 bg-primary rounded-full mx-8 -my-1.5 relative z-10 animate-pulse" />
                                         )}
                                       </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0">
-                                      <Button
-                                        size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                                        onClick={() => handleMoveToPosition(participant.team_id, participant.seed_number - 1)}
-                                        disabled={participant.seed_number <= 1}
-                                      >
-                                        <ArrowUp className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                                        onClick={() => handleMoveToPosition(participant.team_id, participant.seed_number + 1)}
-                                        disabled={participant.seed_number >= participants.length}
-                                      >
-                                        <ArrowDown className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                    {/* Drop Indicator */}
-                                    {canEditSeeding && dragOverItem === bucketTeams.indexOf(participant) && draggedItem !== bucketTeams.indexOf(participant) && (
-                                      <div className="h-1 bg-primary rounded-full mx-8 -my-1.5 relative z-10 animate-pulse" />
-                                    )}
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )
-                        })}
+                                </div>
+                              )
+                            })}
 
-                        {/* Eliminated */}
-                        {eliminatedParticipants.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-2 h-2 rounded-full bg-red-500" />
-                              <span className="text-xs font-semibold text-red-400 uppercase tracking-wider">
-                                Eliminated ({eliminatedParticipants.length})
-                              </span>
-                              <div className="flex-1 h-px bg-red-500/20" />
-                            </div>
-                            <div className="space-y-1.5 pl-4 opacity-40">
-                              {eliminatedParticipants.map(p => {
-                                const rec = records[p.team_id] || { wins: 0, losses: 0 }
-                                return (
-                                  <div key={p.id} className="flex items-center gap-3 p-2 rounded-md bg-red-500/5 border border-red-500/15">
-                                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                                      {p.team?.team_avatar ? (
-                                        <Image src={getTeamAvatarUrl(p.team.team_avatar)!} alt="" width={32} height={32} className="w-full h-full object-cover" unoptimized={process.env.NODE_ENV === 'development'} />
-                                      ) : (
-                                        <div className="w-full h-full flex items-center justify-center"><Users className="h-4 w-4 text-muted-foreground" /></div>
-                                      )}
-                                    </div>
-                                    <span className="text-sm font-medium truncate flex-1 line-through">{p.team?.name}</span>
-                                    <span className="text-xs text-red-400 font-mono">{rec.wins}:{rec.losses}</span>
-                                  </div>
-                                )
-                              })}
-                            </div>
+                            {/* Eliminated */}
+                            {eliminatedParticipants.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                                  <span className="text-xs font-semibold text-red-400 uppercase tracking-wider">
+                                    Eliminated ({eliminatedParticipants.length})
+                                  </span>
+                                  <div className="flex-1 h-px bg-red-500/20" />
+                                </div>
+                                <div className="space-y-1.5 pl-4 opacity-40">
+                                  {eliminatedParticipants.map(p => {
+                                    const rec = records[p.team_id] || { wins: 0, losses: 0 }
+                                    return (
+                                      <div key={p.id} className="flex items-center gap-3 p-2 rounded-md bg-red-500/5 border border-red-500/15">
+                                        <div className="w-8 h-8 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                          {p.team?.team_avatar ? (
+                                            <Image src={getTeamAvatarUrl(p.team.team_avatar)!} alt="" width={32} height={32} className="w-full h-full object-cover" unoptimized={process.env.NODE_ENV === 'development'} />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center"><Users className="h-4 w-4 text-muted-foreground" /></div>
+                                          )}
+                                        </div>
+                                        <span className="text-sm font-medium truncate flex-1 line-through">{p.team?.name}</span>
+                                        <span className="text-xs text-red-400 font-mono">{rec.wins}:{rec.losses}</span>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     )
                   })() : (
                     /* Non-Swiss: flat list */
-                    <div className="space-y-2">
-                      {activeParticipants.map((participant, index) => (
-                        <div
-                          key={participant.id}
-                          draggable
-                          onDragStart={() => handleDragStart(index, participant.team_id)}
-                          onDragOver={(e) => handleDragOver(e, index)}
-                          onDrop={(e) => handleDrop(e, index, participant.team_id)}
-                          className={`
+                    <div className="space-y-2 relative">
+                      {actionLoading && ['seeding_update', 'generate_seeding', 'randomize', 'seed_by_rank'].includes(actionLoading) && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 rounded-lg backdrop-blur-[1px]">
+                          <div className="flex flex-col items-center gap-2 p-4 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl animate-in fade-in zoom-in duration-200">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            <span className="text-xs font-medium text-muted-foreground animate-pulse">Syncing Bracket...</span>
+                          </div>
+                        </div>
+                      )}
+                      <div className={actionLoading && ['seeding_update', 'generate_seeding', 'randomize', 'seed_by_rank'].includes(actionLoading) ? 'pointer-events-none opacity-80 transition-opacity' : ''}>
+                        {activeParticipants.map((participant, index) => (
+                          <div
+                            key={participant.id}
+                            draggable
+                            onDragStart={() => handleDragStart(index, participant.team_id)}
+                            onDragOver={(e) => handleDragOver(e, index)}
+                            onDrop={(e) => handleDrop(e, index, participant.team_id)}
+                            className={`
                             flex items-center gap-3 p-3 rounded-lg border transition-all
                             cursor-grab hover:border-primary/50 hover:bg-muted/50
                             ${draggedTeamId === participant.team_id ? 'opacity-50 border-primary' : 'border-border'}
                           `}
-                        >
-                          <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
-                            {participant.seed_number}
-                          </div>
-                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                            {participant.team?.team_avatar ? (
-                              <Image
-                                src={getTeamAvatarUrl(participant.team.team_avatar)!}
-                                alt=""
-                                width={40}
-                                height={40}
-                                className="w-full h-full object-cover"
-                                placeholder="blur"
-                                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
-                                unoptimized={process.env.NODE_ENV === 'development'}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Users className="h-5 w-5 text-muted-foreground" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{participant.team?.name}</p>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              {participant.team?.average_rank && (
-                                <div className="flex items-center gap-1">
-                                  <Image
-                                    src={getRankImage(participant.team.average_rank)}
-                                    alt={participant.team.average_rank}
-                                    width={16}
-                                    height={16}
-                                  />
-                                  <span>{participant.team.average_rank}</span>
+                          >
+                            <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
+                              {participant.seed_number}
+                            </div>
+                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                              {participant.team?.team_avatar ? (
+                                <Image
+                                  src={getTeamAvatarUrl(participant.team.team_avatar)!}
+                                  alt=""
+                                  width={40}
+                                  height={40}
+                                  className="w-full h-full object-cover"
+                                  placeholder="blur"
+                                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAEBAQAD/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxAPwA/8A8A"
+                                  unoptimized={process.env.NODE_ENV === 'development'}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Users className="h-5 w-5 text-muted-foreground" />
                                 </div>
                               )}
                             </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{participant.team?.name}</p>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                {participant.team?.average_rank && (
+                                  <div className="flex items-center gap-1">
+                                    <Image
+                                      src={getRankImage(participant.team.average_rank)}
+                                      alt={participant.team.average_rank}
+                                      width={16}
+                                      height={16}
+                                    />
+                                    <span>{participant.team.average_rank}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button
+                                size="icon" variant="ghost" className="h-8 w-8"
+                                onClick={() => handleSwapSeeds(participant.team_id, activeParticipants[index - 1].team_id)}
+                                disabled={index === 0 || !!actionLoading}
+                              >
+                                <ArrowUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon" variant="ghost" className="h-8 w-8"
+                                onClick={() => handleSwapSeeds(participant.team_id, activeParticipants[index + 1].team_id)}
+                                disabled={index === activeParticipants.length - 1 || !!actionLoading}
+                              >
+                                <ArrowDown className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <Button
-                              size="icon" variant="ghost" className="h-8 w-8"
-                              onClick={() => handleSwapSeeds(participant.team_id, activeParticipants[index - 1].team_id)}
-                              disabled={index === 0}
-                            >
-                              <ArrowUp className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon" variant="ghost" className="h-8 w-8"
-                              onClick={() => handleSwapSeeds(participant.team_id, activeParticipants[index + 1].team_id)}
-                              disabled={index === activeParticipants.length - 1}
-                            >
-                              <ArrowDown className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </CardContent>

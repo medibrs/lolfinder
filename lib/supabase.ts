@@ -43,6 +43,7 @@ export interface Team {
   region: Region;
   recruiting_status: RecruitingStatus;
   team_avatar?: string | number;
+  average_rank?: string;
   is_bot?: boolean;
   created_at: string;
   updated_at: string;

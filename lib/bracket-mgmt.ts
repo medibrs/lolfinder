@@ -124,8 +124,6 @@ async function generateSingleEliminationBracketInternal(tournamentId: string, to
             best_of: tournament.opening_best_of || 1
         };
 
-        if (team1 && !team2) { match.winner_id = team1.team_id; match.status = 'Completed'; match.result = 'Team1_Win'; }
-        else if (team2 && !team1) { match.winner_id = team2.team_id; match.status = 'Completed'; match.result = 'Team2_Win'; }
         matches.push(match);
     }
 
@@ -148,7 +146,6 @@ async function generateSingleEliminationBracketInternal(tournamentId: string, to
     if (matchError) return { error: 'Failed to create matches', status: 500 };
 
     await supabase.from('tournaments').update({ status: 'In_Progress', total_rounds: totalRounds, current_round: 1 }).eq('id', tournamentId);
-    await advanceByeWinnersInternal(tournamentId, insertedBrackets, insertedMatches);
 
     return { success: true, brackets: insertedBrackets, matches: insertedMatches };
 }
@@ -233,7 +230,9 @@ async function pairSwissRoundInternal(tournamentId: string, tournament: any, par
             winner_id: !pairedWith ? p1?.team_id : null, best_of: bestOf
         });
     }
-    await supabase.from('tournament_matches').insert(newMatches);
+    const { error: mErr } = await supabase.from('tournament_matches').insert(newMatches);
+    if (mErr) return { error: 'Failed to create matches: ' + mErr.message, status: 500 };
+
     return { success: true, message: `Round ${currentRound} regenerated` };
 }
 
@@ -242,8 +241,10 @@ export async function swapSeedsInternal(tournamentId: string, team1Id: string, t
     const { data: participants, error } = await supabase.from('tournament_participants').select('*').eq('tournament_id', tournamentId).in('team_id', [team1Id, team2Id]);
     if (error || !participants || participants.length !== 2) return { error: 'Teams not found', status: 404 };
     const [p1, p2] = participants;
-    await supabase.from('tournament_participants').update({ seed_number: p2.seed_number, initial_bracket_position: p2.seed_number }).eq('id', p1.id);
-    await supabase.from('tournament_participants').update({ seed_number: p1.seed_number, initial_bracket_position: p1.seed_number }).eq('id', p2.id);
+    await supabase.from('tournament_participants').upsert([
+        { id: p1.id, seed_number: p2.seed_number, initial_bracket_position: p2.seed_number },
+        { id: p2.id, seed_number: p1.seed_number, initial_bracket_position: p1.seed_number }
+    ]);
     return { success: true };
 }
 
@@ -251,8 +252,11 @@ export async function setSeedInternal(tournamentId: string, teamId: string, newS
     const { data: p } = await supabase.from('tournament_participants').select('*').eq('tournament_id', tournamentId).eq('team_id', teamId).single();
     if (!p) return { error: 'Team not found', status: 404 };
     const { data: target } = await supabase.from('tournament_participants').select('*').eq('tournament_id', tournamentId).eq('seed_number', newSeedNumber).single();
-    if (target) await supabase.from('tournament_participants').update({ seed_number: p.seed_number, initial_bracket_position: p.seed_number }).eq('id', target.id);
-    await supabase.from('tournament_participants').update({ seed_number: newSeedNumber, initial_bracket_position: newSeedNumber }).eq('id', p.id);
+
+    const updates = [{ id: p.id, seed_number: newSeedNumber, initial_bracket_position: newSeedNumber }];
+    if (target) updates.push({ id: target.id, seed_number: p.seed_number, initial_bracket_position: p.seed_number });
+
+    await supabase.from('tournament_participants').upsert(updates);
     return { success: true };
 }
 
@@ -260,9 +264,12 @@ export async function randomizeSeedsInternal(tournamentId: string) {
     const { data: participants } = await supabase.from('tournament_participants').select('*').eq('tournament_id', tournamentId);
     if (!participants) return { error: 'No participants', status: 404 };
     const shuffled = participants.sort(() => Math.random() - 0.5);
-    for (let i = 0; i < shuffled.length; i++) {
-        await supabase.from('tournament_participants').update({ seed_number: i + 1, initial_bracket_position: i + 1 }).eq('id', shuffled[i].id);
-    }
+    const updates = shuffled.map((p, i) => ({
+        id: p.id,
+        seed_number: i + 1,
+        initial_bracket_position: i + 1
+    }));
+    await supabase.from('tournament_participants').upsert(updates);
     return { success: true };
 }
 
@@ -274,16 +281,3 @@ function generateBracketSeedOrder(bracketSize: number): number[] {
     return order;
 }
 
-async function advanceByeWinnersInternal(tournamentId: string, brackets: any[], matches: any[]) {
-    const byeMatches = matches.filter(m => m.status === 'Completed' && brackets.find(b => b.id === m.bracket_id)?.round_number === 1);
-    for (const byeMatch of byeMatches) {
-        const bracket = brackets.find(b => b.id === byeMatch.bracket_id);
-        if (!bracket || !byeMatch.winner_id) continue;
-        const nextBracket = brackets.find(b => b.round_number === 2 && b.bracket_position === Math.ceil(bracket.bracket_position / 2));
-        if (!nextBracket) continue;
-        const nextMatch = matches.find(m => m.bracket_id === nextBracket.id);
-        if (!nextMatch) continue;
-        const updateField = bracket.bracket_position % 2 === 1 ? 'team1_id' : 'team2_id';
-        await supabase.from('tournament_matches').update({ [updateField]: byeMatch.winner_id }).eq('id', nextMatch.id);
-    }
-}

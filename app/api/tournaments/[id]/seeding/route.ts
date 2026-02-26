@@ -14,6 +14,7 @@ const RANK_TIERS = [
   'Gold', 'Silver', 'Bronze', 'Iron', 'Unranked'
 ];
 
+
 // Convert rank tier to numeric value (higher = better)
 function rankToValue(rank: string | null): number {
   if (!rank) return 0;
@@ -27,19 +28,6 @@ function valueToRank(value: number): string {
   return RANK_TIERS[Math.max(0, Math.min(index, RANK_TIERS.length - 1))];
 }
 
-// Calculate average rank for a team from its members
-async function calculateTeamAverageRank(teamId: string): Promise<string> {
-  const { data: members } = await supabase
-    .from('players')
-    .select('tier')
-    .eq('team_id', teamId);
-
-  if (!members || members.length === 0) return 'Unranked';
-  const values = members.map((m: any) => rankToValue(m.tier)).filter((v: number) => v > 0);
-  if (values.length === 0) return 'Unranked';
-  const avgValue = values.reduce((a: number, b: number) => a + b, 0) / values.length;
-  return valueToRank(avgValue);
-}
 
 // GET /api/tournaments/[id]/seeding - Get current seeding
 export async function GET(
@@ -58,18 +46,13 @@ export async function GET(
 
     const { data: participants, error } = await supabase
       .from('tournament_participants')
-      .select('*, team:teams(id, name, team_avatar, captain_id)')
+      .select('*, team:teams(id, name, team_avatar, captain_id, average_rank)')
       .eq('tournament_id', tournament.id)
       .order('seed_number', { ascending: true });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    const participantsWithRank = await Promise.all(
-      (participants || []).map(async (p: any) => ({
-        ...p,
-        team: { ...p.team, average_rank: await calculateTeamAverageRank(p.team?.id) }
-      }))
-    );
+    const participantsWithRank = participants || [];
 
     const { count: approvedCount } = await supabase.from('tournament_registrations').select('*', { count: 'exact', head: true }).eq('tournament_id', tournament.id).eq('status', 'approved');
     const { count: bracketCount } = await supabase.from('tournament_brackets').select('*', { count: 'exact', head: true }).eq('tournament_id', tournament.id);
@@ -130,6 +113,9 @@ export async function POST(
       case 'randomize_seeds':
         result = await randomizeSeedsInternal(tournamentId);
         break;
+      case 'seed_by_rank':
+        result = await seedByRank(tournamentId);
+        break;
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -146,10 +132,21 @@ export async function POST(
 
 async function bulkUpdateSeeding(tournamentId: string, seedings: { team_id: string; seed_number: number }[]) {
   if (!seedings || !Array.isArray(seedings)) return NextResponse.json({ error: 'Invalid seedings data' }, { status: 400 });
-  for (const seeding of seedings) {
-    await supabase.from('tournament_participants').update({ seed_number: seeding.seed_number, initial_bracket_position: seeding.seed_number })
-      .eq('tournament_id', tournamentId).eq('team_id', seeding.team_id);
-  }
+
+  const { data: participants, error: pErr } = await supabase.from('tournament_participants').select('id, team_id').eq('tournament_id', tournamentId).in('team_id', seedings.map(s => s.team_id));
+  if (pErr || !participants) return { error: 'Participants not found', status: 404 };
+
+  const updates = seedings.map(s => {
+    const p = participants.find(p => p.team_id === s.team_id);
+    return {
+      id: p?.id,
+      seed_number: s.seed_number,
+      initial_bracket_position: s.seed_number
+    };
+  }).filter(u => u.id);
+
+  const { error: uErr } = await supabase.from('tournament_participants').upsert(updates);
+  if (uErr) return { error: 'Failed to update seeding: ' + uErr.message, status: 500 };
   await logAction(tournamentId, 'bulk_seeding_update', { count: seedings.length });
   return { success: true, message: 'Seeding updated successfully' };
 }
@@ -163,8 +160,11 @@ async function moveSeed(tournamentId: string, teamId: string, direction: 'up' | 
 
   const p1 = participants[idx];
   const p2 = participants[targetIdx];
-  await supabase.from('tournament_participants').update({ seed_number: p2.seed_number, initial_bracket_position: p2.seed_number }).eq('id', p1.id);
-  await supabase.from('tournament_participants').update({ seed_number: p1.seed_number, initial_bracket_position: p1.seed_number }).eq('id', p2.id);
+  const { error: upsertErr } = await supabase.from('tournament_participants').upsert([
+    { id: p1.id, seed_number: p2.seed_number, initial_bracket_position: p2.seed_number },
+    { id: p2.id, seed_number: p1.seed_number, initial_bracket_position: p1.seed_number }
+  ]);
+  if (upsertErr) return { error: 'Failed to move seed: ' + upsertErr.message, status: 500 };
   await logAction(tournamentId, 'seed_moved', { team_id: teamId, direction });
   return { success: true, message: 'Moved' };
 }
@@ -175,11 +175,45 @@ async function moveToPosition(tournamentId: string, teamId: string, targetPositi
   const idx = participants.findIndex(p => p.team_id === teamId);
   const [moved] = participants.splice(idx, 1);
   participants.splice(targetPosition - 1, 0, moved);
-  for (let i = 0; i < participants.length; i++) {
-    await supabase.from('tournament_participants').update({ seed_number: i + 1, initial_bracket_position: i + 1 }).eq('id', participants[i].id);
-  }
+
+  const updates = participants.map((p, i) => ({
+    id: p.id,
+    seed_number: i + 1,
+    initial_bracket_position: i + 1
+  }));
+
+  const { error: upsertErr } = await supabase.from('tournament_participants').upsert(updates);
+  if (upsertErr) return { error: 'Failed to update position: ' + upsertErr.message, status: 500 };
   await logAction(tournamentId, 'seed_moved_to_position', { team_id: teamId, to: targetPosition });
   return { success: true, message: 'Updated' };
+}
+
+async function seedByRank(tournamentId: string) {
+  const { data: participants, error: pErr } = await supabase
+    .from('tournament_participants')
+    .select(`*, team:teams(id, name, average_rank)`)
+    .eq('tournament_id', tournamentId);
+
+  if (pErr || !participants || participants.length === 0) return { error: 'No participants', status: 404 };
+
+  const teamsWithRank = participants.map((p: any) => ({
+    participant_id: p.id,
+    rank_value: rankToValue(p.team?.average_rank)
+  }));
+
+  const sorted = teamsWithRank.sort((a, b) => b.rank_value - a.rank_value);
+
+  const updates = sorted.map((s, i) => ({
+    id: s.participant_id,
+    seed_number: i + 1,
+    initial_bracket_position: i + 1
+  }));
+
+  const { error: upsertErr } = await supabase.from('tournament_participants').upsert(updates);
+  if (upsertErr) return { error: 'Failed to seed by rank: ' + upsertErr.message, status: 500 };
+
+  await logAction(tournamentId, 'seeds_by_rank', { count: participants.length });
+  return { success: true, message: 'Seeded by rank' };
 }
 
 async function logAction(tournamentId: string, action: string, details: any) {

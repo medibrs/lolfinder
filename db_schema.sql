@@ -1,6 +1,31 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.api_metrics_logs (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  endpoint character varying NOT NULL,
+  method character varying NOT NULL,
+  status_code integer NOT NULL,
+  response_time_ms integer,
+  user_id uuid,
+  ip_address inet,
+  user_agent text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT api_metrics_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT api_metrics_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.broadcast_assignments (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  match_id uuid NOT NULL UNIQUE,
+  caster_name text,
+  observer_name text,
+  stream_platform text DEFAULT 'Twitch'::text,
+  stream_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT broadcast_assignments_pkey PRIMARY KEY (id),
+  CONSTRAINT broadcast_assignments_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.tournament_matches(id)
+);
 CREATE TABLE public.chat_messages (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   room_name text NOT NULL,
@@ -53,7 +78,7 @@ CREATE TABLE public.feature_requests (
   user_id uuid NOT NULL,
   title character varying NOT NULL,
   description text NOT NULL,
-  category character varying NOT NULL DEFAULT 'Other'::character varying,
+  category_id uuid REFERENCES public.feature_categories(id),
   priority character varying NOT NULL DEFAULT 'Medium'::character varying CHECK (priority::text = ANY (ARRAY['Low'::character varying::text, 'Medium'::character varying::text, 'High'::character varying::text])),
   status character varying NOT NULL DEFAULT 'Submitted'::character varying CHECK (status::text = ANY (ARRAY['Submitted'::character varying::text, 'Under Review'::character varying::text, 'Planned'::character varying::text, 'In Progress'::character varying::text, 'Completed'::character varying::text, 'Rejected'::character varying::text])),
   use_case text,
@@ -77,6 +102,40 @@ CREATE TABLE public.feature_votes (
   CONSTRAINT feature_votes_pkey PRIMARY KEY (id),
   CONSTRAINT feature_votes_feature_request_id_fkey FOREIGN KEY (feature_request_id) REFERENCES public.feature_requests(id),
   CONSTRAINT feature_votes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.players(id)
+);
+CREATE TABLE public.match_disputes (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  match_id uuid NOT NULL,
+  raised_by uuid NOT NULL,
+  reason text NOT NULL,
+  evidence_url text,
+  status USER-DEFINED DEFAULT 'open'::dispute_status_type,
+  resolved_by uuid,
+  resolution_notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT match_disputes_pkey PRIMARY KEY (id),
+  CONSTRAINT match_disputes_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.tournament_matches(id),
+  CONSTRAINT match_disputes_raised_by_fkey FOREIGN KEY (raised_by) REFERENCES public.players(id),
+  CONSTRAINT match_disputes_resolved_by_fkey FOREIGN KEY (resolved_by) REFERENCES public.players(id)
+);
+CREATE TABLE public.match_result_audit (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  match_id uuid NOT NULL,
+  changed_by uuid,
+  previous_team1_score integer,
+  new_team1_score integer,
+  previous_team2_score integer,
+  new_team2_score integer,
+  previous_winner_id uuid,
+  new_winner_id uuid,
+  previous_status USER-DEFINED,
+  new_status USER-DEFINED,
+  change_reason text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT match_result_audit_pkey PRIMARY KEY (id),
+  CONSTRAINT match_result_audit_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.tournament_matches(id),
+  CONSTRAINT match_result_audit_changed_by_fkey FOREIGN KEY (changed_by) REFERENCES auth.users(id)
 );
 CREATE TABLE public.notifications (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -128,8 +187,7 @@ CREATE TABLE public.players (
   losses integer DEFAULT 0,
   is_bot boolean DEFAULT false,
   CONSTRAINT players_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_players_team_id FOREIGN KEY (team_id) REFERENCES public.teams(id),
-  CONSTRAINT fk_team FOREIGN KEY (team_id) REFERENCES public.teams(id)
+  CONSTRAINT fk_players_team_id FOREIGN KEY (team_id) REFERENCES public.teams(id)
 );
 CREATE TABLE public.riot_request_logs (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -146,18 +204,50 @@ CREATE TABLE public.riot_request_logs (
   CONSTRAINT riot_request_logs_pkey PRIMARY KEY (id),
   CONSTRAINT riot_request_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.swiss_match_history (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  tournament_id uuid NOT NULL,
+  round_number integer NOT NULL,
+  team1_id uuid NOT NULL,
+  team2_id uuid NOT NULL,
+  match_id uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT swiss_match_history_pkey PRIMARY KEY (id),
+  CONSTRAINT swiss_match_history_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT swiss_match_history_team1_id_fkey FOREIGN KEY (team1_id) REFERENCES public.teams(id),
+  CONSTRAINT swiss_match_history_team2_id_fkey FOREIGN KEY (team2_id) REFERENCES public.teams(id),
+  CONSTRAINT swiss_match_history_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.tournament_matches(id),
+  CONSTRAINT swiss_match_history_different_teams CHECK (team1_id != team2_id)
+);
+CREATE TABLE public.tournament_opponents_history (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  tournament_id uuid NOT NULL,
+  team_id uuid NOT NULL,
+  opponent_id uuid NOT NULL,
+  match_id uuid,
+  round_number integer,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tournament_opponents_history_pkey PRIMARY KEY (id),
+  CONSTRAINT tournament_opponents_history_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT tournament_opponents_history_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT tournament_opponents_history_opponent_id_fkey FOREIGN KEY (opponent_id) REFERENCES public.teams(id),
+  CONSTRAINT tournament_opponents_history_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.tournament_matches(id),
+  CONSTRAINT tournament_opponents_history_unique_pairing UNIQUE (tournament_id, team_id, opponent_id),
+  CONSTRAINT tournament_opponents_history_different_teams CHECK (team_id != opponent_id)
+);
 CREATE TABLE public.swiss_pairings (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   tournament_id uuid NOT NULL,
   round_number integer NOT NULL,
-  player1_id uuid NOT NULL,
-  player2_id uuid NOT NULL,
+  team1_id uuid NOT NULL,
+  team2_id uuid NOT NULL,
   cannot_pair_again boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT swiss_pairings_pkey PRIMARY KEY (id),
-  CONSTRAINT swiss_pairings_player1_id_fkey FOREIGN KEY (player1_id) REFERENCES public.teams(id),
-  CONSTRAINT swiss_pairings_player2_id_fkey FOREIGN KEY (player2_id) REFERENCES public.teams(id),
-  CONSTRAINT swiss_pairings_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id)
+  CONSTRAINT swiss_pairings_team1_id_fkey FOREIGN KEY (team1_id) REFERENCES public.teams(id),
+  CONSTRAINT swiss_pairings_team2_id_fkey FOREIGN KEY (team2_id) REFERENCES public.teams(id),
+  CONSTRAINT swiss_pairings_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT swiss_pairings_different_teams CHECK (team1_id != team2_id)
 );
 CREATE TABLE public.swiss_round_results (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -172,7 +262,8 @@ CREATE TABLE public.swiss_round_results (
   CONSTRAINT swiss_round_results_pkey PRIMARY KEY (id),
   CONSTRAINT swiss_round_results_opponent_id_fkey FOREIGN KEY (opponent_id) REFERENCES public.teams(id),
   CONSTRAINT swiss_round_results_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
-  CONSTRAINT swiss_round_results_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id)
+  CONSTRAINT swiss_round_results_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT swiss_round_results_unique_round UNIQUE (tournament_id, team_id, round_number)
 );
 CREATE TABLE public.team_invitations (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -201,6 +292,17 @@ CREATE TABLE public.team_join_requests (
   CONSTRAINT team_join_requests_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
   CONSTRAINT team_join_requests_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
 );
+CREATE TABLE public.team_ratings (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  team_id uuid NOT NULL,
+  rating numeric NOT NULL DEFAULT 1200,
+  rating_type character varying DEFAULT 'Elo'::character varying,
+  matches_played integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT team_ratings_pkey PRIMARY KEY (id),
+  CONSTRAINT team_ratings_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
 CREATE TABLE public.team_tournament_performances (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   tournament_id uuid NOT NULL,
@@ -228,6 +330,7 @@ CREATE TABLE public.teams (
   team_size USER-DEFINED NOT NULL DEFAULT '5'::team_size_type,
   team_avatar character varying,
   is_bot boolean DEFAULT false,
+  average_rank text DEFAULT 'Unranked'::text,
   CONSTRAINT teams_pkey PRIMARY KEY (id),
   CONSTRAINT teams_captain_id_fkey FOREIGN KEY (captain_id) REFERENCES public.players(id)
 );
@@ -333,7 +436,7 @@ CREATE TABLE public.tournament_matches (
   started_at timestamp with time zone,
   completed_at timestamp with time zone,
   match_number integer NOT NULL,
-  best_of integer DEFAULT 1,
+  best_of integer DEFAULT 1 CHECK (best_of = ANY (ARRAY[1, 3, 5, 7])),
   team1_score integer DEFAULT 0,
   team2_score integer DEFAULT 0,
   match_room text,
@@ -346,7 +449,8 @@ CREATE TABLE public.tournament_matches (
   CONSTRAINT tournament_matches_team1_id_fkey FOREIGN KEY (team1_id) REFERENCES public.teams(id),
   CONSTRAINT tournament_matches_team2_id_fkey FOREIGN KEY (team2_id) REFERENCES public.teams(id),
   CONSTRAINT tournament_matches_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
-  CONSTRAINT tournament_matches_winner_id_fkey FOREIGN KEY (winner_id) REFERENCES public.teams(id)
+  CONSTRAINT tournament_matches_winner_id_fkey FOREIGN KEY (winner_id) REFERENCES public.teams(id),
+  CONSTRAINT tournament_matches_different_teams CHECK (team1_id IS NULL OR team2_id IS NULL OR team1_id != team2_id)
 );
 CREATE TABLE public.tournament_milestones (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -380,10 +484,27 @@ CREATE TABLE public.tournament_participants (
   tiebreaker_points numeric DEFAULT 0,
   buchholz_score numeric DEFAULT 0,
   dropped_out_at timestamp with time zone,
-  opponents_played ARRAY DEFAULT '{}'::uuid[],
   CONSTRAINT tournament_participants_pkey PRIMARY KEY (id),
   CONSTRAINT tournament_participants_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
-  CONSTRAINT tournament_participants_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id)
+  CONSTRAINT tournament_participants_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT tournament_participants_unique_team UNIQUE (tournament_id, team_id)
+);
+CREATE TABLE public.tournament_penalties (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  tournament_id uuid NOT NULL,
+  team_id uuid NOT NULL,
+  player_id uuid,
+  type USER-DEFINED NOT NULL,
+  reason text NOT NULL,
+  issued_by uuid NOT NULL,
+  applied_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tournament_penalties_pkey PRIMARY KEY (id),
+  CONSTRAINT tournament_penalties_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT tournament_penalties_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT tournament_penalties_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
+  CONSTRAINT tournament_penalties_issued_by_fkey FOREIGN KEY (issued_by) REFERENCES auth.users(id)
 );
 CREATE TABLE public.tournament_registrations (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -394,7 +515,51 @@ CREATE TABLE public.tournament_registrations (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT tournament_registrations_pkey PRIMARY KEY (id),
   CONSTRAINT tournament_registrations_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
-  CONSTRAINT tournament_registrations_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id)
+  CONSTRAINT tournament_registrations_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT tournament_registrations_unique_team UNIQUE (tournament_id, team_id)
+);
+CREATE TABLE public.tournament_rosters (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  tournament_id uuid NOT NULL,
+  team_id uuid NOT NULL,
+  player_id uuid NOT NULL,
+  role USER-DEFINED NOT NULL,
+  is_sub boolean DEFAULT false,
+  locked_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tournament_rosters_pkey PRIMARY KEY (id),
+  CONSTRAINT tournament_rosters_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT tournament_rosters_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT tournament_rosters_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
+  CONSTRAINT tournament_rosters_unique_player UNIQUE (tournament_id, team_id, player_id)
+);
+CREATE TABLE public.tournament_seed_history (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  tournament_id uuid NOT NULL,
+  team_id uuid NOT NULL,
+  seed integer NOT NULL,
+  method USER-DEFINED NOT NULL,
+  assigned_by uuid,
+  assigned_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tournament_seed_history_pkey PRIMARY KEY (id),
+  CONSTRAINT tournament_seed_history_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT tournament_seed_history_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT tournament_seed_history_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES auth.users(id)
+);
+CREATE TABLE public.tournament_stages (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  tournament_id uuid NOT NULL,
+  name text NOT NULL,
+  format USER-DEFINED NOT NULL DEFAULT 'Single_Elimination'::tournament_format_type,
+  stage_order integer NOT NULL DEFAULT 0,
+  advancement_rules jsonb DEFAULT '{}'::jsonb,
+  status USER-DEFINED NOT NULL DEFAULT 'Registration'::tournament_status_type,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tournament_stages_pkey PRIMARY KEY (id),
+  CONSTRAINT tournament_stages_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id)
 );
 CREATE TABLE public.tournament_standings (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -410,7 +575,8 @@ CREATE TABLE public.tournament_standings (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT tournament_standings_pkey PRIMARY KEY (id),
   CONSTRAINT tournament_standings_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
-  CONSTRAINT tournament_standings_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id)
+  CONSTRAINT tournament_standings_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT tournament_standings_unique_team UNIQUE (tournament_id, team_id)
 );
 CREATE TABLE public.tournament_state_snapshots (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -465,3 +631,22 @@ CREATE TABLE public.tournaments (
   CONSTRAINT tournaments_pkey PRIMARY KEY (id),
   CONSTRAINT tournaments_parent_tournament_id_fkey FOREIGN KEY (parent_tournament_id) REFERENCES public.tournaments(id)
 );
+
+-- Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_tournament_matches_tournament_id ON public.tournament_matches(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_matches_team1_id ON public.tournament_matches(team1_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_matches_team2_id ON public.tournament_matches(team2_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_participants_tournament_id ON public.tournament_participants(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_participants_team_id ON public.tournament_participants(team_id);
+CREATE INDEX IF NOT EXISTS idx_swiss_match_history_tournament_id ON public.swiss_match_history(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_swiss_pairings_tournament_id ON public.swiss_pairings(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_logs_tournament_id ON public.tournament_logs(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_match_details_match_id ON public.tournament_match_details(match_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_match_games_match_id ON public.tournament_match_games(match_id);
+CREATE INDEX IF NOT EXISTS idx_match_disputes_match_id ON public.match_disputes(match_id);
+CREATE INDEX IF NOT EXISTS idx_match_result_audit_match_id ON public.match_result_audit(match_id);
+CREATE INDEX IF NOT EXISTS idx_player_tournament_histories_player_id ON public.player_tournament_histories(player_id);
+CREATE INDEX IF NOT EXISTS idx_player_tournament_histories_tournament_id ON public.player_tournament_histories(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_opponents_history_tournament_id ON public.tournament_opponents_history(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_opponents_history_team_id ON public.tournament_opponents_history(team_id);
+
