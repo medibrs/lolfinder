@@ -223,14 +223,14 @@ function generateSwissBracket(teams: Team[], maxWins: number, maxLosses: number)
     columns.push({ rounds: roundsInCol })
   }
 
-  // Pair initial teams in 0:0 round
+  // Pair initial teams in 0:0 round — use seed order, NOT random
   if (columns.length > 0 && columns[0].rounds.length > 0) {
     const firstRound = columns[0].rounds.find(r => r.title === '0:0')
     if (firstRound && firstRound.teamPairs) {
-      const shuffledTeams = [...teams].sort(() => Math.random() - 0.5)
+      // Use teams in the order provided (seed order) for deterministic display
       for (let i = 0; i < firstRound.teamPairs.length; i++) {
-        firstRound.teamPairs[i].team1 = shuffledTeams[i * 2] || null
-        firstRound.teamPairs[i].team2 = shuffledTeams[i * 2 + 1] || null
+        firstRound.teamPairs[i].team1 = teams[i * 2] || null
+        firstRound.teamPairs[i].team2 = teams[i * 2 + 1] || null
       }
     }
   }
@@ -427,8 +427,9 @@ export function SwissBracketPreview({ data, teams, maxWins = 2, maxLosses = 2, t
     // Generate the visual skeleton using the original combinatorial math
     let result = generateSwissBracket(paddedTeams, resolvedMaxWins, resolvedMaxLosses)
 
-    // If we have real data, overlay it onto the skeleton
-    if (data && data.rounds.some(r => r.matches.length > 0)) {
+    // If we have real data, always overlay it onto the skeleton
+    // This ensures seeding order and match results are shown correctly
+    if (data) {
       result = overlayRealData(result, data)
     }
 
