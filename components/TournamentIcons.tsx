@@ -118,3 +118,7 @@ export const UpcomingIcon = (props: IconProps) => (
 export const WinArrowIcon = (props: IconProps) => (
     <IconWrapper src="/tournament_assets/win_arrow.png" alt="Win Arrow" size={24} {...props} />
 );
+
+export const MatchCardIcon = (props: IconProps) => (
+    <IconWrapper src="/tournament_assets/match_card.png" alt="Match Card" size={20} {...props} />
+);

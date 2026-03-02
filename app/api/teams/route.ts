@@ -22,19 +22,30 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const recruiting = searchParams.get('recruiting');
     const role = searchParams.get('role');
+    const bots = searchParams.get('bots'); // 'only', 'include', omitted
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
     // Parallelize the data query and count query
     let countQuery = supabase.from('teams')
-      .select('*', { count: 'exact', head: true })
-      .or('is_bot.is.null,is_bot.eq.false');
+      .select('*', { count: 'exact', head: true });
+
+    if (bots === 'only') {
+      countQuery = countQuery.eq('is_bot', true);
+    } else if (bots !== 'include') {
+      countQuery = countQuery.or('is_bot.is.null,is_bot.eq.false');
+    }
     if (recruiting) countQuery = countQuery.eq('recruiting_status', recruiting);
     if (role) countQuery = countQuery.contains('open_positions', [role]);
 
     let dataQuery = supabase.from('teams')
-      .select('id, name, captain_id, open_positions, team_size, recruiting_status, team_avatar, created_at, is_bot, captain:players!captain_id(summoner_name)')
-      .or('is_bot.is.null,is_bot.eq.false');
+      .select('id, name, captain_id, open_positions, team_size, recruiting_status, team_avatar, created_at, is_bot, captain:players!captain_id(summoner_name)');
+
+    if (bots === 'only') {
+      dataQuery = dataQuery.eq('is_bot', true);
+    } else if (bots !== 'include') {
+      dataQuery = dataQuery.or('is_bot.is.null,is_bot.eq.false');
+    }
     if (recruiting) dataQuery = dataQuery.eq('recruiting_status', recruiting);
     if (role) dataQuery = dataQuery.contains('open_positions', [role]);
     dataQuery = dataQuery.order('created_at', { ascending: false });

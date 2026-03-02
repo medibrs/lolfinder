@@ -220,7 +220,7 @@ export default function TournamentsPage() {
     if (now < start) {
       return { status: 'upcoming', color: 'bg-accent text-accent-foreground' }
     } else if (now >= start && now <= end) {
-      return { status: 'in-progress', color: 'bg-primary text-primary-foreground' }
+      return { status: 'live', color: 'bg-primary text-primary-foreground' }
     } else {
       return { status: 'completed', color: 'bg-muted text-muted-foreground' }
     }
@@ -305,7 +305,7 @@ export default function TournamentsPage() {
                         {tournamentStatus.status === 'upcoming' && (
                           <UpcomingIcon size={100} className="drop-shadow-2xl" />
                         )}
-                        {tournamentStatus.status === 'in-progress' && (
+                        {tournamentStatus.status === 'live' && (
                           <LiveIcon size={100} className="drop-shadow-2xl animate-pulse" />
                         )}
                         {tournamentStatus.status === 'completed' && (
@@ -367,62 +367,64 @@ export default function TournamentsPage() {
 
                       {/* Call to Action Button */}
                       <div className="md:ml-auto">
-                        {!user ? (
-                          <Button
-                            className="px-8 py-3 bg-slate-900/50 border border-slate-700 text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-amber-500 hover:text-amber-400 hover:bg-amber-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              router.push('/auth')
-                            }}
-                          >
-                            Login to Compete
-                          </Button>
-                        ) : !hasPlayerProfile ? (
-                          <Button
-                            className="px-8 py-3 bg-slate-900/50 border border-cyan-800 text-cyan-500 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-cyan-400 hover:text-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              router.push('/setup-profile')
-                            }}
-                          >
-                            Setup Profile
-                          </Button>
-                        ) : !userTeam ? (
-                          <Button
-                            className="px-8 py-3 bg-slate-900/50 border border-indigo-800 text-indigo-400 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-indigo-400 hover:text-indigo-400 hover:bg-indigo-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(129,140,248,0.15)]"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              router.push('/create-team')
-                            }}
-                          >
-                            Create Squad
-                          </Button>
-                        ) : (
-                          registrationStatuses[tournament.id] === 'approved' ? (
-                            <div className="px-6 py-2 rounded bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-[10px] uppercase tracking-widest shadow-inner">
-                              <CheckCircle className="h-3.5 w-3.5 inline mr-2" /> Confirmed
-                            </div>
-                          ) : registrationStatuses[tournament.id] === 'pending' ? (
-                            <div className="px-6 py-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 font-bold text-[10px] uppercase tracking-widest shadow-inner">
-                              <ClockIcon size={14} className="inline mr-2" /> Pending
-                            </div>
-                          ) : (
-                            <button
+                        {tournamentStatus.status === 'upcoming' && (
+                          !user ? (
+                            <Button
+                              className="px-8 py-3 bg-slate-900/50 border border-slate-700 text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-amber-500 hover:text-amber-400 hover:bg-amber-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                handleRegister(tournament.id)
+                                router.push('/auth')
                               }}
-                              disabled={registering === tournament.id}
-                              style={{
-                                backgroundImage: `url(${registering === tournament.id ? '/tournament_assets/regester_button_pressed_small.png' : '/tournament_assets/regester_button_small.png'})`,
-                                backgroundSize: '100% 100%'
-                              }}
-                              className="group/btn relative h-14 w-52 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-125"
                             >
-                              <span className="text-slate-950 font-bold text-xs tracking-[0.15em] uppercase drop-shadow-sm mt-0.5 group-active/btn:mt-1 group-active/btn:text-slate-900 transition-all">
-                                {registering === tournament.id ? 'TRANSMITTING' : 'Register Squad'}
-                              </span>
-                            </button>
+                              Login to Compete
+                            </Button>
+                          ) : !hasPlayerProfile ? (
+                            <Button
+                              className="px-8 py-3 bg-slate-900/50 border border-cyan-800 text-cyan-500 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-cyan-400 hover:text-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                router.push('/setup-profile')
+                              }}
+                            >
+                              Setup Profile
+                            </Button>
+                          ) : !userTeam ? (
+                            <Button
+                              className="px-8 py-3 bg-slate-900/50 border border-indigo-800 text-indigo-400 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-indigo-400 hover:text-indigo-400 hover:bg-indigo-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(129,140,248,0.15)]"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                router.push('/create-team')
+                              }}
+                            >
+                              Create Squad
+                            </Button>
+                          ) : (
+                            registrationStatuses[tournament.id] === 'approved' ? (
+                              <div className="px-6 py-2 rounded bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-[10px] uppercase tracking-widest shadow-inner">
+                                <CheckCircle className="h-3.5 w-3.5 inline mr-2" /> Confirmed
+                              </div>
+                            ) : registrationStatuses[tournament.id] === 'pending' ? (
+                              <div className="px-6 py-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 font-bold text-[10px] uppercase tracking-widest shadow-inner">
+                                <ClockIcon size={14} className="inline mr-2" /> Pending
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleRegister(tournament.id)
+                                }}
+                                disabled={registering === tournament.id}
+                                style={{
+                                  backgroundImage: `url(${registering === tournament.id ? '/tournament_assets/regester_button_pressed.png' : '/tournament_assets/regester_button.png'})`,
+                                  backgroundSize: '100% 100%'
+                                }}
+                                className="group/btn relative h-14 w-52 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-125"
+                              >
+                                <span className="text-slate-950 font-bold text-xs tracking-[0.15em] uppercase drop-shadow-sm mt-0.5 group-active/btn:mt-1 group-active/btn:text-slate-900 transition-all">
+                                  {registering === tournament.id ? 'TRANSMITTING' : 'Register Squad'}
+                                </span>
+                              </button>
+                            )
                           )
                         )}
                       </div>

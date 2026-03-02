@@ -20,35 +20,35 @@ export default function RoleSelect({ value, onChange, placeholder = "Select Role
       <Button
         type="button"
         variant="outline"
-        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white justify-between"
+        className="w-full px-4 h-12 bg-slate-900/50 border-slate-800 text-slate-300 justify-between focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 rounded-xl transition-all"
         onClick={() => setIsOpen(!isOpen)}
       >
         {value ? (
           <div className="flex items-center gap-2">
-            <RoleIcon role={value} size={16} />
-            <span>{value}</span>
+            <RoleIcon role={value} size={16} className="brightness-125" />
+            <span className="text-xs font-bold uppercase tracking-widest">{value}</span>
           </div>
         ) : (
-          <span className="text-gray-400">{placeholder}</span>
+          <span className="text-slate-600 text-xs font-bold uppercase tracking-widest">{placeholder}</span>
         )}
-        <ChevronDown className="h-4 w-4" />
+        <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </Button>
 
       {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+        <div className="absolute z-50 w-full mt-2 bg-[#0b1221] border border-slate-800 rounded-xl shadow-2xl overflow-hidden backdrop-blur-md">
           {ROLES.map(role => (
             <button
               key={role}
               type="button"
-              className="w-full px-3 py-2 text-left text-white hover:bg-gray-700 flex items-center gap-2"
+              className="w-full px-4 py-3 text-left text-slate-400 hover:bg-slate-800/50 hover:text-cyan-400 transition-colors flex items-center gap-3 group"
               onClick={() => {
                 onChange(role)
                 setIsOpen(false)
               }}
             >
-              <RoleIcon role={role} size={16} />
-              <span>{role}</span>
-              {value === role && <Check className="h-4 w-4 ml-auto" />}
+              <RoleIcon role={role} size={16} className="opacity-40 group-hover:opacity-100 transition-opacity" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{role}</span>
+              {value === role && <Check className="h-3 w-3 ml-auto text-cyan-500" />}
             </button>
           ))}
         </div>

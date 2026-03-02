@@ -142,8 +142,8 @@ function generateSingleElimBracket(teams: Team[], forceCount?: number): SingleEl
                 const t2 = seededTeams[i * 2 + 1]
                 matches.push({
                     id: `r${roundNum}-m${i}`,
-                    team1: t1 ? { ...t1 } : { id: `ph1-${i}`, name: 'BYE', team_avatar: undefined },
-                    team2: t2 ? { ...t2 } : { id: `ph2-${i}`, name: 'BYE', team_avatar: undefined },
+                    team1: t1 ? { ...t1 } : { id: `ph1-${i}`, name: 'TBD', team_avatar: undefined },
+                    team2: t2 ? { ...t2 } : { id: `ph2-${i}`, name: 'TBD', team_avatar: undefined },
                     status: 'scheduled',
                     winner: null
                 })

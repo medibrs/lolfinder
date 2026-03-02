@@ -172,7 +172,7 @@ export function TournamentRegistrationBtn({ tournamentId }: TournamentRegistrati
             onClick={handleRegister}
             disabled={loading}
             style={{
-                backgroundImage: `url(${loading ? '/tournament_assets/regester_button_pressed_small.png' : '/tournament_assets/regester_button_small.png'})`,
+                backgroundImage: `url(${loading ? '/tournament_assets/regester_button_pressed.png' : '/tournament_assets/regester_button.png'})`,
                 backgroundSize: '100% 100%'
             }}
             className="group/btn relative h-12 w-48 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-110"

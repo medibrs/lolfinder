@@ -37,6 +37,7 @@ interface Team {
   captain_name?: string
   captain_avatar?: number
   team_avatar?: number
+  is_bot?: boolean
 }
 
 interface Tournament {
@@ -52,6 +53,7 @@ export default function TeamsTable() {
   const [searchTerm, setSearchTerm] = useState('')
   const [tierFilter, setTierFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('user')
   const [contactDialogOpen, setContactDialogOpen] = useState(false)
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
   const [messageSubject, setMessageSubject] = useState('')
@@ -263,7 +265,7 @@ export default function TeamsTable() {
 
   const fetchTeams = async () => {
     try {
-      const response = await fetch('/api/teams')
+      const response = await fetch('/api/teams?limit=1000&bots=include')
       const result = await response.json()
       const teamsData = Array.isArray(result) ? result : (result.data || [])
 
@@ -302,8 +304,9 @@ export default function TeamsTable() {
     const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesTier = tierFilter === 'all' || team.tier === tierFilter
     const matchesStatus = statusFilter === 'all' || team.recruiting_status === statusFilter
+    const matchesType = typeFilter === 'all' || (typeFilter === 'bot' ? team.is_bot : !team.is_bot)
 
-    return matchesSearch && matchesTier && matchesStatus
+    return matchesSearch && matchesTier && matchesStatus && matchesType
   })
 
   const deleteTeam = async (teamId: string) => {
@@ -515,6 +518,17 @@ export default function TeamsTable() {
               <SelectItem value="Open">Open</SelectItem>
               <SelectItem value="Closed">Closed</SelectItem>
               <SelectItem value="Full">Full</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Team Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Teams</SelectItem>
+              <SelectItem value="user">User Teams</SelectItem>
+              <SelectItem value="bot">Bot Teams</SelectItem>
             </SelectContent>
           </Select>
         </div>

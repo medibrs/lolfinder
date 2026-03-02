@@ -641,14 +641,51 @@ export default function TeamsPage() {
                         </TooltipProvider>
                       </div>
 
-                      {/* Compact Action Button */}
+                      {/* Compact Action Button Area */}
                       <div className="pt-2">
-                        <Button
-                          className="w-full bg-slate-800/40 hover:bg-gradient-to-r hover:from-yellow-600 hover:to-amber-700 text-slate-400 hover:text-white border border-slate-700/30 hover:border-yellow-500/50 transition-all duration-300 rounded-lg h-11 font-beaufort tracking-[0.2em] uppercase font-bold text-[10px]"
-                          onClick={(e) => { e.stopPropagation(); router.push(`/teams/${team.id}`) }}
-                        >
-                          View Squad Details
-                        </Button>
+                        {(() => {
+                          const canRequestToJoin = user && hasPlayerProfile && !userTeam && team.recruiting_status === 'Open' && team.members?.length < (parseInt(team.team_size) || 5);
+                          const isPending = pendingRequests[team.id];
+                          const isSending = sendingRequest === team.id;
+                          const isCancelling = cancellingRequest === team.id;
+
+                          if (isPending) {
+                            return (
+                              <Button
+                                className="w-full bg-amber-500/10 hover:bg-red-500/20 text-amber-500 hover:text-red-400 border border-amber-500/30 hover:border-red-500/50 transition-all duration-300 rounded-lg h-12 font-beaufort tracking-[0.15em] uppercase font-bold text-[10px] group/cancel shadow-[0_4px_12px_rgba(245,158,11,0.05)]"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCancelRequest(team.id);
+                                }}
+                                disabled={isCancelling}
+                              >
+                                {isCancelling ? 'Cancelling...' : (
+                                  <>
+                                    <span className="group-hover/cancel:hidden">Pending Request</span>
+                                    <span className="hidden group-hover/cancel:inline">Cancel Request</span>
+                                  </>
+                                )}
+                              </Button>
+                            );
+                          }
+
+                          if (canRequestToJoin) {
+                            return (
+                              <Button
+                                className="w-full bg-cyan-600/20 hover:bg-cyan-500 text-cyan-400 hover:text-white border border-cyan-500/30 hover:border-cyan-400 transition-all duration-300 rounded-lg h-12 font-beaufort tracking-[0.15em] uppercase font-bold text-[10px] shadow-[0_0_15px_rgba(8,145,178,0.1)] hover:shadow-[0_0_20px_rgba(8,145,178,0.4)]"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRequestToJoin(team.id, team.name);
+                                }}
+                                disabled={isSending}
+                              >
+                                {isSending ? 'Sending Request...' : 'Request to Join Squad'}
+                              </Button>
+                            );
+                          }
+
+                          return null;
+                        })()}
                       </div>
                     </CardContent>
                   </Card>
