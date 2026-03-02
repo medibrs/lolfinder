@@ -417,7 +417,7 @@ export default function TeamsPage() {
                         onClick={() => setSelectedRole(null)}
                         className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border ${selectedRole === null
                           ? 'bg-yellow-500/20 border-yellow-500 shadow-[0_0_15_rgba(234,179,8,0.3)]'
-                          : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'
+                          : 'bg-slate-900/50 border-slate-800 hover:border-cyan-500/50'
                           }`}
                       >
                         <span className={`text-xs font-bold ${selectedRole === null ? 'text-yellow-500' : 'text-slate-400'}`}>ALL</span>
@@ -432,7 +432,7 @@ export default function TeamsPage() {
                           onClick={() => setSelectedRole(role)}
                           className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border ${selectedRole === role
                             ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.3)]'
-                            : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'
+                            : 'bg-slate-900/50 border-slate-800 hover:border-cyan-500/50'
                             }`}
                         >
                           <RoleIcon
@@ -519,7 +519,7 @@ export default function TeamsPage() {
                           <div className="absolute -bottom-1 -right-1">
                             <div className={cn(
                               "h-4 w-4 rounded-full border-2 border-slate-950",
-                              team.recruiting_status === 'Open' ? 'bg-green-500' : 'bg-slate-500'
+                              team.recruiting_status === 'Open' ? 'bg-green-400/80' : 'bg-slate-600'
                             )} />
                           </div>
                         </div>
@@ -529,7 +529,7 @@ export default function TeamsPage() {
                           </h3>
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1.5 text-slate-400">
-                              <Crown className="h-3 w-3 text-yellow-500" />
+                              <Crown className="h-3 w-3 text-[#c9aa71]" />
                               <span className="text-[10px] font-bold font-beaufort tracking-widest uppercase">
                                 {team.captain?.summoner_name || 'Captain Unknown'}
                               </span>

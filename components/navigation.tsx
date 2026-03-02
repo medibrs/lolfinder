@@ -240,12 +240,12 @@ export default function Navigation() {
                     <AvatarFallback>Team</AvatarFallback>
                   </Avatar>
                   {isCaptain && (
-                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-yellow-500 scale-50">
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[#c9aa71] scale-50">
                       <Crown className="h-2 w-2" />
                     </span>
                   )}
                   {unreadTeamMessages > 0 && (
-                    <span className="absolute -top-1 -left-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                    <span className="absolute -top-1 -left-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-400/80 text-xs text-white">
                       {unreadTeamMessages > 9 ? '9+' : unreadTeamMessages}
                     </span>
                   )}
@@ -774,12 +774,12 @@ export default function Navigation() {
                     <AvatarFallback>Team</AvatarFallback>
                   </Avatar>
                   {isCaptain && (
-                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-yellow-500 scale-50">
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[#c9aa71] scale-50">
                       <Crown className="h-2 w-2" />
                     </span>
                   )}
                   {unreadTeamMessages > 0 && (
-                    <span className="absolute -top-1 -left-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                    <span className="absolute -top-1 -left-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-400/80 text-xs text-white">
                       {unreadTeamMessages > 9 ? '9+' : unreadTeamMessages}
                     </span>
                   )}

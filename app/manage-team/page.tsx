@@ -194,7 +194,7 @@ export default function ManageTeamPage() {
           },
           body: uploadFormData,
         })
-
+        // TODO : ADD text anaylize safetly to edit team route . 
         if (!uploadResponse.ok) {
           const result = await uploadResponse.json()
           alert(result.error || 'Failed to update avatar')

@@ -1,3 +1,5 @@
+const { cache } = require("react")
+
 const CACHE_NAME = 'lolfinder-v2' // Incremented to forcefully wipe v1
 const urlsToCache = [
   '/',
@@ -33,29 +35,27 @@ self.addEventListener('activate', (event) => {
 })
 
 // Fetch event - Network First, falling back to cache
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return
+self.addEventListener('fetch', async (event) => {
+  if (event.request.method !== 'GET') {
+    return
+  }
+  event.respondWith((async () => {
+    try {
+      const cache = await caches.open(CACHE_NAME)
+      const cached = await cache.match(event.request)
+      if (cached) return cached
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Only cache valid responses
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response
-        }
-
-        const responseClone = response.clone()
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone)
-        })
-        return response
-      })
-      .catch(() => {
-        // Offline fallback
-        return caches.match(event.request)
-      })
-  )
-})
+      const response  = await fetch(event.request)
+      if (network && network.status === 200) {
+        await cache.put(event.request, response.clone())
+      }
+      return network
+    }
+    catch{ 
+      return new Response ('Offline', {status: 503, headers: {'Content-Type': 'text/plain'},})
+    }
+  })());
+});
 
 // Push event - handle push notifications (for future PWA implementation)
 self.addEventListener('push', (event) => {

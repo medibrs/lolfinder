@@ -180,12 +180,11 @@ export default function AuthPage() {
             <div className="flex items-center justify-center gap-4 mb-2">
               <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[#c9aa71]/50 to-transparent"></div>
               <h1 className="text-2xl md:text-3xl font-beaufort font-black uppercase tracking-[0.5em] text-[#c9aa71] drop-shadow-2xl">
-                LoL Tournaments
+               1337 CHAMPIONS 
               </h1>
               <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[#c9aa71]/50 to-transparent"></div>
             </div>
             <div className="flex items-center justify-center gap-1.5 opacity-60">
-              <div className="w-1 h-1 rotate-45 bg-[#c9aa71]"></div>
               <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400">Elite Competitive Arena</span>
               <div className="w-1 h-1 rotate-45 bg-[#c9aa71]"></div>
             </div>

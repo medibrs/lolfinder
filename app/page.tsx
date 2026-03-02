@@ -597,7 +597,7 @@ export default function Home() {
                   <p className="text-slate-400 mb-8 text-lg leading-relaxed">
                     Check out the latest tournaments you can join with your team and win exclusive rewards.
                   </p>
-                  <Button asChild variant="outline" className="border-slate-600 text-slate-300 hover:bg-yellow-600 hover:border-yellow-600 hover:text-white transition-all px-8 py-6 text-sm font-bold tracking-wide bg-transparent">
+                  <Button asChild variant="outline" className="border-slate-800 text-slate-300 hover:bg-cyan-500/5 hover:border-cyan-500/50 hover:text-cyan-400 transition-all px-8 py-6 text-sm font-bold tracking-wide bg-transparent">
                     <Link href="/tournaments">View All</Link>
                   </Button>
                 </CardContent>
@@ -621,7 +621,7 @@ export default function Home() {
                   <p className="text-slate-400 mb-8 text-lg leading-relaxed">
                     Teams are actively looking for players in your rank range. Find your perfect squad today.
                   </p>
-                  <Button asChild variant="outline" className="border-slate-600 text-slate-300 hover:bg-cyan-600 hover:border-cyan-600 hover:text-white transition-all px-8 py-6 text-sm font-bold tracking-wide bg-transparent">
+                  <Button asChild variant="outline" className="border-slate-800 text-slate-300 hover:bg-cyan-500/5 hover:border-cyan-500/50 hover:text-cyan-400 transition-all px-8 py-6 text-sm font-bold tracking-wide bg-transparent">
                     <Link href="/teams">Find Teams</Link>
                   </Button>
                 </CardContent>
@@ -645,7 +645,7 @@ export default function Home() {
                   <p className="text-slate-400 mb-8 text-lg leading-relaxed">
                     Stay updated with the latest tournament results, match replays, and team performance.
                   </p>
-                  <Button asChild variant="outline" className="border-slate-600 text-slate-300 hover:bg-red-600 hover:border-red-600 hover:text-white transition-all px-8 py-5 text-sm font-bold tracking-wide bg-transparent">
+                  <Button asChild variant="outline" className="border-slate-800 text-slate-300 hover:bg-cyan-500/5 hover:border-cyan-500/50 hover:text-cyan-400 transition-all px-8 py-5 text-sm font-bold tracking-wide bg-transparent">
                     <Link href="/tournaments">View Results</Link>
                   </Button>
                 </CardContent>

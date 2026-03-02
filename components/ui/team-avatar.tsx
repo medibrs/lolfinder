@@ -74,7 +74,7 @@ export function TeamAvatar({
   if (!team) {
     return (
       <div className={cn(
-        "rounded-full bg-zinc-800 flex items-center justify-center shadow-lg shrink-0",
+        "rounded-full bg-[#0c121d]/60 flex items-center justify-center shadow-lg shrink-0",
         sizeClass,
         className
       )}>
@@ -89,8 +89,8 @@ export function TeamAvatar({
         "rounded-full overflow-hidden shadow-lg transition-all duration-200 shrink-0",
         sizeClass,
         isWinner
-          ? "ring-2 ring-green-500/60 shadow-[0_0_14px_rgba(34,197,94,0.45),0_0_28px_rgba(34,197,94,0.15)]"
-          : "border-[1px] border-transparent hover:border-zinc-600",
+          ? "ring-2 ring-green-400/60 shadow-[0_0_14px_rgba(34,197,94,0.45),0_0_28px_rgba(34,197,94,0.15)]"
+          : "border-[1px] border-transparent hover:border-cyan-500/50",
         className
       )}>
         {avatarUrl && !imageError ? (
@@ -104,7 +104,7 @@ export function TeamAvatar({
             unoptimized={process.env.NODE_ENV === 'development'}
           />
         ) : (
-          <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+          <div className="w-full h-full bg-[#0c121d]/60 flex items-center justify-center">
             <SheildHollowIcon className={cn("absolute", iconSize)} />
           </div>
         )}
@@ -112,7 +112,7 @@ export function TeamAvatar({
 
       {/* Tooltip */}
       {showTooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/90 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-zinc-800">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/90 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-slate-800">
           {team?.name || 'TBD'}
         </div>
       )}

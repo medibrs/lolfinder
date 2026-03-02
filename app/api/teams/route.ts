@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       const formData = await request.formData();
       file = formData.get('file') as File | null;
 
-      const openPositions = formData.getAll('open_positions');
+      const openPositions = formData.getAll('open_positions')
 
       body = {
         name: formData.get('name') as string,

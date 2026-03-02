@@ -378,7 +378,7 @@ export default function PlayersPage() {
                         onClick={() => setSelectedRole(null)}
                         className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border ${selectedRole === null
                           ? 'bg-yellow-500/20 border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]'
-                          : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'
+                          : 'bg-slate-900/50 border-slate-800 hover:border-cyan-500/50'
                           }`}
                       >
                         <span className={`text-xs font-bold ${selectedRole === null ? 'text-yellow-500' : 'text-slate-400'}`}>ALL</span>
@@ -393,7 +393,7 @@ export default function PlayersPage() {
                           onClick={() => setSelectedRole(role)}
                           className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all border ${selectedRole === role
                             ? 'bg-cyan-500/20 border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.3)]'
-                            : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'
+                            : 'bg-slate-900/50 border-slate-800 hover:border-cyan-500/50'
                             }`}
                         >
                           <RoleIcon
@@ -415,12 +415,12 @@ export default function PlayersPage() {
               onClick={() => setShowLFTOnly(!showLFTOnly)}
               className={`h-12 px-6 rounded-xl font-bold tracking-widest uppercase text-xs transition-all ${showLFTOnly
                 ? 'bg-green-500 border-green-400 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]'
-                : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:border-slate-600'
+                : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:border-cyan-500/50 hover:bg-cyan-500/5'
                 }`}
             >
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${showLFTOnly ? 'bg-white animate-pulse' : 'bg-slate-600'}`}></div>
-                {showLFTOnly ? 'Recruiting Only' : 'Show Recruiting Only'}
+                {showLFTOnly ? 'Looking For Team Only' : 'Show Looking For Team Only'}
               </div>
             </Button>
           </div>
