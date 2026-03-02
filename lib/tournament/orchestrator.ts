@@ -95,14 +95,25 @@ async function loadBracketsAndMatches(tournamentId: string) {
     const [bracketsRes, matchesRes] = await Promise.all([
         supabase.from('tournament_brackets').select('*').eq('tournament_id', tournamentId),
         supabase.from('tournament_matches')
-            .select('*, bracket:tournament_brackets!inner(round_number, bracket_position)')
+            .select('id, bracket_id, team1_id, team2_id, winner_id, result, status, match_number, team1_score, team2_score, best_of')
             .eq('tournament_id', tournamentId),
     ])
 
-    return {
-        brackets: bracketsRes.data || [],
-        matches: matchesRes.data || [],
+    const brackets = bracketsRes.data || []
+    const rawMatches = matchesRes.data || []
+
+    // Build bracket lookup and enrich matches
+    const bracketMap: Record<string, any> = {}
+    for (const b of brackets) {
+        bracketMap[b.id] = { round_number: b.round_number, bracket_position: b.bracket_position }
     }
+
+    const matches = rawMatches.map((m: any) => ({
+        ...m,
+        bracket: bracketMap[m.bracket_id] || null,
+    }))
+
+    return { brackets, matches }
 }
 
 // ─── Orchestrator ───────────────────────────────────────────────────
@@ -378,8 +389,76 @@ export const TournamentOrchestrator = {
     },
 
     // ────────────────────────────────────────────────────────────────
+    // ROUND REWIND
+    // ────────────────────────────────────────────────────────────────
+
+    /**
+     * Rewinds a tournament to the previous round by wiping current round data.
+     * For Swiss, this also recalculates participant scores from remaining matches.
+     */
+    async rewindRound(tournamentId: string, userId?: string): Promise<{ success: boolean; message?: string; error?: string }> {
+        const supabase = getServiceClient()
+        const tournament = await loadTournament(tournamentId)
+        const id = tournament.id
+        const format = tournament.format || 'Single_Elimination'
+        const currentRound = tournament.current_round || 0
+
+        if (currentRound <= 1) {
+            return {
+                success: false,
+                error: 'Cannot rewind past Round 1. Use "Reset Bracket" to wipe all matches.'
+            }
+        }
+
+        const targetRound = currentRound - 1
+
+        // 1. Delete brackets/matches for the current round
+        const { data: brackets } = await supabase
+            .from('tournament_brackets')
+            .select('id')
+            .eq('tournament_id', id)
+            .eq('round_number', currentRound)
+
+        if (brackets && brackets.length > 0) {
+            const bracketIds = brackets.map((b: any) => b.id)
+            await supabase.from('tournament_matches').delete().in('bracket_id', bracketIds)
+            await supabase.from('tournament_brackets').delete().in('id', bracketIds)
+        }
+
+        // Also wipe pairing data purely tracked by round number (applicable to Swiss)
+        await supabase.from('swiss_pairings').delete().eq('round_number', currentRound).eq('tournament_id', id)
+
+        // 2. Set current_round to targetRound, status to In_Progress
+        await supabase.from('tournaments').update({
+            current_round: targetRound,
+        }).eq('id', id)
+        await transitionTournament(id, 'In_Progress')
+
+        // 3. If Swiss, recalculate participant scores from remaining matches
+        if (format === 'Swiss') {
+            const { recalculateSwissScores } = await import('./swiss-service')
+            await recalculateSwissScores(id)
+        }
+
+        // Log action
+        await supabase.from('tournament_logs').insert({
+            tournament_id: id,
+            action: 'ROUND_REWIND',
+            details: JSON.stringify({
+                format,
+                from_round: currentRound,
+                to_round: targetRound
+            }),
+            user_id: userId || null,
+        })
+
+        return { success: true, message: `Rewound to round ${targetRound}` }
+    },
+
+    // ────────────────────────────────────────────────────────────────
     // BRACKET RESET
     // ────────────────────────────────────────────────────────────────
+
 
     /**
      * Full bracket reset — wipes all matches, brackets, and resets participant state.

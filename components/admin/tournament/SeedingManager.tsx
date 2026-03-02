@@ -6,12 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import {
     GripVertical, Shuffle, Trophy, Users, ArrowUp, ArrowDown,
-    Loader2, BarChart3
+    Loader2, BarChart3, ListChecks, AlertTriangle
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
 import { getRankImage } from '@/lib/rank-utils'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+    AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -36,9 +41,12 @@ interface Participant {
 interface SeedingManagerProps {
     tournamentId: string
     tournamentFormat?: string
+    tournamentStatus?: string
+    currentRound?: number
     isLocked?: boolean
     matchData?: any[]
     onSeedingUpdate?: () => void
+    onMatchesGenerated?: () => void
 }
 
 // ─── Component ──────────────────────────────────────────────────────
@@ -46,9 +54,12 @@ interface SeedingManagerProps {
 export default function SeedingManager({
     tournamentId,
     tournamentFormat,
+    tournamentStatus,
+    currentRound = 0,
     isLocked = false,
     matchData = [],
     onSeedingUpdate,
+    onMatchesGenerated,
 }: SeedingManagerProps) {
     const { toast } = useToast()
     const [participants, setParticipants] = useState<Participant[]>([])
@@ -58,6 +69,9 @@ export default function SeedingManager({
     const [newSeedValue, setNewSeedValue] = useState('')
     const [draggedTeamId, setDraggedTeamId] = useState<string | null>(null)
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+    const [needsGeneration, setNeedsGeneration] = useState(false)
+    const [canRegenerate, setCanRegenerate] = useState(false)
+    const [showRewindDialog, setShowRewindDialog] = useState(false)
 
     const fetchSeeding = useCallback(async (silent = false) => {
         if (!silent) setLoading(true)
@@ -75,6 +89,71 @@ export default function SeedingManager({
     }, [tournamentId])
 
     useEffect(() => { fetchSeeding() }, [fetchSeeding])
+
+    // Check if current round needs match generation
+    const checkNeedsGeneration = useCallback(async () => {
+        if (tournamentFormat !== 'Swiss' || !tournamentStatus || tournamentStatus === 'Registration' || tournamentStatus === 'Seeding') {
+            setNeedsGeneration(false)
+            setCanRegenerate(false)
+            return
+        }
+        try {
+            const res = await fetch(`/api/tournaments/${tournamentId}/swiss-approve`)
+            if (res.ok) {
+                const data = await res.json()
+                setNeedsGeneration(data.needs_generation)
+                setCanRegenerate(data.can_regenerate || false)
+            }
+        } catch { /* ignore */ }
+    }, [tournamentId, tournamentFormat, tournamentStatus])
+
+    useEffect(() => { checkNeedsGeneration() }, [checkNeedsGeneration, matchData, currentRound])
+
+    const handleGenerateMatches = async () => {
+        setActionLoading('generate-matches')
+        try {
+            const res = await fetch(`/api/tournaments/${tournamentId}/swiss-approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ round_number: currentRound }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed')
+            setNeedsGeneration(false)
+            onMatchesGenerated?.()
+            onSeedingUpdate?.()
+            toast({ title: 'Matches Generated', description: data.message })
+        } catch (err: any) {
+            toast({ title: 'Error', description: err.message, variant: 'destructive' })
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
+    const handleRewindRound = async () => {
+        setActionLoading('rewind')
+        setShowRewindDialog(false)
+        try {
+            const res = await fetch(`/api/tournaments/${tournamentId}/rewind`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to rewind')
+
+            // Update local state and notify parent
+            onMatchesGenerated?.() // This usually triggers a tournament fetch in the parent
+            onSeedingUpdate?.()
+            toast({
+                title: 'Round Rewound',
+                description: data.message || `Tournament rolled back to Round ${currentRound - 1}.`,
+            })
+        } catch (err: any) {
+            toast({ title: 'Error', description: err.message, variant: 'destructive' })
+        } finally {
+            setActionLoading(null)
+        }
+    }
 
     // ─── Actions ────────────────────────────────────────────────────
 
@@ -411,9 +490,9 @@ export default function SeedingManager({
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="flex items-center gap-2">
-                            <Users className="h-5 w-5" />
-                            Seeding
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <Trophy className="h-5 w-5 text-primary" />
+                            {tournamentFormat === 'Swiss' && currentRound > 0 ? `Round ${currentRound} Seeding` : 'Seeding'}
                             <Badge variant="outline" className="ml-1 text-xs font-normal">
                                 {activeParticipants.length} active / {participants.length} total
                             </Badge>
@@ -424,30 +503,97 @@ export default function SeedingManager({
                                 : 'Drag teams to reorder. Click seed numbers to edit directly.'}
                         </CardDescription>
                     </div>
-                    {!isLocked && (
-                        <div className="flex items-center gap-2">
+
+                    <div className="flex items-center gap-2">
+                        {currentRound > 1 && !isLocked && (
                             <Button
-                                size="sm" variant="outline"
-                                onClick={handleRandomize}
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowRewindDialog(true)}
                                 disabled={!!actionLoading}
-                                className="text-xs h-8"
+                                className="text-amber-500 hover:text-amber-400 border-amber-500/20 hover:bg-amber-500/10 h-8 text-xs"
                             >
-                                {actionLoading === 'randomize_seeds' ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <Shuffle className="h-3 w-3 mr-1.5" />}
-                                Shuffle
+                                {actionLoading === 'rewind' ? (
+                                    <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                                ) : (
+                                    <AlertTriangle className="h-3 w-3 mr-1.5" />
+                                )}
+                                Rewind Round
                             </Button>
-                            <Button
-                                size="sm" variant="outline"
-                                onClick={handleSeedByRank}
-                                disabled={!!actionLoading}
-                                className="text-xs h-8"
-                            >
-                                {actionLoading === 'seed_by_rank' ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <BarChart3 className="h-3 w-3 mr-1.5" />}
-                                By Rank
-                            </Button>
-                        </div>
-                    )}
+                        )}
+                        {!isLocked && (
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    size="sm" variant="outline"
+                                    onClick={handleRandomize}
+                                    disabled={!!actionLoading}
+                                    className="text-xs h-8"
+                                >
+                                    {actionLoading === 'randomize_seeds' ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <Shuffle className="h-3 w-3 mr-1.5" />}
+                                    Shuffle
+                                </Button>
+                                <Button
+                                    size="sm" variant="outline"
+                                    onClick={handleSeedByRank}
+                                    disabled={!!actionLoading}
+                                    className="text-xs h-8"
+                                >
+                                    {actionLoading === 'seed_by_rank' ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <BarChart3 className="h-3 w-3 mr-1.5" />}
+                                    By Rank
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </CardHeader>
+
+            {/* Generate Matches Banner */}
+            {needsGeneration && (
+                <div className="mx-6 mb-4 p-4 rounded-lg border border-amber-500/30 bg-amber-500/[0.05] flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                        <ListChecks className="h-5 w-5 text-amber-400 flex-shrink-0" />
+                        <div>
+                            <p className="text-sm font-medium text-amber-300">Ready to Generate Round {currentRound} Matches</p>
+                            <p className="text-xs text-muted-foreground">Review the seeding above, then generate matches based on this order.</p>
+                        </div>
+                    </div>
+                    <Button
+                        onClick={handleGenerateMatches}
+                        disabled={actionLoading === 'generate-matches'}
+                        className="gap-1.5 shrink-0"
+                    >
+                        {actionLoading === 'generate-matches'
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <ListChecks className="h-4 w-4" />
+                        }
+                        Generate Matches
+                    </Button>
+                </div>
+            )}
+
+            {/* Regenerate Matches Banner */}
+            {!needsGeneration && canRegenerate && (
+                <div className="mx-6 mb-4 p-3 rounded-lg border border-muted-foreground/20 bg-muted/30 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                        <ListChecks className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <p className="text-xs text-muted-foreground">Round {currentRound} matches generated. Adjust seeding and regenerate if needed.</p>
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleGenerateMatches}
+                        disabled={actionLoading === 'generate-matches'}
+                        className="gap-1.5 shrink-0 text-xs h-8"
+                    >
+                        {actionLoading === 'generate-matches'
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <ListChecks className="h-3.5 w-3.5" />
+                        }
+                        Regenerate
+                    </Button>
+                </div>
+            )}
+
             <CardContent>
                 {/* Loading overlay */}
                 <div className="relative">
@@ -496,6 +642,31 @@ export default function SeedingManager({
                     {renderStatusSection('Eliminated', eliminatedParticipants, 'bg-red-500', 'text-red-400', 'bg-red-500/5', 'border-red-500/15', 'opacity-40')}
                 </div>
             </CardContent>
+
+            {/* Rewind Confirmation */}
+            <AlertDialog open={showRewindDialog} onOpenChange={setShowRewindDialog}>
+                <AlertDialogContent className="border-amber-500/20">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-amber-500 flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5" />
+                            Rewind to Round {currentRound - 1}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will <strong className="text-foreground">permanently delete all matches</strong> that were generated for Round {currentRound} and rollback the tournament to its state in Round {currentRound - 1}.
+                            For Swiss tournaments, team scores will be recalculated. This cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleRewindRound}
+                            className="bg-amber-500 hover:bg-amber-600 text-white"
+                        >
+                            Yes, Rewind Round
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     )
 }

@@ -96,7 +96,11 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { match_id, team1_id, team2_id, team1_score, team2_score, winner_id, status, result: bodyResult } = body;
+        const {
+            match_id, team1_id, team2_id, team1_score, team2_score, winner_id, status, result: bodyResult,
+            scheduled_at, started_at, completed_at, best_of, match_room, stream_url, notes,
+            is_locked, override_reason
+        } = body;
 
         // Validate
         if (!match_id) {
@@ -111,6 +115,17 @@ export async function PUT(
         if (team1_score !== undefined) updateData.team1_score = team1_score;
         if (team2_score !== undefined) updateData.team2_score = team2_score;
         if (status !== undefined) updateData.status = status;
+
+        // New extended fields
+        if (scheduled_at !== undefined) updateData.scheduled_at = scheduled_at;
+        if (started_at !== undefined) updateData.started_at = started_at;
+        if (completed_at !== undefined) updateData.completed_at = completed_at;
+        if (best_of !== undefined) updateData.best_of = best_of;
+        if (match_room !== undefined) updateData.match_room = match_room;
+        if (stream_url !== undefined) updateData.stream_url = stream_url;
+        if (notes !== undefined) updateData.notes = notes;
+        if (is_locked !== undefined) updateData.is_locked = is_locked;
+        if (override_reason !== undefined) updateData.override_reason = override_reason;
 
         // Handle winner_id (can be explicitly set to null for re-open)
         if ('winner_id' in body) updateData.winner_id = winner_id;
@@ -160,6 +175,9 @@ export async function PUT(
                 result: updateData.result,
                 team1_score: updateData.team1_score,
                 team2_score: updateData.team2_score,
+                is_locked: updateData.is_locked,
+                best_of: updateData.best_of,
+                scheduled_at: updateData.scheduled_at
             })
         });
 

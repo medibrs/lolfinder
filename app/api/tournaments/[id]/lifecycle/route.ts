@@ -5,6 +5,7 @@ import {
     getTournamentLifecycle,
 } from '@/lib/tournament/lifecycle/lifecycle-service'
 import type { TournamentState } from '@/lib/tournament/lifecycle/state-machine'
+import { TournamentOrchestrator } from '@/lib/tournament/orchestrator'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -71,6 +72,17 @@ export async function POST(
 
         if (!result.success) {
             return NextResponse.json({ error: result.error }, { status: 400 })
+        }
+
+        // Auto-generate bracket when starting the tournament
+        if (to === 'In_Progress') {
+            try {
+                // The orchestrator handles checking if a bracket already exists
+                await TournamentOrchestrator.generateBracket(tournamentUuid)
+            } catch (bracketErr) {
+                console.warn('Failed to auto-generate bracket on start:', bracketErr)
+                // We still return success for the state change, but might want to notify
+            }
         }
 
         // Return updated lifecycle

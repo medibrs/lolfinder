@@ -109,16 +109,18 @@ export async function POST(
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
-    // After seeding changes, regenerate bracket if one exists
+    // After seeding changes, regenerate bracket ONLY if tournament hasn't started
     if (result.success || result.status === 200 || !result.status) {
-      try {
-        const { count: bracketCount } = await supabase.from('tournament_brackets').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId)
-        if (bracketCount && bracketCount > 0) {
-          await TournamentOrchestrator.resetBracket(tournamentId)
-          await TournamentOrchestrator.generateBracket(tournamentId)
+      if (tournament.status === 'Registration' || tournament.status === 'Seeding') {
+        try {
+          const { count: bracketCount } = await supabase.from('tournament_brackets').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId)
+          if (bracketCount && bracketCount > 0) {
+            await TournamentOrchestrator.resetBracket(tournamentId)
+            await TournamentOrchestrator.generateBracket(tournamentId)
+          }
+        } catch (regenErr) {
+          console.warn('Bracket regeneration after seeding change failed:', regenErr)
         }
-      } catch (regenErr) {
-        console.warn('Bracket regeneration after seeding change failed:', regenErr)
       }
     }
 

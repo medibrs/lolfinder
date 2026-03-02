@@ -50,7 +50,7 @@ export async function loadSwissContext(tournamentId: string) {
         supabase.from('tournaments').select('*').eq('id', tournamentId).single(),
         supabase.from('tournament_participants').select('*').eq('tournament_id', tournamentId),
         supabase.from('tournament_matches')
-            .select('*, bracket:tournament_brackets!inner(round_number)')
+            .select('id, team1_id, team2_id, winner_id, result, status, bracket_id, match_number, team1_score, team2_score, best_of')
             .eq('tournament_id', tournamentId),
         supabase.from('tournament_brackets').select('*').eq('tournament_id', tournamentId),
     ])
@@ -64,6 +64,12 @@ export async function loadSwissContext(tournamentId: string) {
     const rawMatches = matchesRes.data || []
     const brackets = bracketsRes.data || []
 
+    // Build bracket lookup for round_number
+    const bracketMap: Record<string, number> = {}
+    for (const b of brackets) {
+        bracketMap[b.id] = b.round_number
+    }
+
     const config: SwissConfig = {
         points_per_win: tournament.swiss_points_per_win || 3,
         points_per_draw: tournament.swiss_points_per_draw || 1,
@@ -75,7 +81,6 @@ export async function loadSwissContext(tournamentId: string) {
         opening_best_of: tournament.opening_best_of || 1,
         progression_best_of: tournament.progression_best_of || 3,
         elimination_best_of: tournament.elimination_best_of || 3,
-        finals_best_of: tournament.finals_best_of || 5,
     }
 
     const swissParticipants: SwissTeamInput[] = participants.map((p: any) => ({
@@ -94,7 +99,7 @@ export async function loadSwissContext(tournamentId: string) {
         winner_id: m.winner_id,
         result: m.result,
         status: m.status,
-        round_number: m.bracket?.round_number || 0,
+        round_number: bracketMap[m.bracket_id] || 0,
     }))
 
     return { tournament, config, participants: swissParticipants, matches: swissMatches, brackets, rawParticipants: participants }
@@ -238,14 +243,22 @@ export async function approveSwissPairings(
     const allTeamIds = pairings.flatMap((p: any) => [p.team1_id, p.team2_id].filter(Boolean))
     const { data: allMatchesRaw } = await supabase
         .from('tournament_matches')
-        .select('*, bracket:tournament_brackets!inner(round_number)')
+        .select('id, team1_id, team2_id, winner_id, result, status, bracket_id')
         .eq('tournament_id', tournamentId)
         .eq('status', 'Completed')
+
+    // Get bracket info for round_number
+    const matchBracketIds = (allMatchesRaw || []).map((m: any) => m.bracket_id).filter(Boolean)
+    let bracketRoundMap: Record<string, number> = {}
+    if (matchBracketIds.length > 0) {
+        const { data: bkts } = await supabase.from('tournament_brackets').select('id, round_number').in('id', matchBracketIds)
+        if (bkts) for (const b of bkts) bracketRoundMap[b.id] = b.round_number
+    }
 
     const allMatches: SwissMatchInput[] = (allMatchesRaw || []).map((m: any) => ({
         id: m.id, team1_id: m.team1_id, team2_id: m.team2_id,
         winner_id: m.winner_id, result: m.result, status: m.status,
-        round_number: m.bracket?.round_number || 0,
+        round_number: bracketRoundMap[m.bracket_id] || 0,
     }))
     const wlRecords = computeWLRecords(allTeamIds, allMatches)
 
@@ -254,7 +267,9 @@ export async function approveSwissPairings(
         const isBye = p.team1_id === p.team2_id || !p.team2_id
         const t1Losses = wlRecords[p.team1_id]?.losses || 0
         const t2Losses = wlRecords[p.team2_id]?.losses || 0
-        const bestOf = determineBestOf(roundNumber, config, t1Losses, t2Losses)
+        const t1Wins = wlRecords[p.team1_id]?.wins || 0
+        const t2Wins = wlRecords[p.team2_id]?.wins || 0
+        const bestOf = determineBestOf(roundNumber, config, t1Losses, t2Losses, t1Wins, t2Wins)
 
         return {
             bracket_id: insertedBrackets[i].id,
@@ -401,12 +416,26 @@ export async function advanceSwissRound(
     // Check all matches completed
     const { data: verifyMatches } = await supabase
         .from('tournament_matches')
-        .select('id, status, bracket:tournament_brackets!inner(round_number)')
+        .select('id, status, bracket_id')
         .eq('tournament_id', tournamentId)
 
+    // Get bracket round info
+    const verifyBracketIds = (verifyMatches || []).map((m: any) => m.bracket_id).filter(Boolean)
+    let verifyBracketMap: Record<string, number> = {}
+    if (verifyBracketIds.length > 0) {
+        const { data: vBkts } = await supabase.from('tournament_brackets').select('id, round_number').in('id', verifyBracketIds)
+        if (vBkts) for (const b of vBkts) verifyBracketMap[b.id] = b.round_number
+    }
+
     const currentRoundVerify = (verifyMatches || []).filter(
-        (m: any) => m.bracket?.round_number === currentRound
+        (m: any) => verifyBracketMap[m.bracket_id] === currentRound
     )
+
+    // Guard: must have matches for the current round before advancing
+    if (currentRoundVerify.length === 0) {
+        throw new Error(`No matches found for round ${currentRound}. Generate matches from the Seeding tab first.`)
+    }
+
     const incomplete = currentRoundVerify.filter((m: any) => m.status !== 'Completed')
     if (incomplete.length > 0) {
         throw new Error(`${incomplete.length} matches still incomplete in round ${currentRound}`)
@@ -476,22 +505,9 @@ export async function advanceSwissRound(
         .eq('id', tournamentId)
     await transitionTournament(tournamentId, result.tournament_completed ? 'Completed' : 'In_Progress')
 
-    // ── Save Next Round Draft (if applicable) ─────────────────────────
-    if (result.next_round_proposal) {
-        const pairingsToInsert = result.next_round_proposal.pairings.map(p => ({
-            tournament_id: tournamentId,
-            round_number: result.next_round_proposal!.round,
-            team1_id: p.team1_id,
-            team2_id: p.team2_id || p.team1_id,
-            pairing_status: 'draft',
-            is_locked: false,
-            generation_source: 'auto',
-            version: 1,
-            cannot_pair_again: true,
-        }))
-
-        await supabase.from('swiss_pairings').insert(pairingsToInsert)
-    }
+    // ── Note: Next round pairings are NOT auto-generated here. ──────
+    // The admin will review seeding in the Seeding tab and explicitly
+    // click "Generate Matches" to create pairings from the live state.
 
     // ── Log ───────────────────────────────────────────────────────────
     await supabase.from('tournament_logs').insert({
@@ -536,4 +552,41 @@ export async function regenerateSwissDraft(
 
     // Generate fresh
     return createSwissDraft(tournamentId, userId)
+}
+/**
+ * Wipes current swiss scores and recalculates them from scratch based on all
+ * remaining completed matches. Used after a round rewind.
+ */
+export async function recalculateSwissScores(tournamentId: string): Promise<void> {
+    const supabase = getServiceClient()
+    const { config, participants, matches, rawParticipants } = await loadSwissContext(tournamentId)
+
+    const teamIds = participants.map(p => p.team_id)
+    const completedMatches = matches.filter(m => m.status === 'Completed')
+
+    const wlRecords = computeWLRecords(teamIds, completedMatches)
+    const elimResults = computeEliminationResults(wlRecords, config)
+    const elimMap = new Map(elimResults.map(e => [e.team_id, e.status]))
+
+    // Update all participants
+    for (const raw of rawParticipants) {
+        const teamId = raw.team_id
+        const wl = wlRecords[teamId] || { wins: 0, losses: 0, draws: 0 }
+
+        const newScore =
+            wl.wins * config.points_per_win +
+            (wl.draws || 0) * config.points_per_draw +
+            wl.losses * config.points_per_loss
+
+        const status = elimMap.get(teamId) || 'active'
+        const isActive = status === 'active'
+
+        await supabase
+            .from('tournament_participants')
+            .update({
+                swiss_score: newScore,
+                is_active: isActive
+            })
+            .eq('id', raw.id)
+    }
 }

@@ -44,7 +44,6 @@ export interface SwissConfig {
     opening_best_of: number
     progression_best_of: number
     elimination_best_of: number
-    finals_best_of: number
 }
 
 // ─── Output Types ───────────────────────────────────────────────────
@@ -237,11 +236,11 @@ export function buildOpponentHistory(
  *
  * Algorithm:
  *  1. Filter to active-only teams (not qualified, not eliminated)
- *  2. Sort by swiss_score DESC, then seed ASC
- *  3. For each unpaired team, find the closest-ranked opponent
- *     that hasn't been played yet
- *  4. If no unique opponent exists, allow a forced rematch (tracked)
- *  5. Handle bye for odd team count
+ *  2. Group teams by swiss_score (W/L pool)
+ *  3. Within each pool, sort by tiebreaker DESC → seed ASC
+ *  4. Pair within each pool, respecting opponent history
+ *  5. If a pool has an odd team, push the leftover down to the next pool
+ *  6. Cross-pool pairing only as absolute last resort (forced rematch)
  *
  * Returns a PROPOSAL — not a database mutation.
  */
@@ -259,62 +258,123 @@ export function generateSwissProposal(
         return p.is_active && status === 'active'
     })
 
-    // 2. Sort: swiss_score DESC → tiebreaker DESC → seed ASC
-    const sorted = [...activeTeams].sort((a, b) => {
-        if (b.swiss_score !== a.swiss_score) return b.swiss_score - a.swiss_score
-        if (b.tiebreaker_points !== a.tiebreaker_points) return b.tiebreaker_points - a.tiebreaker_points
-        return a.seed_number - b.seed_number
-    })
+    // 2. Group by swiss_score (pool)
+    const poolMap = new Map<number, SwissTeamInput[]>()
+    for (const team of activeTeams) {
+        const score = team.swiss_score
+        if (!poolMap.has(score)) poolMap.set(score, [])
+        poolMap.get(score)!.push(team)
+    }
 
-    // 3. Pair teams
+    // 3. Sort pools by score DESC, and sort teams within each pool
+    const sortedScores = [...poolMap.keys()].sort((a, b) => b - a)
+    for (const score of sortedScores) {
+        poolMap.get(score)!.sort((a, b) => {
+            if (b.tiebreaker_points !== a.tiebreaker_points) return b.tiebreaker_points - a.tiebreaker_points
+            return a.seed_number - b.seed_number
+        })
+    }
+
+    // 4. Pair within each pool, pushing leftovers to next pool
     const paired = new Set<string>()
     const pairings: ProposedPairing[] = []
     let rematches_forced = 0
+    let carryOver: SwissTeamInput | null = null
 
-    for (let i = 0; i < sorted.length; i++) {
-        const p1 = sorted[i]
-        if (paired.has(p1.team_id)) continue
-        paired.add(p1.team_id)
+    for (let poolIdx = 0; poolIdx < sortedScores.length; poolIdx++) {
+        const score = sortedScores[poolIdx]
+        const poolTeams = [...poolMap.get(score)!]
 
-        const p1Opponents = opponent_history.get(p1.team_id) || new Set()
+        // Add carry-over from previous pool (odd-sized pool leftover)
+        if (carryOver) {
+            poolTeams.unshift(carryOver)
+            carryOver = null
+        }
 
-        // Try to find an opponent that hasn't been played
-        let pairedWith: SwissTeamInput | null = null
-        for (let j = i + 1; j < sorted.length; j++) {
-            const p2 = sorted[j]
-            if (paired.has(p2.team_id)) continue
-            if (!p1Opponents.has(p2.team_id)) {
-                pairedWith = p2
-                paired.add(p2.team_id)
-                break
+        // Pair within this pool
+        const unpaired: SwissTeamInput[] = []
+        const poolPaired = new Set<string>()
+
+        for (let i = 0; i < poolTeams.length; i++) {
+            const p1 = poolTeams[i]
+            if (paired.has(p1.team_id) || poolPaired.has(p1.team_id)) continue
+
+            const p1Opponents = opponent_history.get(p1.team_id) || new Set()
+
+            // Try to find an opponent within THIS pool that hasn't been played
+            let found: SwissTeamInput | null = null
+            for (let j = i + 1; j < poolTeams.length; j++) {
+                const p2 = poolTeams[j]
+                if (paired.has(p2.team_id) || poolPaired.has(p2.team_id)) continue
+                if (!p1Opponents.has(p2.team_id)) {
+                    found = p2
+                    break
+                }
+            }
+
+            if (found) {
+                poolPaired.add(p1.team_id)
+                poolPaired.add(found.team_id)
+                paired.add(p1.team_id)
+                paired.add(found.team_id)
+                pairings.push({
+                    team1_id: p1.team_id,
+                    team2_id: found.team_id,
+                    is_bye: false,
+                    reason: `Pool pairing (score ${score})`,
+                })
+            } else {
+                unpaired.push(p1)
             }
         }
 
-        // Fallback: forced rematch with the closest-ranked available
-        if (!pairedWith) {
-            for (let j = i + 1; j < sorted.length; j++) {
-                const p2 = sorted[j]
-                if (paired.has(p2.team_id)) continue
-                pairedWith = p2
-                paired.add(p2.team_id)
-                rematches_forced++
+        // Handle unpaired teams from this pool
+        if (unpaired.length === 1) {
+            // Odd team → carry to next pool
+            carryOver = unpaired[0]
+        } else if (unpaired.length > 1) {
+            // Multiple unpaired (all played each other within pool) → forced rematches within pool
+            for (let i = 0; i < unpaired.length; i += 2) {
+                if (i + 1 < unpaired.length) {
+                    paired.add(unpaired[i].team_id)
+                    paired.add(unpaired[i + 1].team_id)
+                    pairings.push({
+                        team1_id: unpaired[i].team_id,
+                        team2_id: unpaired[i + 1].team_id,
+                        is_bye: false,
+                        reason: `Forced rematch within pool (score ${score})`,
+                    })
+                    rematches_forced++
+                } else {
+                    carryOver = unpaired[i]
+                }
+            }
+        }
+    }
+
+    // 5. Handle final carry-over (last pool had odd team)
+    if (carryOver) {
+        // Try to pair with the last unpaired team from any pool, or give a bye
+        let found = false
+        // Look through all active teams for any unpaired
+        for (const team of activeTeams) {
+            if (!paired.has(team.team_id) && team.team_id !== carryOver.team_id) {
+                paired.add(carryOver.team_id)
+                paired.add(team.team_id)
+                pairings.push({
+                    team1_id: carryOver.team_id,
+                    team2_id: team.team_id,
+                    is_bye: false,
+                    reason: 'Cross-pool pairing (last resort)',
+                })
+                found = true
                 break
             }
         }
-
-        if (pairedWith) {
+        if (!found) {
+            paired.add(carryOver.team_id)
             pairings.push({
-                team1_id: p1.team_id,
-                team2_id: pairedWith.team_id,
-                is_bye: false,
-                reason: p1Opponents.has(pairedWith.team_id)
-                    ? `Forced rematch (no unique opponents available)`
-                    : `Score group pairing (${p1.swiss_score} vs ${pairedWith.swiss_score})`,
-            })
-        } else {
-            // Bye
-            pairings.push({
-                team1_id: p1.team_id,
+                team1_id: carryOver.team_id,
                 team2_id: null,
                 is_bye: true,
                 reason: 'Bye — odd number of active teams',
@@ -374,25 +434,32 @@ export function generateRound1Proposal(
 
 /**
  * Determine best_of for a match based on context.
+ *
+ * Match type hierarchy:
+ *  - Elimination (either team has max_losses-1) → elimination_best_of
+ *  - Progression (either team has max_wins-1) → progression_best_of
+ *  - Opening (neither is close to being in or out) → opening_best_of
  */
 export function determineBestOf(
     round_number: number,
     config: SwissConfig,
     team1_losses: number,
-    team2_losses: number
+    team2_losses: number,
+    team1_wins: number = 0,
+    team2_wins: number = 0
 ): number {
-    const is_final_round = round_number >= config.total_rounds
-
-    if (is_final_round) {
-        return config.finals_best_of
-    }
-
-    // If either team is on match point for elimination, use elimination best_of
+    // A match is an "Elimination" match if either team is at risk of being eliminated (max_losses - 1)
     if (team1_losses >= config.max_losses - 1 || team2_losses >= config.max_losses - 1) {
         return config.elimination_best_of
     }
 
-    return config.progression_best_of
+    // A match is a "Progression" match if either team is on the verge of qualifying (max_wins - 1)
+    if (team1_wins >= config.max_wins - 1 || team2_wins >= config.max_wins - 1) {
+        return config.progression_best_of
+    }
+
+    // Otherwise, it's an "Opening" match (neither is close to being in or out)
+    return config.opening_best_of
 }
 
 /**

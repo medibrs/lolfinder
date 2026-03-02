@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Users } from 'lucide-react'
+import { SheildHollowIcon, TBDIcon } from '@/components/TournamentIcons';
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -78,7 +78,7 @@ export function TeamAvatar({
         sizeClass,
         className
       )}>
-        <Users className={cn("text-zinc-600", iconSize)} />
+        <SheildHollowIcon className={cn("absolute", iconSize)} />
       </div>
     )
   }
@@ -105,7 +105,7 @@ export function TeamAvatar({
           />
         ) : (
           <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-            <Users className={cn("text-zinc-400", iconSize)} />
+            <SheildHollowIcon className={cn("absolute", iconSize)} />
           </div>
         )}
       </div>

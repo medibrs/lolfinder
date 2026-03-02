@@ -151,7 +151,9 @@ export default function TournamentManagePage() {
     setLifecycleState(state)
     setCapabilities(caps)
     fetchTournament()
-  }, [fetchTournament])
+    fetchSeeding()
+    fetchMatches()
+  }, [fetchTournament, fetchSeeding, fetchMatches])
 
   const handleBracketChanged = useCallback(() => {
     fetchSeeding()
@@ -162,7 +164,8 @@ export default function TournamentManagePage() {
   const handleMatchStateChanged = useCallback(() => {
     fetchMatches()
     fetchSeeding()
-  }, [fetchMatches, fetchSeeding])
+    fetchTournament()
+  }, [fetchMatches, fetchSeeding, fetchTournament])
 
   // ─── Form Handlers ────────────────────────────────────────────
 
@@ -486,9 +489,12 @@ export default function TournamentManagePage() {
               <SeedingManager
                 tournamentId={tournament.id}
                 tournamentFormat={tournament.format}
+                tournamentStatus={lifecycleState}
+                currentRound={tournament.current_round || 0}
                 isLocked={capabilities?.can_edit_seeding === false}
                 matchData={matchData}
                 onSeedingUpdate={() => { fetchSeeding(); fetchMatches() }}
+                onMatchesGenerated={() => { fetchMatches(); fetchTournament() }}
               />
             </TabsContent>
 
@@ -498,6 +504,7 @@ export default function TournamentManagePage() {
                 tournamentId={tournament.id}
                 tournamentFormat={tournament.format}
                 matchData={matchData}
+                currentRound={tournament.current_round || 0}
                 canAdvance={capabilities?.can_advance_round !== false}
                 onStateChanged={handleMatchStateChanged}
                 onMatchDataUpdate={setMatchData}

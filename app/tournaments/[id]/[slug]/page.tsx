@@ -22,7 +22,7 @@ type Props = {
   }>;
 };
 
-// Fetch tournament by tournament_number (numeric ID)
+// Fetch tournamenz by tournament_number (numeric ID)
 async function getTournament(id: string) {
   const supabase = await createClient();
 
