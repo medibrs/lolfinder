@@ -78,7 +78,7 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
                   title={isCurrentAvatar ? 'Current Avatar' : 'Available'}
                 >
                   <Image
-                    src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`}
+                    src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${avatarId}.png`}
                     alt={`Avatar ${avatarId}`}
                     fill
                     className="object-cover"

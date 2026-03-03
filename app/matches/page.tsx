@@ -54,7 +54,7 @@ interface ExpandedStats {
   team2Gold: number | null
 }
 
-const DDRAGON_VERSION = '15.23.1'
+const DDRAGON_VERSION = '16.4.1'
 
 function toDate(value?: string | null): Date | null {
   if (!value) return null

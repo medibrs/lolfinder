@@ -18,7 +18,7 @@ import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
 import { getCached, setCache } from '@/lib/cache'
 // DDragon version is stable - hardcode to avoid network fetch blocking render
-const DDRAGON_VERSION = '15.23.1'
+const DDRAGON_VERSION = '16.4.1'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 

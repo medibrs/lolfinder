@@ -26,12 +26,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle, Edit, MessageSquare } from 'lucide-react'
+import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle, Edit, MessageSquare, Upload, Plus, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import { getRankImage } from '@/lib/rank-utils'
+import RoleIcon from '@/components/RoleIcon'
+import { CurrentUserAvatar } from '@/components/current-user-avatar'
 
-const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
+const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'] as const
 
 export default function ManageTeamPage() {
   const router = useRouter()
@@ -499,18 +501,25 @@ export default function ManageTeamPage() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            <h1 className="text-4xl font-bold flex items-center gap-3">
-              <Crown className="w-8 h-8 text-yellow-500" />
-              Manage Team
-            </h1>
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold flex items-center gap-3">
+                <Crown className="w-8 h-8 text-yellow-500" />
+                Manage Team
+              </h1>
+              <div className="flex items-center gap-4 text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500 ml-1">
+                <span className="flex items-center gap-1.5"><Users className="w-3 h-3" /> {teamMembers.length}/{team.team_size || 6} Members</span>
+                <span className="w-1 h-1 rounded-full bg-slate-800" />
+                <span>Est. {new Date(team.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <Button asChild variant="default" className="w-full sm:w-auto">
+              <Button asChild variant="ghost" className="w-full sm:w-auto border border-slate-700 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500 hover:text-cyan-400">
                 <Link href="/team-chat">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Team Chat
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="w-full sm:w-auto">
+              <Button asChild variant="ghost" className="w-full sm:w-auto border border-slate-700 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500 hover:text-cyan-400">
                 <Link href="/teams">Back to Teams</Link>
               </Button>
             </div>
@@ -532,7 +541,10 @@ export default function ManageTeamPage() {
                   </CardTitle>
                   <Button
                     onClick={() => setEditing(!editing)}
-                    variant={editing ? "outline" : "default"}
+                    variant="ghost"
+                    className={`border transition-all ${editing 
+                      ? "border-slate-800 text-slate-500 hover:bg-slate-800/50" 
+                      : "border-slate-700 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500 hover:text-cyan-400"}`}
                   >
                     {editing ? 'Cancel' : 'Edit'}
                   </Button>
@@ -542,7 +554,7 @@ export default function ManageTeamPage() {
                 {editing ? (
                   <>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Team Name</label>
+                      <label className="block text-sm font-medium mb-2 text-slate-300">Team Name</label>
                       <Input
                         value={formData.name}
                         onChange={(e) => {
@@ -551,77 +563,124 @@ export default function ManageTeamPage() {
                         }}
                         placeholder="Enter team name"
                         maxLength={25}
+                        className="bg-slate-900/50 border-slate-700 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus-visible:ring-cyan-500 transition-all text-slate-200"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         Choose your team name wisely and respectfully (max 25 characters). Inappropriate or offensive names will be rejected. Team names must be in English.
                       </p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Team Avatar</label>
-                      <div className="flex items-center gap-4">
-                        {(avatarPreview || team?.team_avatar) ? (
-                          <div className="w-16 h-16 rounded-full overflow-hidden border">
-                            <img src={avatarPreview || getTeamAvatarUrl(team.team_avatar) || ''} alt="Team Avatar" className="w-full h-full object-cover" />
+                      <label className="block text-sm font-medium mb-3 text-slate-300">Team Avatar</label>
+                      <div className="flex items-center gap-6">
+                        <div className="relative group">
+                          {/* Avatar Container */}
+                          <div className={`w-24 h-24 rounded-lg overflow-hidden border-2 transition-all duration-300 bg-slate-900 flex items-center justify-center ${
+                            isTeamInActiveTournament 
+                              ? 'border-orange-500/30' 
+                              : 'border-slate-700 group-hover:border-cyan-500 shadow-lg group-hover:shadow-cyan-500/20'
+                          }`}>
+                            {(avatarPreview || team?.team_avatar) ? (
+                              <img 
+                                src={avatarPreview || getTeamAvatarUrl(team.team_avatar) || ''} 
+                                alt="Team Avatar" 
+                                className="w-full h-full object-cover" 
+                              />
+                            ) : (
+                              <Shield className="w-10 h-10 text-slate-700 group-hover:text-slate-500 transition-colors" />
+                            )}
+                            
+                            {/* Hover Overlay */}
+                            {!isTeamInActiveTournament && (
+                              <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                <div className="flex flex-col items-center gap-1">
+                                  <Pencil className="w-6 h-6 text-cyan-400" />
+                                  <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Change</span>
+                                </div>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleFileUpload}
+                                  disabled={updatingAvatar}
+                                  className="hidden"
+                                />
+                              </label>
+                            )}
                           </div>
-                        ) : (
-                          <div className="w-16 h-16 rounded-full overflow-hidden border bg-zinc-800 flex items-center justify-center">
-                            <Shield className="w-8 h-8 text-zinc-600" />
-                          </div>
-                        )}
-                        <div>
+
+                          {/* Locked Status Indicator */}
+                          {isTeamInActiveTournament && (
+                            <div className="absolute -bottom-2 -right-2 bg-orange-500 rounded-full p-1 border-2 border-slate-950">
+                              <Trophy className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1">
                           {isTeamInActiveTournament ? (
-                            <div className="space-y-2">
-                              <p className="text-sm font-semibold text-orange-500 flex items-center gap-2">
-                                <Trophy className="w-4 h-4" />
+                            <div className="p-3 rounded border border-orange-500/20 bg-orange-500/5">
+                              <p className="text-xs font-bold text-orange-400 uppercase tracking-tight flex items-center gap-2">
+                                <Trophy className="w-3 h-3" />
                                 Locked during tournament
                               </p>
-                              <p className="text-xs text-muted-foreground">
-                                Team logo cannot be changed while participating in an ongoing tournament.
+                              <p className="text-[10px] text-slate-500 mt-1">
+                                Logo changes are disabled during active competition.
                               </p>
                             </div>
                           ) : (
-                            <>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileUpload}
-                                disabled={updatingAvatar}
-                                className="max-w-xs cursor-pointer"
-                              />
-                              <p className="text-xs text-muted-foreground mt-2">
-                                Select a team logo (Max 2MB). Upload happens when saving team info. Logos are checked for inappropriate content and will be rejected if they violate our guidelines.
+                            <div className="space-y-1">
+                              <p className="text-xs text-slate-400 font-medium">Click emblem to upload new insignia</p>
+                              <p className="text-[10px] text-slate-600 uppercase tracking-widest leading-relaxed">
+                                PNG, JPG (Max 2MB)
                               </p>
-                            </>
+                              {pendingAvatarFile && (
+                                <p className="text-[10px] text-emerald-400 font-bold uppercase animate-pulse">
+                                  Pending: {pendingAvatarFile.name}
+                                </p>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Looking For</label>
-                      <div className="flex flex-wrap gap-2">
+                      <label className="block text-sm font-medium mb-3 text-slate-300">Looking For</label>
+                      <div className="flex flex-wrap gap-3">
                         {ROLES.map(role => (
-                          <Button
+                          <button
                             key={role}
                             type="button"
-                            variant={formData.open_positions.includes(role) ? "default" : "outline"}
-                            size="sm"
                             onClick={() => handleRoleToggle(role)}
+                            className={`group relative flex flex-col items-center justify-center w-14 h-14 rounded-md border transition-all duration-200 ${
+                              formData.open_positions.includes(role)
+                                ? 'bg-cyan-500/10 border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.2)]'
+                                : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'
+                            }`}
+                            title={role}
                           >
-                            {role}
-                          </Button>
+                            <div className={`transition-all duration-200 ${
+                              formData.open_positions.includes(role) 
+                                ? 'text-cyan-400 scale-110' 
+                                : 'text-slate-500 group-hover:text-slate-300'
+                            }`}>
+                              <RoleIcon role={role} size={24} />
+                            </div>
+                            {formData.open_positions.includes(role) && (
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-500 rounded-full animate-pulse" />
+                            )}
+                          </button>
                         ))}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2">Recruiting Status</label>
+                        <label className="block text-sm font-medium mb-2 text-slate-300">Recruiting Status</label>
                         <select
                           value={formData.recruiting_status}
                           onChange={(e) => setFormData(prev => ({ ...prev, recruiting_status: e.target.value as any }))}
-                          className="w-full p-2 border rounded-md bg-background"
+                          className="w-full p-2 border rounded-md bg-slate-900/50 border-slate-700 text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all outline-none"
                         >
                           <option value="Open">Open</option>
                           <option value="Closed">Closed</option>
@@ -630,18 +689,18 @@ export default function ManageTeamPage() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium mb-2">Team Size</label>
+                        <label className="block text-sm font-medium mb-2 text-slate-300">Team Size</label>
                         <select
                           value={formData.team_size}
                           onChange={(e) => setFormData(prev => ({ ...prev, team_size: parseInt(e.target.value) }))}
-                          className="w-full p-2 border rounded-md bg-background"
+                          className="w-full p-2 border rounded-md bg-slate-900/50 border-slate-700 text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all outline-none"
                           disabled={teamMembers.length > 5}
                         >
                           <option value={5}>5 (No Sub)</option>
                           <option value={6}>6 (With Sub)</option>
                         </select>
                         {teamMembers.length > 5 && (
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-slate-500 mt-1">
                             Cannot reduce size while you have {teamMembers.length} members
                           </p>
                         )}
@@ -651,11 +710,11 @@ export default function ManageTeamPage() {
                     {/* Substitute Selection - Only show if team has 6 members */}
                     {teamMembers.length === 6 && (
                       <div>
-                        <label className="block text-sm font-medium mb-2">Substitute Player</label>
+                        <label className="block text-sm font-medium mb-2 text-slate-300">Substitute Player</label>
                         <select
                           value={formData.substitute_id || ''}
                           onChange={(e) => setFormData(prev => ({ ...prev, substitute_id: e.target.value || null }))}
-                          className="w-full p-2 border rounded-md bg-background"
+                          className="w-full p-2 border rounded-md bg-slate-900/50 border-slate-700 text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all outline-none"
                         >
                           <option value="">No Substitute</option>
                           {teamMembers
@@ -666,13 +725,16 @@ export default function ManageTeamPage() {
                               </option>
                             ))}
                         </select>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                           Select which player will be the substitute
                         </p>
                       </div>
                     )}
 
-                    <Button onClick={handleSaveTeam} className="w-full">
+                    <Button 
+                      onClick={handleSaveTeam} 
+                      className="w-full bg-[#C89B3C] hover:bg-[#A67E22] text-zinc-900 font-bold shadow-[0_0_15px_rgba(200,155,60,0.2)] uppercase tracking-wider"
+                    >
                       Save Changes
                     </Button>
                   </>
@@ -683,23 +745,37 @@ export default function ManageTeamPage() {
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium mb-2">Looking For:</p>
+                      <p className="text-sm font-medium mb-2 text-slate-300">Looking For:</p>
                       <div className="flex flex-wrap gap-2">
                         {team.open_positions?.length > 0 ? (
                           team.open_positions.map((role: string) => (
-                            <Badge key={role} variant="secondary">{role}</Badge>
+                            <Badge 
+                              key={role} 
+                              variant="secondary"
+                              className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
+                            >
+                              {role}
+                            </Badge>
                           ))
                         ) : (
-                          <Badge variant="outline">Not recruiting</Badge>
+                          <Badge 
+                            variant="outline"
+                            className="text-slate-500 border-slate-800 bg-slate-900/50 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
+                          >
+                            Not recruiting
+                          </Badge>
                         )}
                       </div>
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium">Status:</p>
+                      <p className="text-sm font-medium text-slate-300 mb-2">Status:</p>
                       <Badge
-                        variant={team.recruiting_status === 'Open' ? 'default' :
-                          team.recruiting_status === 'Closed' ? 'secondary' : 'outline'}
+                        className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${
+                          team.recruiting_status === 'Open' 
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                            : 'bg-slate-900/50 text-slate-500 border border-slate-800'
+                        }`}
                       >
                         {team.recruiting_status}
                       </Badge>
@@ -720,41 +796,56 @@ export default function ManageTeamPage() {
               <CardContent>
                 <div className="space-y-3">
                   {teamMembers.map(member => (
-                    <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={member.id} className="flex items-center justify-between p-3 border border-slate-800 rounded-lg bg-slate-900/30 hover:bg-slate-900/50 transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
-                        <Image
-                          src={getRankImage(member.tier)}
-                          alt={member.tier}
-                          width={40}
-                          height={40}
-                          className="object-contain shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
+                        <div className="relative shrink-0">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 flex items-center justify-center group-hover:border-cyan-500/50 transition-colors">
+                            <img
+                              src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${member.profile_icon_id || 29}.png`}
+                              alt="Summoner Icon"
+                              className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                            />
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded bg-slate-950 border border-slate-800 p-0.5 shadow-lg">
+                            <Image
+                              src={getRankImage(member.tier)}
+                              alt={member.tier}
+                              width={20}
+                              height={20}
+                              className="object-contain"
+                            />
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1 ml-1">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium truncate" title={member.summoner_name}>
+                            <p className="font-medium text-slate-200 truncate" title={member.summoner_name}>
                               {member.summoner_name.split('#')[0]}
                             </p>
                             {member.id === team.captain_id && (
-                              <Badge className="bg-yellow-600">
+                              <Badge className="border border-yellow-500 bg-yellow-500/10 text-yellow-400 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-sm">
                                 <Crown className="w-3 h-3 mr-1" />
                                 Captain
                               </Badge>
                             )}
                             {member.is_substitute && (
-                              <Badge className="bg-blue-600">
+                              <Badge className="border border-cyan-500 bg-cyan-500/10 text-cyan-400 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-sm">
                                 Sub
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {member.main_role} • {member.tier}
-                          </p>
+                          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium uppercase tracking-tight">
+                            <RoleIcon role={member.main_role} size={14} className="brightness-75" />
+                            <span>{member.main_role}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-800" />
+                            <span className="text-cyan-600/80">{member.tier}</span>
+                          </div>
                         </div>
                       </div>
                       {member.id !== team.captain_id && (
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="ghost"
+                          className="border border-slate-800 text-slate-500 hover:bg-red-900/20 hover:border-red-500 hover:text-red-400 transition-all"
                           onClick={() => setMemberToRemove({ id: member.id, name: member.summoner_name })}
                         >
                           <UserMinus className="w-4 h-4" />
@@ -828,14 +919,14 @@ export default function ManageTeamPage() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button asChild className="w-full">
+                <Button asChild className="w-full bg-[#C89B3C] hover:bg-[#A67E22] text-zinc-900 font-bold shadow-[0_0_15px_rgba(200,155,60,0.2)] uppercase tracking-wider">
                   <Link href="/players">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Find Players
                   </Link>
                 </Button>
 
-                <Button asChild variant="outline" className="w-full">
+                <Button asChild variant="ghost" className="w-full border border-slate-700 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500 hover:text-cyan-400">
                   <Link href="/teams">
                     <Users className="w-4 h-4 mr-2" />
                     Browse Teams
@@ -844,8 +935,8 @@ export default function ManageTeamPage() {
 
                 <Button
                   onClick={handleDeleteTeam}
-                  variant="destructive"
-                  className="w-full"
+                  variant="ghost"
+                  className="w-full border border-slate-800 text-slate-500 hover:bg-red-900/20 hover:border-red-500 hover:text-red-400 transition-all duration-300"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Team
@@ -853,34 +944,12 @@ export default function ManageTeamPage() {
 
                 <Button
                   onClick={() => setShowCaptainTransfer(true)}
-                  variant="outline"
-                  className="w-full"
+                  variant="ghost"
+                  className="w-full border border-slate-700 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500 hover:text-cyan-400"
                 >
                   <Crown className="w-4 h-4 mr-2" />
                   Transfer Captain
                 </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle>Team Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Team Size</span>
-                  <span className="font-medium">{teamMembers.length}/{team.team_size || 6}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Open Slots</span>
-                  <span className="font-medium">{(team.team_size || 6) - teamMembers.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created</span>
-                  <span className="font-medium">
-                    {new Date(team.created_at).toLocaleDateString()}
-                  </span>
-                </div>
               </CardContent>
             </Card>
 

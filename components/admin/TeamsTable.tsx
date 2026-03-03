@@ -599,7 +599,7 @@ export default function TeamsTable() {
                     <div className="flex items-center gap-2">
                       <Avatar className="w-6 h-6">
                         {team.captain_avatar ? (
-                          <AvatarImage src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${team.captain_avatar}.png`} />
+                          <AvatarImage src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${team.captain_avatar}.png`} />
                         ) : null}
                         <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 text-xs">
                           {team.captain_name?.charAt(0).toUpperCase()}

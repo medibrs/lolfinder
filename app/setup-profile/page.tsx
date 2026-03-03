@@ -299,7 +299,7 @@ export default function SetupProfilePage() {
                             <div className="text-center">
                               <p className="text-[8px] text-slate-500 font-bold uppercase mb-2">TARGET ICON</p>
                               <img
-                                src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${verificationRequired.expectedIconId}.png`}
+                                src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${verificationRequired.expectedIconId}.png`}
                                 alt="Expected"
                                 className="w-16 h-16 rounded-xl border-2 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
                               />
@@ -307,7 +307,7 @@ export default function SetupProfilePage() {
                             <div className="text-center opacity-30">
                               <p className="text-[8px] text-slate-500 font-bold uppercase mb-2">CURRENT</p>
                               <img
-                                src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${verificationRequired.currentIconId}.png`}
+                                src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${verificationRequired.currentIconId}.png`}
                                 alt="Current"
                                 className="w-12 h-12 rounded-xl border border-slate-700"
                               />
@@ -379,7 +379,7 @@ export default function SetupProfilePage() {
                       <div className="relative">
                         <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#c9aa71]/30 p-1 bg-[#0c121d]/60">
                           <img
-                            src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${profileIconId || 29}.png`}
+                            src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${profileIconId || 29}.png`}
                             alt="Avatar"
                             className="w-full h-full object-cover rounded-xl opacity-60 group-hover:opacity-100 transition-opacity"
                           />

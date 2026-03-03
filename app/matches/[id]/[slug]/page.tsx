@@ -19,7 +19,7 @@ const supabase = createClient(
 function getTeamAvatarUrl(avatarId?: number | string | null): string | null {
   if (!avatarId) return null
   if (typeof avatarId === 'string' && avatarId.startsWith('http')) return avatarId
-  return `https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${avatarId}.png`
+  return `https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${avatarId}.png`
 }
 
 async function getMatch(id: string, slug?: string) {

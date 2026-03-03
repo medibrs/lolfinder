@@ -15,7 +15,7 @@ import { User, Target } from 'lucide-react'
 import { getCached, setCache } from '@/lib/cache'
 
 // DDragon version is stable - avoid async fetch
-const DDRAGON_VERSION = '15.23.1'
+const DDRAGON_VERSION = '16.4.1'
 import {
   Tooltip,
   TooltipContent,

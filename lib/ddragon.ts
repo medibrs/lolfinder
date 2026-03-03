@@ -44,7 +44,7 @@ export async function getLatestDDragonVersion(): Promise<string> {
 
     // Final fallback to a hardcoded recent version
 
-    return '15.23.1';
+    return '16.4.1';
   }
 }
 
