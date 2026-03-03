@@ -68,6 +68,24 @@ export async function PUT(
     // Validate input
     const validatedData = updateTeamSchema.parse(body);
 
+    // --- Tournament Lock: prevent name changes if team has an accepted registration ---
+    if (validatedData.name) {
+      const { data: acceptedReg } = await supabase
+        .from('tournament_registrations')
+        .select('id')
+        .eq('team_id', id)
+        .eq('status', 'Accepted')
+        .limit(1)
+        .maybeSingle();
+
+      if (acceptedReg) {
+        return NextResponse.json(
+          { error: 'Team name cannot be changed while registered in a tournament.' },
+          { status: 403 }
+        );
+      }
+    }
+
     // --- Content Safety: check team name ---
     if (validatedData.name) {
       try {

@@ -36,6 +36,22 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Only team captains can update avatar' }, { status: 403 })
     }
 
+    // --- Tournament Lock: prevent avatar changes if team has an accepted registration ---
+    const { data: acceptedReg } = await supabase
+      .from('tournament_registrations')
+      .select('id')
+      .eq('team_id', teamId)
+      .eq('status', 'Accepted')
+      .limit(1)
+      .maybeSingle()
+
+    if (acceptedReg) {
+      return NextResponse.json(
+        { error: 'Team avatar cannot be changed while registered in a tournament.' },
+        { status: 403 }
+      )
+    }
+
     // Check if avatar is already taken by another team
     const { data: existingTeam, error: avatarCheckError } = await supabase
       .from('teams')
