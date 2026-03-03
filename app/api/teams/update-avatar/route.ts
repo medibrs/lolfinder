@@ -41,7 +41,7 @@ export async function PUT(request: Request) {
       .from('tournament_registrations')
       .select('id')
       .eq('team_id', teamId)
-      .eq('status', 'Accepted')
+      .eq('status', 'approved')
       .limit(1)
       .maybeSingle()
 
