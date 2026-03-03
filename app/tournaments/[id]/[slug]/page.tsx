@@ -285,21 +285,27 @@ export default async function TournamentEventPage({ params }: Props) {
         {/* Bottom gradient fade into page background */}
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background via-background/80 to-transparent" />
 
+        {/* Status banner — flush top-right */}
+        <div className="absolute top-0 right-0 z-20">
+          <div className={cn(
+            "px-4 py-2 flex items-center gap-2 rounded-bl-lg font-bold text-sm uppercase tracking-wider shadow-lg",
+            tournamentStatus.status === 'upcoming' && "bg-orange-500 text-white",
+            tournamentStatus.status === 'live' && "bg-green-500 text-white animate-pulse",
+            tournamentStatus.status === 'completed' && "bg-zinc-600 text-zinc-200",
+          )}>
+            {tournamentStatus.status === 'upcoming' && <UpcomingIcon size={18} />}
+            {tournamentStatus.status === 'live' && <LiveIcon size={18} />}
+            {tournamentStatus.status === 'completed' && <EndedIcon size={18} />}
+            {tournamentStatus.text}
+          </div>
+        </div>
+
         {/* Hero content — pinned to bottom */}
         <div className="absolute inset-x-0 bottom-0 z-10">
           <div className="max-w-7xl mx-auto px-4 pb-6">
-            {/* Status + number */}
+            {/* Tournament number */}
             <div className="flex items-center gap-3 mb-3">
-              {tournamentStatus.status === 'upcoming' && (
-                <UpcomingIcon size={32} className="drop-shadow-lg" />
-              )}
-              {tournamentStatus.status === 'live' && (
-                <LiveIcon size={32} className="drop-shadow-lg animate-pulse" />
-              )}
-              {tournamentStatus.status === 'completed' && (
-                <EndedIcon size={32} className="opacity-80" />
-              )}
-              <span className="text-zinc-500 text-sm font-mono ml-2">#{tournament.tournament_number}</span>
+              <span className="text-zinc-500 text-sm font-mono">#{tournament.tournament_number}</span>
             </div>
             {/* Title */}
             {!(tournament.name === "1337 Leet E-Sports LoL Tournament" && (!tournament.banner_image || tournament.banner_image === '/leet_lol_header.jpg')) && (

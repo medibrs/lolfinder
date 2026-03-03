@@ -55,7 +55,7 @@ export function SwissMatchColumn({
   return (
     <div className={cn(
       "w-full flex flex-col justify-evenly",
-      isMobile ? "gap-[8px]" : "gap-[32px]",
+      isMobile ? "gap-[6px]" : "gap-[16px] xl:gap-[24px] 2xl:gap-[32px]",
       className
     )}>
       {rounds.map((round, index) => {

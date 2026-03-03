@@ -175,9 +175,9 @@ export function TournamentRegistrationBtn({ tournamentId }: TournamentRegistrati
                 backgroundImage: `url(${loading ? '/tournament_assets/regester_button_pressed.png' : '/tournament_assets/regester_button.png'})`,
                 backgroundSize: '100% 100%'
             }}
-            className="group/btn relative h-12 w-48 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-110"
+            className="group/btn relative h-10 w-36 md:h-12 md:w-48 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-110"
         >
-            <span className="text-slate-950 font-bold text-[10px] tracking-[0.15em] uppercase drop-shadow-sm mt-0.5 group-active/btn:mt-1 transition-all">
+            <span className="text-slate-950 font-bold text-[9px] md:text-[10px] tracking-[0.15em] uppercase drop-shadow-sm mt-0.5 group-active/btn:mt-1 transition-all">
                 {loading ? 'TRANSMITTING' : 'Register Squad'}
             </span>
         </button>

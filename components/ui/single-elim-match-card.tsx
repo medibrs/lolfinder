@@ -39,7 +39,14 @@ export function SingleElimMatchCard({
     const isTeam1Winner = winner === 'team1'
     const isTeam2Winner = winner === 'team2'
 
+    const isTbd = (t: SingleElimMatchCardTeam | null) =>
+        !t || t.name === 'TBD' || t.id.startsWith('tbd') || t.id.startsWith('ph')
+
+    const bothTbd = isTbd(team1) && isTbd(team2)
+
     const handleTeamClick = (team: SingleElimMatchCardTeam | null) => {
+        if (bothTbd) return
+
         if (matchId) {
             router.push(getMatchPath({
                 id: matchId,
@@ -56,7 +63,7 @@ export function SingleElimMatchCard({
     }
 
     const handleCardClick = () => {
-        if (!matchId) return
+        if (!matchId || bothTbd) return
         router.push(getMatchPath({
             id: matchId,
             team1Name: team1?.name,
@@ -70,7 +77,7 @@ export function SingleElimMatchCard({
             "relative transition-all duration-200 flex flex-col rounded-md w-full bg-zinc-900 border mx-auto",
             "w-[160px] md:w-[200px]", // Wide enough for single elim vertical list
             status === 'live' ? "border-red-500/70 shadow-[0_0_10px_rgba(239,68,68,0.4)]" : "border-zinc-800/80",
-            matchId && "cursor-pointer hover:border-cyan-500/60",
+            matchId && !bothTbd && "cursor-pointer hover:border-cyan-500/60",
             className
         )}
             onClick={handleCardClick}

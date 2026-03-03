@@ -56,7 +56,7 @@ export function SwissMatchContainer({
     )}>
       <div className={cn(
         "flex items-stretch",
-        isMobile ? "gap-0.5 p-1" : "gap-1 p-4"
+        isMobile ? "gap-0.5 p-0.5" : "gap-0.5 p-2 md:gap-1 md:p-3 xl:gap-1 xl:p-4"
       )}>
         {columns.map((column, index) => (
           <SwissMatchColumn

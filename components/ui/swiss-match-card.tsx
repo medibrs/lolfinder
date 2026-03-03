@@ -56,7 +56,14 @@ export function SwissMatchCard({
   const isTeam1Winner = winner === 'team1'
   const isTeam2Winner = winner === 'team2'
 
+  const isTbd = (t: SwissMatchCardTeam | null) =>
+    !t || t.name === 'TBD' || t.id.startsWith('tbd') || t.id.startsWith('ph')
+
+  const bothTbd = isTbd(team1) && isTbd(team2)
+
   const handleTeamClick = (team: SwissMatchCardTeam | null) => {
+    if (bothTbd) return
+
     if (matchId) {
       router.push(getMatchPath({
         id: matchId,
@@ -67,13 +74,13 @@ export function SwissMatchCard({
       return
     }
 
-    if (team) {
+    if (team && !isTbd(team)) {
       router.push(`/teams/${team.id}`)
     }
   }
 
   const handleCardClick = () => {
-    if (!matchId) return
+    if (!matchId || bothTbd) return
     router.push(getMatchPath({
       id: matchId,
       team1Name: team1?.name,
@@ -93,24 +100,24 @@ export function SwissMatchCard({
     }
   }
 
-  // Remove VS text vertically when we're on mobile and it hasn't been explicitly requested
-  const shouldHideVs = isMobile || hideVs
+  // Only hide VS when explicitly requested via prop
+  const shouldHideVs = hideVs
 
   return (
     <div className={cn(
       "relative transition-all duration-300 flex items-center justify-center rounded-lg mx-auto w-full",
       // Glassmorphic Hextech treatment
       "bg-slate-900/60 backdrop-blur-md border border-slate-700/50 shadow-xl",
-      // Flex constraints: start small on iPads, grow gradually matching grid column availability
-      isMobile ? "max-w-[52px]" : "max-w-[124px] xl:max-w-[164px] 2xl:max-w-[184px]",
+      // Flex constraints: fill available space, scale up with screen
+      isMobile ? "max-w-[72px]" : "max-w-[160px] xl:max-w-[180px] 2xl:max-w-[200px]",
       // States
       status === 'done' && winner && "border-emerald-500/40 shadow-[inset_0_0_12px_rgba(16,185,129,0.05),0_0_15px_rgba(16,185,129,0.1)]",
       status === 'live' && "border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.2)] animate-pulse",
       // Shrink outer margin/padding on intermediate resolutions
-      shouldHideVs
-        ? (isMobile ? "gap-[2px] px-[0.5] py-[1px]" : "gap-2 px-1 py-1 xl:gap-2 xl:px-2")
-        : "gap-2 px-1 py-1 xl:gap-4 xl:px-2 xl:py-2",
-      matchId && "cursor-pointer hover:border-cyan-400/50",
+      isMobile
+        ? "gap-[2px] px-1.5 py-1"
+        : "gap-2 px-2 py-1.5 xl:gap-3 xl:px-3 xl:py-2",
+      matchId && !bothTbd && "cursor-pointer hover:border-cyan-400/50",
       className
     )}
       onClick={handleCardClick}
@@ -129,17 +136,20 @@ export function SwissMatchCard({
         >
           <TeamAvatar
             team={team1}
-            size={isMobile ? "md" : "lg"}
+            size={isMobile ? "sm" : "lg"}
             showTooltip={true}
             isWinner={isTeam1Winner}
           />
         </div>
       </div>
 
-      {/* VS Divider - Hidden on tablets/smaller desktops because grid columns are constrained */}
+      {/* VS Divider */}
       {!shouldHideVs && (
-        <div className="hidden xl:flex justify-center items-center">
-          <div className="font-light text-zinc-500 uppercase tracking-wider text-[10px]">
+        <div className="flex justify-center items-center">
+          <div className={cn(
+            "font-light text-zinc-500 uppercase tracking-wider",
+            isMobile ? "text-[7px]" : "text-[10px]"
+          )}>
             vs
           </div>
         </div>
@@ -159,7 +169,7 @@ export function SwissMatchCard({
         >
           <TeamAvatar
             team={team2}
-            size={isMobile ? "md" : "lg"}
+            size={isMobile ? "sm" : "lg"}
             showTooltip={true}
             isWinner={isTeam2Winner}
           />
