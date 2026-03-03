@@ -3,25 +3,15 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { getRankImage } from '@/lib/rank-utils'
 import { getProfileIconUrl } from '@/lib/ddragon'
 import RoleIcon from '@/components/RoleIcon'
-import { Shield, Trophy, Users, Calendar, UserPlus, Edit, Gamepad2, Crown } from 'lucide-react'
+import { Shield, Trophy, Users, Calendar, UserPlus, Edit, Gamepad2, Crown, ChevronLeft, Swords, Target } from 'lucide-react'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
@@ -234,14 +224,80 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
 
   if (loading) {
     return (
-      <main className="min-h-screen pt-24 pb-12 bg-gradient-to-b from-background to-secondary/20">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-700 rounded w-32 mb-8"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 h-96 bg-gray-700 rounded-xl"></div>
-              <div className="h-96 bg-gray-700 rounded-xl"></div>
+      <main className="min-h-screen bg-background">
+        {/* Banner skeleton */}
+        <div className="relative w-full h-[340px] sm:h-[380px] lg:h-[420px] bg-gradient-to-b from-secondary to-background">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+          <div className="flex flex-col items-center justify-end h-full pb-16 px-4">
+            {/* Crest */}
+            <Skeleton className="w-28 h-28 lg:w-32 lg:h-32 rounded-full bg-slate-800 mb-5" />
+            {/* Title */}
+            <Skeleton className="h-10 w-56 sm:w-72 bg-slate-800 rounded mb-3" />
+            {/* Captain subtitle */}
+            <Skeleton className="h-4 w-40 bg-slate-800/60 rounded" />
+          </div>
+        </div>
+
+        {/* Stats strip skeleton */}
+        <div className="max-w-6xl mx-auto px-4 -mt-6 mb-8">
+          <div className="flex items-center justify-center gap-0 bg-slate-950/60 border border-slate-800/40 rounded-lg overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-3.5 border-r border-slate-800/40">
+              <Skeleton className="w-12 h-12 bg-slate-800 rounded" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-2 w-10 bg-slate-800 rounded" />
+                <Skeleton className="h-4 w-16 bg-slate-800 rounded" />
+              </div>
             </div>
+            <div className="flex items-center gap-3 px-5 py-3.5 border-r border-slate-800/40">
+              <div className="flex gap-1.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="w-9 h-9 bg-slate-800 rounded-md" />
+                ))}
+              </div>
+              <div className="space-y-1.5">
+                <Skeleton className="h-2 w-10 bg-slate-800 rounded" />
+                <Skeleton className="h-4 w-10 bg-slate-800 rounded" />
+              </div>
+            </div>
+            <div className="flex items-center gap-3 px-5 py-3.5 border-r border-slate-800/40">
+              <Skeleton className="w-2 h-2 bg-slate-800 rounded-full" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-2 w-10 bg-slate-800 rounded" />
+                <Skeleton className="h-4 w-20 bg-slate-800 rounded" />
+              </div>
+            </div>
+            <div className="flex items-center gap-3 px-5 py-3.5">
+              <Skeleton className="w-4 h-4 bg-slate-800 rounded" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-2 w-12 bg-slate-800 rounded" />
+                <Skeleton className="h-4 w-16 bg-slate-800 rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Roster grid skeleton */}
+        <div className="max-w-6xl mx-auto px-4 mb-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-[1px] flex-1 bg-slate-800" />
+            <Skeleton className="h-3 w-28 bg-slate-800 rounded" />
+            <div className="h-[1px] flex-1 bg-slate-800" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-slate-950/70 border border-slate-800/60 rounded-lg p-4 min-h-[200px]">
+                <div className="flex items-center gap-3 mb-3">
+                  <Skeleton className="w-12 h-12 bg-slate-800 rounded-md" />
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-4 w-24 bg-slate-800 rounded" />
+                    <Skeleton className="h-2.5 w-14 bg-slate-800/60 rounded" />
+                  </div>
+                </div>
+                <Skeleton className="h-3 w-20 bg-slate-800/60 rounded mb-3" />
+                <Skeleton className="h-3 w-28 bg-slate-800/60 rounded mb-2" />
+                <Skeleton className="h-1 w-full bg-slate-800 rounded-full mt-4" />
+              </div>
+            ))}
           </div>
         </div>
       </main>
@@ -250,10 +306,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
 
   if (!team) {
     return (
-      <main className="min-h-screen pt-24 pb-12 bg-gradient-to-b from-background to-secondary/20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-2xl font-bold mb-4">Team not found</h1>
-          <Button asChild>
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-16 w-16 text-slate-800 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-slate-300 mb-2">Team not found</h1>
+          <p className="text-slate-600 mb-6 text-sm">This team may have been disbanded or doesn't exist.</p>
+          <Button asChild variant="ghost" className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/5 text-xs uppercase tracking-widest font-bold">
             <Link href="/teams">Back to Teams</Link>
           </Button>
         </div>
@@ -276,500 +334,485 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
     : 0
 
   return (
-    <main className="min-h-screen pt-24 pb-12 bg-gradient-to-b from-background to-secondary/20">
-      <div className="max-w-7xl mx-auto px-4">
-        <Button asChild variant="ghost" className="mb-6 hover:bg-transparent hover:text-primary">
-          <Link href="/teams" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Back to Teams
-          </Link>
-        </Button>
+    <main className="min-h-screen bg-background">
+      {/* ═══════════════ 1. BATTLE STANDARD — Hero Banner ═══════════════ */}
+      <div className="relative w-full h-[340px] sm:h-[380px] lg:h-[420px] overflow-hidden">
+        {/* Background — Dark moody Hextech forge glow */}
+        <div className="absolute inset-0 bg-gradient-to-b from-secondary via-card to-background" />
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        {/* Bottom fade to page bg */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+        {/* Decorative top border */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
 
-        {/* Profile Setup Banner */}
-        {currentUserId && !hasPlayerProfile && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
+        {/* Back Button */}
+        <div className="absolute top-6 left-6 z-10">
+          <Button asChild variant="ghost" className="text-slate-500 hover:text-cyan-400 hover:bg-transparent text-xs uppercase tracking-widest font-bold gap-1.5 px-0">
+            <Link href="/teams">
+              <ChevronLeft className="h-4 w-4" />
+              Teams
+            </Link>
+          </Button>
+        </div>
+
+        {/* Captain Actions float top-right */}
+        {isCaptain && (
+          <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
+            <Button
+              onClick={handleEditTeam}
+              variant="ghost"
+              className="text-xs uppercase tracking-widest text-slate-500 hover:text-amber-400 hover:bg-amber-400/5 font-bold gap-1.5"
+            >
+              <Edit className="h-3.5 w-3.5" />
+              Edit
+            </Button>
+            <Button
+              onClick={handleRegisterForTournament}
+              variant="ghost"
+              className="text-xs uppercase tracking-widest text-slate-500 hover:text-cyan-400 hover:bg-cyan-400/5 font-bold gap-1.5"
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              Tournaments
+            </Button>
+          </div>
+        )}
+
+        {/* Banner Content */}
+        <div className="relative z-[5] h-full flex flex-col items-center justify-end pb-16 sm:pb-20 px-4">
+          {/* Team Crest — large emblem overlapping banner bottom */}
+          <div className="relative mb-5">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full overflow-hidden border-2 border-amber-500/40 shadow-[0_0_40px_rgba(202,138,4,0.15),0_0_80px_rgba(8,145,178,0.08)] bg-[#0a1628]">
+              {team.team_avatar ? (
+                <Image
+                  src={getTeamAvatarUrl(team.team_avatar)!}
+                  alt="Team Avatar"
+                  width={128}
+                  height={128}
+                  className="w-full h-full object-cover"
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
+                  <Shield className="h-12 w-12 sm:h-14 sm:w-14 text-amber-500/60" />
+                </div>
+              )}
+            </div>
+            {/* Decorative ring */}
+            <div className="absolute -inset-1 rounded-full border border-amber-500/10 pointer-events-none" />
+            <div className="absolute -inset-2.5 rounded-full border border-cyan-500/5 pointer-events-none" />
+          </div>
+
+          {/* Team Name — Leaderboard-style gold header */}
+          <div className="text-center mb-1">
+            <div className="flex items-center justify-center gap-4 mb-2">
+              <div className="h-[1px] flex-1 max-w-[200px] bg-gradient-to-r from-transparent via-[#c9aa71]/50 to-transparent"></div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-beaufort font-black uppercase tracking-[0.5em] text-[#c9aa71] drop-shadow-2xl">
+                {team.name}
+              </h1>
+              <div className="h-[1px] flex-1 max-w-[200px] bg-gradient-to-r from-transparent via-[#c9aa71]/50 to-transparent"></div>
+            </div>
+            <div className="flex items-center justify-center gap-1.5 opacity-60">
+              <div className="w-1 h-1 rotate-45 bg-[#c9aa71]"></div>
+              <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400">
+                Captain: {captain?.summoner_name || captain?.riot_games_name || 'Unknown'}
+              </span>
+              <div className="w-1 h-1 rotate-45 bg-[#c9aa71]"></div>
+            </div>
+          </div>
+
+          {isCaptain && (
+            <Badge className="mt-3 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-sm text-[10px] uppercase tracking-widest font-bold px-3 py-0.5 hover:bg-amber-500/15">
+              Your Team
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Profile Setup Banner */}
+      {currentUserId && !hasPlayerProfile && (
+        <div className="max-w-6xl mx-auto px-4 -mt-4 mb-6 relative z-10">
+          <div className="p-4 bg-cyan-950/30 border border-cyan-500/20 rounded-lg backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                <div className="w-9 h-9 rounded bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                  <UserPlus className="h-4 w-4 text-cyan-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900">Complete Your Player Profile</h3>
-                  <p className="text-sm text-blue-700">Create your profile to join teams and participate in tournaments</p>
+                  <h3 className="font-bold text-sm text-cyan-100">Complete Your Player Profile</h3>
+                  <p className="text-xs text-slate-400">Create your profile to join teams and participate in tournaments</p>
                 </div>
               </div>
-              <Button asChild className="bg-blue-600 hover:bg-blue-700">
+              <Button asChild className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider h-8 px-4 shadow-[0_0_10px_rgba(8,145,178,0.2)]">
                 <Link href="/setup-profile">Set Up Profile</Link>
               </Button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
-          {/* Main Team Info */}
-          <div className="xl:col-span-2 space-y-4 lg:space-y-6">
-            {/* Team Header Card */}
-            <Card className="bg-gradient-to-br from-card to-secondary/30 border-border overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-primary to-accent"></div>
-              <div className="p-4 sm:p-6 lg:p-8">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6 mb-6">
-                  {/* Team Avatar */}
-                  <div className="relative group flex-shrink-0 mx-auto sm:mx-0">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-4 border-border bg-gradient-to-br from-primary/10 to-accent/10">
-                      {team.team_avatar ? (
+      {/* ═══════════════ 2. WAR ROOM — Stats Strip ═══════════════ */}
+      <div className="max-w-6xl mx-auto px-4 -mt-6 relative z-10 mb-8">
+        <div className="flex flex-wrap items-center justify-center gap-x-0 sm:gap-x-0 bg-slate-950/60 backdrop-blur-md border border-slate-800/60 rounded-lg overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+          {/* Average Rank Crest */}
+          <div className="flex items-center gap-3 px-5 py-3.5 border-r border-slate-800/40">
+            <div className="relative w-10 h-10 sm:w-12 sm:h-12">
+              <Image
+                src={getRankImage(TIERS[Math.round(averageTier)] || 'Unranked')}
+                alt="Team Rank"
+                width={48}
+                height={48}
+                className="object-contain drop-shadow-[0_0_8px_rgba(202,138,4,0.3)]"
+              />
+            </div>
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-bold">Avg Rank</div>
+              <div className="text-sm font-black text-slate-200">{TIERS[Math.round(averageTier)] || 'Unranked'}</div>
+            </div>
+          </div>
+
+          {/* Member Slots — visual Hextech slots */}
+          <div className="flex items-center gap-3 px-5 py-3.5 border-r border-slate-800/40">
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: teamSize }).map((_, i) => {
+                const member = members[i]
+                return (
+                  <div
+                    key={i}
+                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md overflow-hidden border transition-all duration-300 ${
+                      member
+                        ? 'border-cyan-500/40 shadow-[0_0_8px_rgba(8,145,178,0.2)] bg-slate-900'
+                        : 'border-slate-800/60 bg-slate-900/30'
+                    }`}
+                  >
+                    {member ? (
+                      profileIconUrls[member.id] ? (
                         <Image
-                          src={getTeamAvatarUrl(team.team_avatar)!}
-                          alt="Team Avatar"
-                          width={96}
-                          height={96}
-                          className="w-full h-full object-cover"
-                          placeholder="blur"
-                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
+                          src={profileIconUrls[member.id]}
+                          alt={member.summoner_name}
+                          width={36}
+                          height={36}
+                          className="w-full h-full object-cover opacity-90"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Shield className="h-10 w-10 text-primary" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex-1 text-center sm:text-left">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{team.name}</h1>
-                      {isCaptain && (
-                        <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white w-fit mx-auto sm:mx-0">
-                          <Crown className="h-3 w-3 mr-1" />
-                          Your Team
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2">
-                      <Users className="h-4 w-4" />
-                      Captain: {captain?.summoner_name || captain?.riot_games_name || 'Unknown'}
-                    </p>
-                  </div>
-                  <div className="text-center sm:text-right">
-                    <div className="text-sm text-muted-foreground mb-1">Team Founded</div>
-                    <div className="font-semibold flex items-center justify-center sm:justify-end gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {team.created_at ? new Date(team.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-primary" />
-                    <span className="text-sm font-medium">Team Size</span>
-                    <Badge variant="secondary">{members.length}/{teamSize}</Badge>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Gamepad2 className="h-5 w-5 text-primary" />
-                    <span className="text-sm font-medium">Status</span>
-                    <Badge className={team.recruiting_status === 'Open' ? 'bg-green-500' : 'bg-gray-500'}>
-                      {team.recruiting_status === 'Open' ? 'Recruiting' : team.recruiting_status}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Needed Roles */}
-            {neededRoles.length > 0 && (
-              <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <UserPlus className="h-5 w-5 text-primary" />
-                    <h3 className="text-xl font-bold">Looking For</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {neededRoles.map((role: string) => (
-                      <div key={role} className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
-                        <RoleIcon role={role} size={20} />
-                        <span className="font-semibold text-primary">{role}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* Team Members */}
-            <Card className="bg-gradient-to-br from-card to-secondary/30 border-border">
-              <div className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg sm:text-xl font-bold">Team Roster</h3>
-                  </div>
-                  <Badge variant="outline">{members.length}/{teamSize} Members</Badge>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-                  {members.map(member => (
-                    <div key={member.id} className="bg-gradient-to-r from-secondary/20 to-background rounded-lg p-3 sm:p-4 border border-border hover:border-primary/50 transition-all">
-                      <div className="flex items-start gap-3 sm:gap-4">
-                        {/* Profile Icon with Rank Badge */}
-                        <div className="relative flex-shrink-0">
-                          <div className="relative">
-                            {member.profile_icon_id ? (
-                              <Image
-                                src={profileIconUrls[member.id] || ''}
-                                alt="Profile Icon"
-                                width={48}
-                                height={48}
-                                className="rounded-full border-2 border-border"
-                                onError={(e) => {
-                                  // Fallback to question mark if image fails to load
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  const parent = target.parentElement;
-                                  if (parent) {
-                                    const fallback = parent.querySelector('.fallback-icon');
-                                    if (fallback) {
-                                      (fallback as HTMLElement).style.display = 'flex';
-                                    }
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                                <span className="text-lg">?</span>
-                              </div>
-                            )}
-                            {/* Fallback icon */}
-                            <div className="fallback-icon w-12 h-12 bg-muted rounded-full flex items-center justify-center" style={{ display: 'none' }}>
-                              <span className="text-lg">?</span>
-                            </div>
-                            {/* Rank Badge */}
-                            <div className="absolute -bottom-1 -right-1">
-                              <Image
-                                src={getRankImage(member.tier)}
-                                alt={member.tier}
-                                width={20}
-                                height={20}
-                                className="object-contain"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-semibold text-foreground truncate">
-                              {member.summoner_name?.split('#')[0] || member.riot_games_name || 'Unknown'}
-                              {member.summoner_name?.split('#')[1] && (
-                                <span className="text-muted-foreground font-normal ml-1">#{member.summoner_name.split('#')[1]}</span>
-                              )}
-                            </h4>
-                            {member.id === team.captain_id && (
-                              <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs">
-                                <Crown className="h-3 w-3 mr-1" />
-                                Captain
-                              </Badge>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
-                            <div className="flex items-center gap-1">
-                              <RoleIcon role={member.main_role} size={16} />
-                              <span>{member.main_role}</span>
-                            </div>
-                            {member.secondary_role && (
-                              <>
-                                <span>•</span>
-                                <div className="flex items-center gap-1">
-                                  <RoleIcon role={member.secondary_role} size={16} />
-                                  <span>{member.secondary_role}</span>
-                                </div>
-                              </>
-                            )}
-                          </div>
-
-                          {/* Enhanced Rank Display */}
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-medium text-muted-foreground">Rank:</span>
-                            <span className="text-sm font-semibold">
-                              {member.tier}
-                              {member.rank && member.rank !== null && (
-                                <span className="ml-1">{member.rank}</span>
-                              )}
-                            </span>
-                            {member.league_points !== undefined && member.league_points > 0 && (
-                              <span className="text-xs text-muted-foreground">
-                                ({member.league_points} LP)
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Win/Loss Stats */}
-                          {(member.wins !== undefined || member.losses !== undefined) && (
-                            <div className="flex items-center gap-3 mb-2 p-2 bg-muted/50 rounded text-xs">
-                              {member.wins !== undefined && (
-                                <div className="text-center">
-                                  <span className="text-green-600 font-bold">{member.wins}</span>
-                                  <span className="text-muted-foreground ml-1">W</span>
-                                </div>
-                              )}
-                              {(member.wins !== undefined && member.losses !== undefined) && (
-                                <span className="text-muted-foreground">/</span>
-                              )}
-                              {member.losses !== undefined && (
-                                <div className="text-center">
-                                  <span className="text-red-600 font-bold">{member.losses}</span>
-                                  <span className="text-muted-foreground ml-1">L</span>
-                                </div>
-                              )}
-                              {member.wins !== undefined && member.losses !== undefined && member.wins + member.losses > 0 && (
-                                <div className="text-center">
-                                  <span className="text-blue-600 font-bold">
-                                    {Math.round((member.wins / (member.wins + member.losses)) * 100)}%
-                                  </span>
-                                  <span className="text-muted-foreground ml-1">WR</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Summoner Level */}
-                          {member.summoner_level && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm font-medium text-muted-foreground">Level:</span>
-                              <span className="text-sm font-semibold">{member.summoner_level}</span>
-                            </div>
-                          )}
-
-                          {member.looking_for_team && (
-                            <Badge variant="outline" className="text-xs">
-                              LFT
-                            </Badge>
-                          )}
-
-                          <div className="text-xs text-muted-foreground">
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {members.length < teamSize && (
-                  <div className="mt-4 p-4 border-2 border-dashed border-border rounded-lg text-center">
-                    {(() => {
-
-
-                      const canRequestToJoin = currentUserId && hasPlayerProfile && !userTeam && !isCaptain && team.recruiting_status === 'Open'
-
-
-                      return canRequestToJoin ? (
-                        // User has no team and can request to join
-                        <div className="space-y-3">
-                          <UserPlus className="h-8 w-8 mx-auto mb-2 text-primary" />
-                          <p className="text-sm font-medium text-foreground">
-                            {teamSize - members.length} slots available
-                          </p>
-                          {pendingRequest ? (
-                            <div className="space-y-2">
-                              <Button disabled className="w-full bg-orange-600">
-                                Request Sent
-                              </Button>
-                              <p className="text-xs text-muted-foreground">
-                                Waiting for captain to review your request
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <Button
-                                onClick={handleRequestToJoin}
-                                disabled={sendingRequest || members.length >= teamSize}
-                                className="w-full bg-primary hover:bg-primary/90"
-                              >
-                                {sendingRequest ? 'Sending...' : 'Request to Join This Team'}
-                              </Button>
-                              <p className="text-xs text-muted-foreground">
-                                Click to request joining this team
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      ) : currentUserId && userTeam ? (
-                        // User already has a team
-                        <div className="space-y-3">
-                          <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm font-medium text-muted-foreground">
-                            {teamSize - members.length} slots available
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            You're already in a team
-                          </p>
-                        </div>
-                      ) : isCaptain ? (
-                        // User is the captain
-                        <div className="space-y-3">
-                          <Crown className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
-                          <p className="text-sm font-medium text-foreground">
-                            {teamSize - members.length} slots available
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            You're the captain of this team
-                          </p>
-                        </div>
-                      ) : team.recruiting_status !== 'Open' ? (
-                        // Team is not recruiting
-                        <div className="space-y-3">
-                          <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm font-medium text-muted-foreground">
-                            {teamSize - members.length} slots available
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Team is not currently recruiting
-                          </p>
-                        </div>
-                      ) : (
-                        // Default slots available (user not logged in or no profile)
-                        <div className="space-y-3">
-                          <UserPlus className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm font-medium text-muted-foreground">
-                            {teamSize - members.length} slots available
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {currentUserId ? 'Complete your profile to join teams' : 'Sign in to request joining this team'}
-                          </p>
+                          <Users className="h-3.5 w-3.5 text-cyan-500/60" />
                         </div>
                       )
-                    })()}
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-2.5 h-2.5 border border-dashed border-slate-700 rounded-sm" />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </Card>
+                )
+              })}
+            </div>
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-bold">Roster</div>
+              <div className="text-sm font-black text-slate-200">{members.length}<span className="text-slate-600">/{teamSize}</span></div>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Team Actions */}
-            {isCaptain && (
-              <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Edit className="h-5 w-5 text-primary" />
-                    <h3 className="font-bold">Team Actions</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <Button
-                      onClick={() => setShowAddMember(!showAddMember)}
-                      className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      {showAddMember ? 'Hide Invite Form' : 'Find Players to Invite'}
-                    </Button>
-                    <Button
-                      onClick={handleEditTeam}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Team
-                    </Button>
-                    <Button
-                      onClick={handleRegisterForTournament}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <Trophy className="h-4 w-4 mr-2" />
-                      Register for Tournament
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* Invite Player Form */}
-            {showAddMember && isCaptain && (
-              <Card className="bg-gradient-to-br from-secondary/30 to-background border-border">
-                <div className="p-6">
-                  <h3 className="font-bold mb-4">Find Players by Role</h3>
-                  <div className="space-y-3">
-                    <select
-                      value={newMemberRole}
-                      onChange={(e) => setNewMemberRole(e.target.value)}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
-                    >
-                      <option value="">Select Role</option>
-                      {ROLES.map(role => (
-                        <option key={role} value={role}>{role}</option>
-                      ))}
-                    </select>
-                    <Button
-                      onClick={handleSearchPlayers}
-                      className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Search Players
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* Team Stats */}
-            <Card className="bg-gradient-to-br from-secondary/30 to-background border-border">
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Trophy className="h-5 w-5 text-primary" />
-                  <h3 className="font-bold">Team Stats</h3>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total Members</span>
-                    <span className="font-semibold">{members.length}/{teamSize}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge className={team.recruiting_status === 'Open' ? 'bg-green-500' : 'bg-gray-500'}>
-                      {team.recruiting_status === 'Open' ? 'Looking for Players' : team.recruiting_status}
-                    </Badge>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center">
-                    <div className="group relative">
-                      <div className="flex items-center gap-1 cursor-help">
-                        <span className="text-sm text-muted-foreground">Average Rank</span>
-                        <span className="text-xs text-muted-foreground">ⓘ</span>
-                      </div>
-                      {/* Desktop tooltip */}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="absolute inset-0 cursor-pointer" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs max-w-xs">Based on ranked players only. Unranked players are excluded from this calculation.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      {/* Mobile text display */}
-                      <div className="absolute bottom-full left-0 mb-2 hidden group-active:block bg-popover text-popover-foreground text-xs rounded-md px-3 py-1.5 shadow-md border z-50 w-48">
-                        Based on ranked players only. Unranked players are excluded from this calculation.
-                      </div>
-                    </div>
-                    <Badge className={`${getTierColor(TIERS[Math.round(averageTier)] || 'Unranked')} text-white text-xs`}>
-                      {TIERS[Math.round(averageTier)] || 'Unranked'}
-                    </Badge>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Open Slots</span>
-                    <span className="font-semibold text-primary">{teamSize - members.length}</span>
-                  </div>
-                </div>
+          {/* Status */}
+          <div className="flex items-center gap-3 px-5 py-3.5 border-r border-slate-800/40">
+            <div className={`w-2 h-2 rounded-full ${team.recruiting_status === 'Open' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)] animate-pulse' : 'bg-slate-600'}`} />
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-bold">Status</div>
+              <div className={`text-sm font-black ${team.recruiting_status === 'Open' ? 'text-emerald-400' : 'text-slate-400'}`}>
+                {team.recruiting_status === 'Open' ? 'Recruiting' : team.recruiting_status || 'Closed'}
               </div>
-            </Card>
+            </div>
+          </div>
+
+          {/* Founded */}
+          <div className="flex items-center gap-3 px-5 py-3.5">
+            <Calendar className="h-4 w-4 text-slate-600" />
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 font-bold">Founded</div>
+              <div className="text-sm font-black text-slate-200">
+                {team.created_at ? new Date(team.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}
+              </div>
+            </div>
           </div>
         </div>
-
       </div>
+
+      {/* ═══════════════ 3. LOOKING FOR ROLES — Compact Strip ═══════════════ */}
+      {neededRoles.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 mb-8">
+          <div className="flex items-center gap-4 px-5 py-3 bg-cyan-950/15 border border-cyan-500/10 rounded-lg">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-cyan-500/70 font-bold whitespace-nowrap">
+              <Target className="h-3.5 w-3.5" />
+              Recruiting
+            </div>
+            <div className="w-[1px] h-5 bg-cyan-500/10" />
+            <div className="flex flex-wrap gap-2">
+              {neededRoles.map((role: string) => (
+                <div key={role} className="flex items-center gap-1.5 bg-cyan-500/5 border border-cyan-500/15 rounded px-2.5 py-1">
+                  <RoleIcon role={role} size={16} />
+                  <span className="text-xs font-bold text-cyan-300/90">{role}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════ 4. LCS STARTING LINEUP — Roster ═══════════════ */}
+      <div className="max-w-6xl mx-auto px-4 mb-12">
+        {/* Section Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-slate-800" />
+          <h2 className="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-bold flex items-center gap-2">
+            <Swords className="h-3.5 w-3.5" />
+            Starting Lineup
+          </h2>
+          <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-slate-800" />
+        </div>
+
+        {/* Roster Grid — Horizontal pillar layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+          {/* Filled Player Cards */}
+          {members.map(member => {
+            const winRate = member.wins !== undefined && member.losses !== undefined && (member.wins + member.losses) > 0
+              ? Math.round((member.wins / (member.wins + member.losses)) * 100)
+              : null
+            const tierBase = (member.tier || 'Unranked').split(' ')[0]
+
+            return (
+              <div
+                key={member.id}
+                className="group relative bg-slate-950/70 border border-slate-800/60 rounded-lg overflow-hidden hover:border-cyan-500/30 transition-all duration-300 hover:shadow-[0_0_20px_rgba(8,145,178,0.08)]"
+              >
+                {/* Rank watermark background */}
+                <div className="absolute top-2 right-2 opacity-[0.04] group-hover:opacity-[0.07] transition-opacity pointer-events-none">
+                  <Image
+                    src={getRankImage(member.tier || 'Unranked')}
+                    alt=""
+                    width={100}
+                    height={100}
+                    className="object-contain"
+                  />
+                </div>
+
+                {/* Captain crown indicator */}
+                {member.id === team.captain_id && (
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+                )}
+
+                <div className="relative p-4">
+                  {/* Player icon + name */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-12 h-12 rounded-md overflow-hidden border border-slate-700/60 bg-slate-900">
+                        {member.profile_icon_id && profileIconUrls[member.id] ? (
+                          <Image
+                            src={profileIconUrls[member.id]}
+                            alt="Icon"
+                            width={48}
+                            height={48}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <span className="text-slate-700 text-lg">?</span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Small rank badge */}
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5">
+                        <Image
+                          src={getRankImage(member.tier || 'Unranked')}
+                          alt={member.tier || 'Unranked'}
+                          width={20}
+                          height={20}
+                          className="object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        {member.id === team.captain_id && (
+                          <Crown className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                        )}
+                        <span className="font-bold text-sm text-slate-200 truncate">
+                          {member.summoner_name?.split('#')[0] || member.riot_games_name || 'Unknown'}
+                        </span>
+                      </div>
+                      {member.summoner_name?.split('#')[1] && (
+                        <span className="text-[10px] text-slate-600 font-mono">#{member.summoner_name.split('#')[1]}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Role */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <RoleIcon role={member.main_role} size={14} />
+                      <span className="text-slate-400 font-semibold">{member.main_role}</span>
+                    </div>
+                    {member.secondary_role && (
+                      <>
+                        <span className="text-slate-800">·</span>
+                        <div className="flex items-center gap-1 text-xs">
+                          <RoleIcon role={member.secondary_role} size={12} />
+                          <span className="text-slate-500">{member.secondary_role}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Rank info */}
+                  <div className="text-xs text-slate-400 font-semibold mb-2">
+                    {member.tier || 'Unranked'}
+                    {member.rank && <span className="ml-1 text-slate-500">{member.rank}</span>}
+                    {member.league_points > 0 && <span className="text-slate-600 ml-1">({member.league_points} LP)</span>}
+                  </div>
+
+                  {/* Win/Loss bar */}
+                  {winRate !== null && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
+                        <span className="text-emerald-500">{member.wins}W</span>
+                        <span className={`${winRate >= 50 ? 'text-emerald-400' : 'text-red-400'}`}>{winRate}%</span>
+                        <span className="text-red-500">{member.losses}L</span>
+                      </div>
+                      <div className="h-1 rounded-full bg-slate-800 overflow-hidden flex">
+                        <div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+                          style={{ width: `${winRate}%` }}
+                        />
+                        <div
+                          className="h-full bg-gradient-to-r from-red-400 to-red-500"
+                          style={{ width: `${100 - winRate}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Level */}
+                  {member.summoner_level && (
+                    <div className="mt-2 text-[10px] text-slate-600 font-bold uppercase tracking-wider">
+                      Lv. {member.summoner_level}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Empty Recruiting Slots */}
+          {Array.from({ length: Math.max(0, teamSize - members.length) }).map((_, i) => (
+            <div
+              key={`empty-${i}`}
+              className="relative bg-slate-950/30 border-2 border-dashed border-slate-800/60 rounded-lg overflow-hidden group"
+            >
+              <div className="p-4 flex flex-col items-center justify-center min-h-[200px]">
+                {/* Pulsing glow */}
+                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                <div className="w-12 h-12 rounded-md border border-dashed border-slate-700/50 flex items-center justify-center mb-3 group-hover:border-cyan-500/30 transition-colors">
+                  <UserPlus className="h-5 w-5 text-slate-700 group-hover:text-cyan-500/50 transition-colors" />
+                </div>
+
+                <span className="text-[10px] uppercase tracking-[0.2em] text-slate-700 font-bold group-hover:text-cyan-500/40 transition-colors animate-pulse">
+                  Recruiting
+                </span>
+
+                {/* Join button for eligible users */}
+                {(() => {
+                  const canRequestToJoin = currentUserId && hasPlayerProfile && !userTeam && !isCaptain && team.recruiting_status === 'Open'
+                  if (canRequestToJoin && i === 0) {
+                    return (
+                      <div className="mt-3">
+                        {pendingRequest ? (
+                          <Badge className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] uppercase tracking-wider">
+                            Request Pending
+                          </Badge>
+                        ) : (
+                          <Button
+                            onClick={handleRequestToJoin}
+                            disabled={sendingRequest}
+                            className="h-7 px-3 text-[10px] uppercase tracking-widest font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_10px_rgba(8,145,178,0.2)]"
+                          >
+                            {sendingRequest ? 'Sending...' : 'Request to Join'}
+                          </Button>
+                        )}
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Join team info for non-eligible users */}
+        {members.length < teamSize && (() => {
+          const canRequestToJoin = currentUserId && hasPlayerProfile && !userTeam && !isCaptain && team.recruiting_status === 'Open'
+          if (canRequestToJoin) return null
+
+          return (
+            <div className="mt-4 text-center text-xs text-slate-600">
+              {currentUserId && userTeam ? (
+                <span>You're already in a team</span>
+              ) : team.recruiting_status !== 'Open' ? (
+                <span>This team is not currently recruiting</span>
+              ) : !currentUserId ? (
+                <span>Sign in to request joining this team</span>
+              ) : !hasPlayerProfile ? (
+                <span>Complete your profile to join teams</span>
+              ) : null}
+            </div>
+          )
+        })()}
+      </div>
+
+      {/* Captain quick-actions (bottom, only for captains) */}
+      {isCaptain && showAddMember && (
+        <div className="max-w-6xl mx-auto px-4 mb-12">
+          <div className="bg-slate-950/60 border border-slate-800/40 rounded-lg p-5 backdrop-blur-sm">
+            <h3 className="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold mb-3">Find Players by Role</h3>
+            <div className="flex gap-3">
+              <select
+                value={newMemberRole}
+                onChange={(e) => setNewMemberRole(e.target.value)}
+                className="flex-1 px-3 py-2 bg-slate-900/50 border border-slate-800 rounded text-sm text-slate-300 focus:border-cyan-500/50 outline-none"
+              >
+                <option value="">Select Role</option>
+                {ROLES.map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+              <Button
+                onClick={handleSearchPlayers}
+                className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider px-5 shadow-[0_0_10px_rgba(8,145,178,0.15)]"
+              >
+                <Users className="h-3.5 w-3.5 mr-2" />
+                Search
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Players toggle (captain only, floating at bottom) */}
+      {isCaptain && (
+        <div className="max-w-6xl mx-auto px-4 mb-12 flex justify-center">
+          <Button
+            onClick={() => setShowAddMember(!showAddMember)}
+            variant="ghost"
+            className="text-xs uppercase tracking-[0.2em] text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/5 font-bold gap-2"
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            {showAddMember ? 'Hide Player Search' : 'Find Players to Invite'}
+          </Button>
+        </div>
+      )}
     </main>
   )
 }
