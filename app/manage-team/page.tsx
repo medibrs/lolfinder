@@ -48,6 +48,7 @@ export default function ManageTeamPage() {
   const [joinRequests, setJoinRequests] = useState<any[]>([])
   const [tournaments, setTournaments] = useState<any[]>([])
   const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     open_positions: [] as string[],
@@ -165,6 +166,8 @@ export default function ManageTeamPage() {
   }
 
   const handleSaveTeam = async () => {
+    if (saving) return
+    setSaving(true)
     try {
       const supabase = createClient()
 
@@ -190,24 +193,28 @@ export default function ManageTeamPage() {
       // Handle avatar upload if pending
       if (pendingAvatarFile) {
         setUpdatingAvatar(true)
-        const { data: { session } } = await supabase.auth.getSession()
-        const uploadFormData = new FormData()
-        uploadFormData.append('file', pendingAvatarFile)
-        uploadFormData.append('teamId', team.id)
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          const uploadFormData = new FormData()
+          uploadFormData.append('file', pendingAvatarFile)
+          uploadFormData.append('teamId', team.id)
 
-        const uploadResponse = await fetch('/api/teams/upload-avatar', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
-          },
-          body: uploadFormData,
-        })
-        if (!uploadResponse.ok) {
-          const result = await uploadResponse.json()
-          alert(result.error || 'Failed to update avatar')
+          const uploadResponse = await fetch('/api/teams/upload-avatar', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`,
+            },
+            body: uploadFormData,
+          })
+          if (!uploadResponse.ok) {
+            const result = await uploadResponse.json()
+            alert(result.error || 'Failed to update avatar')
+          }
+        } finally {
+          setUpdatingAvatar(false)
+          setPendingAvatarFile(null)
+          setAvatarPreview(null)
         }
-        setPendingAvatarFile(null)
-        setAvatarPreview(null)
       }
 
       // Update substitute status for all players
@@ -240,6 +247,8 @@ export default function ManageTeamPage() {
       loadTeamData() // Refresh data
     } catch (error) {
 
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -586,8 +595,22 @@ export default function ManageTeamPage() {
                     </div>
 
                     {/* Still show current team info in read-only */}
-                    <div>
-                      <h3 className="text-xl font-semibold">{team.name}</h3>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-slate-900 flex items-center justify-center shrink-0">
+                        {team.team_avatar ? (
+                          <img 
+                            src={getTeamAvatarUrl(team.team_avatar)} 
+                            alt={team.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Shield className="w-8 h-8 text-slate-700" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-white">{team.name}</h3>
+                        <p className="text-xs text-slate-500">Official tournament name</p>
+                      </div>
                     </div>
 
                     <div>
@@ -710,8 +733,8 @@ export default function ManageTeamPage() {
                                 PNG, JPG (Max 2MB)
                               </p>
                               {pendingAvatarFile && (
-                                <p className="text-[10px] text-emerald-400 font-bold uppercase animate-pulse">
-                                  Pending: {pendingAvatarFile.name}
+                                <p className="text-[10px] text-zinc-400 font-medium uppercase italic">
+                                  {pendingAvatarFile.name}
                                 </p>
                               )}
                             </div>
@@ -808,10 +831,19 @@ export default function ManageTeamPage() {
                     )}
 
                     <Button 
-                      onClick={handleSaveTeam} 
-                      className="w-full bg-[#C89B3C] hover:bg-[#A67E22] text-zinc-900 font-bold shadow-[0_0_15px_rgba(200,155,60,0.2)] uppercase tracking-wider"
+                      onClick={handleSaveTeam}
+                      disabled={saving}
+                      className="w-full bg-[#C89B3C] hover:bg-[#A67E22] text-zinc-900 font-bold shadow-[0_0_15px_rgba(200,155,60,0.2)] uppercase tracking-wider disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      Save Changes
+                      {saving ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          {updatingAvatar ? 'Uploading Avatar...' : 'Saving...'}
+                        </span>
+                      ) : 'Save Changes'}
                     </Button>
                   </>
                 ) : (
