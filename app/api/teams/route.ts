@@ -6,7 +6,7 @@ import { validateAndUploadTeamAvatar } from '@/lib/azure/image-validation';
 
 // Validation schema
 const createTeamSchema = z.object({
-  name: z.string().min(1).max(255),
+  name: z.string().min(1).max(25),
   description: z.string().optional(),
   captain_id: z.string().uuid(),
   open_positions: z.array(z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support'])).default([]),

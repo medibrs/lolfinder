@@ -177,11 +177,13 @@ export default function BracketManager({
                     participants,
                     localMatchData
                   )}
+                  tournamentName={tournamentData?.name}
                 />
               ) : (
                 <SingleEliminationBracketPreview
                   teams={participants.map((p: any) => p.team).filter(Boolean)}
                   teamCount={maxTeams}
+                  tournamentName={tournamentData?.name}
                   matchData={localMatchData}
                 />
               )}

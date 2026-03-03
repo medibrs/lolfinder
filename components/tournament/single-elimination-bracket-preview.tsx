@@ -51,6 +51,7 @@ interface RawMatch {
 interface SingleEliminationBracketPreviewProps {
     teams: Team[]
     teamCount?: number
+    tournamentName?: string
     /** Real match data from the tournament engine. When provided, overrides mock generation. */
     matchData?: RawMatch[]
 }
@@ -99,7 +100,7 @@ function buildBracketFromMatches(matches: RawMatch[], totalRounds: number): Sing
             const displayTeam2 = team2 || { id: `tbd-${m.id}-2`, name: 'TBD', team_avatar: undefined }
 
             return {
-                id: m.id,
+                id: String(m.match_number || m.id),
                 team1: displayTeam1,
                 team2: displayTeam2,
                 status,
@@ -192,7 +193,7 @@ function BracketConnector({ isLastColumn, isMobile }: { isLastColumn: boolean, i
     )
 }
 
-export function SingleEliminationBracketPreview({ teams, teamCount, matchData }: SingleEliminationBracketPreviewProps) {
+export function SingleEliminationBracketPreview({ teams, teamCount, tournamentName, matchData }: SingleEliminationBracketPreviewProps) {
     const [bracketData, setBracketData] = useState<SingleElimFormatData | null>(null)
     const [error, setError] = useState<string | null>(null)
     const isMobile = useIsMobile()
@@ -274,6 +275,8 @@ export function SingleEliminationBracketPreview({ teams, teamCount, matchData }:
                                                         team2={match.team2}
                                                         status={match.status}
                                                         winner={match.winner}
+                                                        matchId={match.id}
+                                                        matchContextName={tournamentName}
                                                         className="w-full"
                                                     />
                                                 </div>

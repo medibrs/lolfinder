@@ -4,6 +4,7 @@ import { TeamAvatar, TeamAvatarTeam } from './team-avatar'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { getMatchPath } from '@/lib/slugs'
 
 export interface SwissMatchCardTeam {
   id: string
@@ -18,6 +19,8 @@ interface SwissMatchCardProps {
   team2: SwissMatchCardTeam | null
   status: MatchStatus
   winner?: 'team1' | 'team2' | null
+  matchId?: string
+  matchContextName?: string
   /** Hide the VS divider text */
   hideVs?: boolean
   /** Background color variant */
@@ -42,6 +45,8 @@ export function SwissMatchCard({
   team2,
   status,
   winner = null,
+  matchId,
+  matchContextName,
   hideVs = false,
   backgroundColor = 'default',
   className
@@ -52,9 +57,29 @@ export function SwissMatchCard({
   const isTeam2Winner = winner === 'team2'
 
   const handleTeamClick = (team: SwissMatchCardTeam | null) => {
+    if (matchId) {
+      router.push(getMatchPath({
+        id: matchId,
+        team1Name: team1?.name,
+        team2Name: team2?.name,
+        contextName: matchContextName,
+      }))
+      return
+    }
+
     if (team) {
       router.push(`/teams/${team.id}`)
     }
+  }
+
+  const handleCardClick = () => {
+    if (!matchId) return
+    router.push(getMatchPath({
+      id: matchId,
+      team1Name: team1?.name,
+      team2Name: team2?.name,
+      contextName: matchContextName,
+    }))
   }
 
   const getBackgroundClass = () => {
@@ -85,8 +110,11 @@ export function SwissMatchCard({
       shouldHideVs
         ? (isMobile ? "gap-[2px] px-[0.5] py-[1px]" : "gap-2 px-1 py-1 xl:gap-2 xl:px-2")
         : "gap-2 px-1 py-1 xl:gap-4 xl:px-2 xl:py-2",
+      matchId && "cursor-pointer hover:border-cyan-400/50",
       className
-    )}>
+    )}
+      onClick={handleCardClick}
+    >
       {/* Team 1 */}
       <div className={cn(
         "rounded-sm transition-opacity duration-300",

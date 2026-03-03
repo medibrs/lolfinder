@@ -165,17 +165,22 @@ export default function ManageTeamPage() {
     try {
       const supabase = createClient()
 
-      const { error } = await supabase
-        .from('teams')
-        .update({
+      const updateResponse = await fetch(`/api/teams/${team.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: formData.name,
           open_positions: formData.open_positions,
           recruiting_status: formData.recruiting_status,
-          team_size: formData.team_size
-        })
-        .eq('id', team.id)
+          team_size: String(formData.team_size),
+        }),
+      })
 
-      if (error) {
+      if (!updateResponse.ok) {
+        const result = await updateResponse.json()
+        alert(result.error || 'Failed to update team')
         return
       }
 
@@ -194,7 +199,6 @@ export default function ManageTeamPage() {
           },
           body: uploadFormData,
         })
-        // TODO : ADD text anaylize safetly to edit team route . 
         if (!uploadResponse.ok) {
           const result = await uploadResponse.json()
           alert(result.error || 'Failed to update avatar')
@@ -541,9 +545,16 @@ export default function ManageTeamPage() {
                       <label className="block text-sm font-medium mb-2">Team Name</label>
                       <Input
                         value={formData.name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        onChange={(e) => {
+                          const filtered = e.target.value.replace(/[^a-zA-Z0-9\s\-_!@#$%^&*(),.?':;]/g, '')
+                          setFormData(prev => ({ ...prev, name: filtered }))
+                        }}
                         placeholder="Enter team name"
+                        maxLength={25}
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Choose your team name wisely and respectfully (max 25 characters). Inappropriate or offensive names will be rejected. Team names must be in English.
+                      </p>
                     </div>
 
                     <div>
@@ -579,7 +590,7 @@ export default function ManageTeamPage() {
                                 className="max-w-xs cursor-pointer"
                               />
                               <p className="text-xs text-muted-foreground mt-2">
-                                Select a team logo (Max 2MB). Upload happens when saving team info.
+                                Select a team logo (Max 2MB). Upload happens when saving team info. Logos are checked for inappropriate content and will be rejected if they violate our guidelines.
                               </p>
                             </>
                           )}

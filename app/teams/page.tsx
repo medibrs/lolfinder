@@ -530,7 +530,7 @@ export default function TeamsPage() {
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1.5 text-slate-400">
                               <Crown className="h-3 w-3 text-[#c9aa71]" />
-                              <span className="text-[10px] font-bold font-beaufort tracking-widest uppercase">
+                              <span className="text-[10px] font-bold font-beaufort tracking-widest uppercase max-w-[120px] truncate">
                                 {team.captain?.summoner_name || 'Captain Unknown'}
                               </span>
                             </div>

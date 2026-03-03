@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { AlertDescription } from '@/components/ui/alert'
 import RoleIcon from '@/components/RoleIcon'
 import RoleSelect from '@/components/RoleSelect'
+import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import { Shield, Trophy, Users, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -46,6 +45,7 @@ export default function SetupProfilePage() {
   })
   const [riotError, setRiotError] = useState<string | null>(null)
   const [fetchedTier, setFetchedTier] = useState<string | null>(null)
+  const [profileIconId, setProfileIconId] = useState<number>(29)
 
   // Ownership Verification State
   const [verificationRequired, setVerificationRequired] = useState<{
@@ -90,6 +90,7 @@ export default function SetupProfilePage() {
             looking_for_team: existingProfile.looking_for_team || false
           })
           setFetchedTier(existingProfile.tier || null)
+          setProfileIconId(existingProfile.profile_icon_id || 29)
           setIsEditing(true)
 
           // Fetch team information if player is in a team
@@ -174,6 +175,7 @@ export default function SetupProfilePage() {
         const errorData = await response.json()
 
         if (errorData.requiresVerification) {
+          setProfileIconId(errorData.currentIconId || 29)
           setVerificationRequired({
             expectedIconId: errorData.expectedIconId,
             currentIconId: errorData.currentIconId,
@@ -199,7 +201,7 @@ export default function SetupProfilePage() {
   }
 
   return (
-    <main className="min-h-screen pt-24 pb-12 bg-background text-white font-sans">
+    <main className="min-h-screen pt-24 pb-12 bg-background text-white font-beaufort">
       <div className="max-w-6xl mx-auto px-4">
         {/* League Client Styled Header */}
         <div className="relative mb-12 text-center">
@@ -229,8 +231,16 @@ export default function SetupProfilePage() {
                 {userTeam && (
                   <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-4 flex items-center justify-between group transition-all hover:bg-cyan-500/10 mb-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
-                        <Users className="w-5 h-5 text-cyan-400" />
+                      <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center p-1">
+                        {getTeamAvatarUrl(userTeam.team_avatar) ? (
+                          <img
+                            src={getTeamAvatarUrl(userTeam.team_avatar) || ''}
+                            alt={`${userTeam.name} logo`}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <Users className="w-5 h-5 text-cyan-400" />
+                        )}
                       </div>
                       <div>
                         <p className="text-[10px] text-cyan-500/60 uppercase tracking-widest font-bold mb-0.5">Assigned Squad</p>
@@ -251,7 +261,7 @@ export default function SetupProfilePage() {
                     {/* Riot ID Input */}
                     <div className="space-y-2">
                       <label className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] ml-1">
-                        Riot ID <span className="text-[#c9aa71] ml-1">*</span>
+                        Riot ID <span className="text-[#c9aa71] ml-1 text-base leading-none align-middle">*</span>
                       </label>
                       <div className="relative group">
                         <Input
@@ -310,8 +320,8 @@ export default function SetupProfilePage() {
                     {/* Roles Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] ml-1">
-                          Role Main <span className="text-[#c9aa71] ml-1">*</span>
+                        <label className="text-[10px] text-slate-400 uppercase tracking-[0.2em] ml-1">
+                          Role Main <span className="text-[#c9aa71] ml-1 text-base leading-none align-middle">*</span>
                         </label>
                         <RoleSelect
                           value={formData.main_role}
@@ -321,8 +331,8 @@ export default function SetupProfilePage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] ml-1">
-                          Role Secondary <span className="text-[#c9aa71] ml-1">*</span>
+                        <label className="text-[10px] text-slate-400 uppercase tracking-[0.2em] ml-1">
+                          Role Secondary <span className="text-[#c9aa71] ml-1 text-base leading-none align-middle">*</span>
                         </label>
                         <RoleSelect
                           value={formData.secondary_role}
@@ -369,7 +379,7 @@ export default function SetupProfilePage() {
                       <div className="relative">
                         <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#c9aa71]/30 p-1 bg-[#0c121d]/60">
                           <img
-                            src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/29.png`}
+                            src={`https://ddragon.leagueoflegends.com/cdn/15.23.1/img/profileicon/${profileIconId || 29}.png`}
                             alt="Avatar"
                             className="w-full h-full object-cover rounded-xl opacity-60 group-hover:opacity-100 transition-opacity"
                           />

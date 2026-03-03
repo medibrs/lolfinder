@@ -4,6 +4,7 @@ import { TeamAvatar } from './team-avatar'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { getMatchPath } from '@/lib/slugs'
 
 export interface SingleElimMatchCardTeam {
     id: string
@@ -19,6 +20,8 @@ interface SingleElimMatchCardProps {
     team2: SingleElimMatchCardTeam | null
     status: MatchStatus
     winner?: 'team1' | 'team2' | null
+    matchId?: string
+    matchContextName?: string
     className?: string
 }
 
@@ -27,6 +30,8 @@ export function SingleElimMatchCard({
     team2,
     status,
     winner = null,
+    matchId,
+    matchContextName,
     className
 }: SingleElimMatchCardProps) {
     const router = useRouter()
@@ -35,9 +40,29 @@ export function SingleElimMatchCard({
     const isTeam2Winner = winner === 'team2'
 
     const handleTeamClick = (team: SingleElimMatchCardTeam | null) => {
+        if (matchId) {
+            router.push(getMatchPath({
+                id: matchId,
+                team1Name: team1?.name,
+                team2Name: team2?.name,
+                contextName: matchContextName,
+            }))
+            return
+        }
+
         if (team && !team.id.startsWith('tbd') && !team.id.startsWith('ph')) {
             router.push(`/teams/${team.id}`)
         }
+    }
+
+    const handleCardClick = () => {
+        if (!matchId) return
+        router.push(getMatchPath({
+            id: matchId,
+            team1Name: team1?.name,
+            team2Name: team2?.name,
+            contextName: matchContextName,
+        }))
     }
 
     return (
@@ -45,8 +70,11 @@ export function SingleElimMatchCard({
             "relative transition-all duration-200 flex flex-col rounded-md w-full bg-zinc-900 border mx-auto",
             "w-[160px] md:w-[200px]", // Wide enough for single elim vertical list
             status === 'live' ? "border-red-500/70 shadow-[0_0_10px_rgba(239,68,68,0.4)]" : "border-zinc-800/80",
+            matchId && "cursor-pointer hover:border-cyan-500/60",
             className
-        )}>
+        )}
+            onClick={handleCardClick}
+        >
             {/* Live Indicator Pulse Background */}
             {status === 'live' && (
                 <div className="absolute inset-0 rounded-md bg-red-500/5 animate-pulse pointer-events-none z-0" />

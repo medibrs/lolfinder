@@ -57,6 +57,12 @@ interface Player {
   is_bot?: boolean
 }
 
+function getWinRate(wins: number = 0, losses: number = 0): string {
+  const total = wins + losses
+  if (total === 0) return '0%'
+  return `${Math.round((wins / total) * 100)}%`
+}
+
 function getRankScore(tier: string, division: string | null | undefined, lp: number = 0): number {
   const tierIndex = RANK_ORDER.indexOf(tier) || 0
   const divisionIndex = division ? DIVISION_ORDER.indexOf(division) : 0
@@ -281,7 +287,13 @@ export default function LeaderboardPage() {
                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">{players[1].tier}</p>
                         </div>
                         <p className="text-sm font-black tracking-wider transition-colors group-hover/p2:text-cyan-400">
-                          <span className="text-slate-300 group-hover/p2:text-cyan-400">{players[1].league_points}</span> <span className="text-[10px] text-slate-500 uppercase tracking-normal">LP</span>
+                          <span className="text-slate-300 group-hover/p2:text-cyan-400">
+                            <span className="group-hover/p2:hidden">{getWinRate(players[1].wins, players[1].losses)}</span>
+                            <span className="hidden group-hover/p2:inline">{players[1].league_points}</span>
+                          </span> <span className="text-[10px] text-slate-500 uppercase tracking-normal">
+                            <span className="group-hover/p2:hidden">WR</span>
+                            <span className="hidden group-hover/p2:inline">LP</span>
+                          </span>
                         </p>
                       </div>
                       <div className="absolute top-0 left-0 w-3 h-3 border-l border-t border-slate-500/50"></div>
@@ -326,9 +338,15 @@ export default function LeaderboardPage() {
                           <Image src={getRankImage(players[0].tier)} alt="" width={24} height={24} className="object-contain" />
                           <p className="text-[10px] md:text-[12px] font-black text-slate-300 uppercase tracking-widest leading-none">{players[0].tier}</p>
                         </div>
-                        <div className="flex items-center justify-end gap-1.5">
-                          <span className="text-lg md:text-xl font-black text-[#c9aa71]">{players[0].league_points}</span>
-                          <span className="text-[10px] md:text-[12px] font-bold text-slate-500 uppercase tracking-wider">LP</span>
+                        <div className="flex items-center justify-end gap-1.5 -mt-4">
+                          <span className="text-lg md:text-xl font-black text-[#c9aa71] group-hover/p1:text-cyan-400 transition-all duration-200">
+                            <span className="group-hover/p1:hidden">{getWinRate(players[0].wins, players[0].losses)}</span>
+                            <span className="hidden group-hover/p1:inline">{players[0].league_points}</span>
+                          </span>
+                          <span className="text-[10px] md:text-[12px] font-bold text-slate-500 uppercase tracking-wider">
+                            <span className="group-hover/p1:hidden">WR</span>
+                            <span className="hidden group-hover/p1:inline">LP</span>
+                          </span>
                         </div>
 
                       </div>
@@ -373,7 +391,13 @@ export default function LeaderboardPage() {
                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">{players[2].tier}</p>
                         </div>
                         <p className="text-sm font-black tracking-wider group-hover/p3:text-orange-500 transition-colors">
-                          <span className="text-slate-300 group-hover/p3:text-orange-500">{players[2].league_points}</span> <span className="text-[10px] text-slate-500 uppercase tracking-normal">LP</span>
+                          <span className="text-slate-300 group-hover/p3:text-orange-500">
+                            <span className="group-hover/p3:hidden">{getWinRate(players[2].wins, players[2].losses)}</span>
+                            <span className="hidden group-hover/p3:inline">{players[2].league_points}</span>
+                          </span> <span className="text-[10px] text-slate-500 uppercase tracking-normal">
+                            <span className="group-hover/p3:hidden">WR</span>
+                            <span className="hidden group-hover/p3:inline">LP</span>
+                          </span>
                         </p>
                       </div>
                       <div className="absolute top-0 left-0 w-3 h-3 border-l border-t border-amber-700/50"></div>

@@ -106,6 +106,11 @@ export default function CreateTeamPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
+    if (name === 'name') {
+      const filtered = value.replace(/[^a-zA-Z0-9\s\-_!@#$%^&*(),.?':;]/g, '')
+      setFormData(prev => ({ ...prev, [name]: filtered }))
+      return
+    }
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
@@ -136,6 +141,12 @@ export default function CreateTeamPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    if (!avatarFile) {
+      setError('Please upload a team logo before creating your team.')
+      setLoading(false)
+      return
+    }
 
     try {
       const submitData = new FormData()
@@ -359,13 +370,17 @@ export default function CreateTeamPage() {
                 onChange={handleChange}
                 placeholder="Your team name"
                 required
+                maxLength={25}
                 className="bg-input border-border"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Choose your team name wisely and respectfully (max 25 characters). Inappropriate or offensive names will be rejected. Team names must be in English.
+              </p>
             </div>
 
             {/* Team Avatar */}
             <div>
-              <Label>Team Avatar</Label>
+              <Label>Team Avatar *</Label>
               <div className="flex items-center gap-4 mt-2">
                 {avatarPreviewUrl ? (
                   <div className="w-16 h-16 rounded-full overflow-hidden border shrink-0">
@@ -381,10 +396,11 @@ export default function CreateTeamPage() {
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
+                    required
                     className="max-w-xs cursor-pointer"
                   />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Upload a team logo (Max 2MB, JPG/PNG)
+                    Upload a team logo (Max 2MB, JPG/PNG). Logos are checked for inappropriate content and will be rejected if they violate our guidelines.
                   </p>
                 </div>
               </div>

@@ -370,12 +370,14 @@ export default async function TournamentEventPage({ params }: Props) {
                     participants,
                     matchData
                   )}
+                  tournamentName={tournament.name}
                   teamCount={tournament.max_teams}
                 />
               ) : tournament.format === 'Single_Elimination' ? (
                 <SingleEliminationBracketPreview
                   teams={registeredTeams.map((r: any) => r.teams).filter(Boolean)}
                   teamCount={tournament.max_teams || 16}
+                  tournamentName={tournament.name}
                   matchData={matchData.length > 0 ? matchData : undefined}
                 />
               ) : (

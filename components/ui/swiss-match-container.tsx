@@ -14,12 +14,14 @@ interface SwissRound {
     team2: SwissMatchCardTeam | null
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
+    matchId?: string
   }>
   matches?: Array<{
     team1: SwissMatchCardTeam | null
     team2: SwissMatchCardTeam | null
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
+    matchId?: string
   }>
   topCut?: {
     title?: string
@@ -36,11 +38,13 @@ interface SwissMatchContainerProps {
   columns: Array<{
     rounds: SwissRound[]
   }>
+  matchContextName?: string
   className?: string
 }
 
 export function SwissMatchContainer({
   columns,
+  matchContextName,
   className
 }: SwissMatchContainerProps) {
   const isMobile = useIsMobile()
@@ -58,6 +62,7 @@ export function SwissMatchContainer({
           <SwissMatchColumn
             key={index}
             rounds={column.rounds}
+            matchContextName={matchContextName}
             isLastColumn={index === columns.length - 1}
           />
         ))}

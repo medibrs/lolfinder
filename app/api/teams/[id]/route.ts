@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
+import { analyzeTextSafety, getFlaggedCategories } from '@/lib/azure/content-safety';
 
 // Validation schema for updates
 const updateTeamSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
+  name: z.string().min(1).max(25).optional(),
   description: z.string().optional(),
   open_positions: z.array(z.enum(['Top', 'Jungle', 'Mid', 'ADC', 'Support'])).optional(),
   team_size: z.enum(['5', '6']).optional(),
@@ -66,6 +67,25 @@ export async function PUT(
 
     // Validate input
     const validatedData = updateTeamSchema.parse(body);
+
+    // --- Content Safety: check team name ---
+    if (validatedData.name) {
+      try {
+        const textResult = await analyzeTextSafety(validatedData.name);
+        const flaggedCats = getFlaggedCategories(textResult);
+        if (flaggedCats.length > 0) {
+          return NextResponse.json(
+            { error: `Team name rejected. Flagged for: ${flaggedCats.join(', ')}` },
+            { status: 400 }
+          );
+        }
+      } catch (safetyError: any) {
+        return NextResponse.json(
+          { error: safetyError.message || 'Failed to verify content safety' },
+          { status: 500 }
+        );
+      }
+    }
 
     // If captain_id is being updated, validate the transfer
     if (validatedData.captain_id) {

@@ -8,11 +8,13 @@ import { useIsMobile } from '@/hooks/use-mobile'
 
 interface SwissMatchCardWrapperProps {
   title: string
+  matchContextName?: string
   teamPairs?: Array<{
     team1: SwissMatchCardTeam | null
     team2: SwissMatchCardTeam | null
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
+    matchId?: string
   }>
   /** Arrow style: 'curved' for normal progression (right side), 'straight' for last round (top/bottom), 'none' for no arrows */
   arrowStyle?: 'curved' | 'straight' | 'none'
@@ -22,6 +24,7 @@ interface SwissMatchCardWrapperProps {
 
 export function SwissMatchCardWrapper({
   title,
+  matchContextName,
   teamPairs,
   arrowStyle = 'none',
   children,
@@ -59,6 +62,8 @@ export function SwissMatchCardWrapper({
                     team2={pair.team2}
                     status={pair.status}
                     winner={pair.winner}
+                    matchId={pair.matchId}
+                    matchContextName={matchContextName}
                   />
                 </div>
               ))}
@@ -97,6 +102,8 @@ export function SwissMatchCardWrapper({
                   team2={pair.team2}
                   status={pair.status}
                   winner={pair.winner}
+                  matchId={pair.matchId}
+                  matchContextName={matchContextName}
                 />
               </div>
             ))}

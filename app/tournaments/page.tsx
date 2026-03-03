@@ -11,6 +11,7 @@ import { Share2, CheckCircle, XCircle, User, Coins } from 'lucide-react'
 import { CalendarIcon, ClockIcon, TrophyIcon, TeamsIcon, UpcomingIcon, LiveIcon, EndedIcon } from '@/components/TournamentIcons'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
+import { getTournamentPath } from '@/lib/slugs'
 
 interface Tournament {
   id: string
@@ -43,21 +44,10 @@ export default function TournamentsPage() {
   const { toast } = useToast()
   const supabase = createClient()
 
-  // Generate URL-friendly slug from tournament name
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-') // Replace multiple hyphens with single
-      .trim()
-  }
-
   // Navigate to tournament event page
   const handleTournamentClick = (tournament: Tournament) => {
-    const slug = generateSlug(tournament.name)
     const tournamentId = tournament.tournament_number || tournament.id
-    router.push(`/tournaments/${tournamentId}/${slug}`)
+    router.push(getTournamentPath(tournamentId, tournament.name))
   }
 
   useEffect(() => {

@@ -17,12 +17,14 @@ interface SwissRound {
     team2: SwissMatchCardTeam | null
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
+    matchId?: string
   }>
   matches?: Array<{
     team1: SwissMatchCardTeam | null
     team2: SwissMatchCardTeam | null
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
+    matchId?: string
   }>
   topCut?: {
     title?: string
@@ -37,12 +39,14 @@ interface SwissRound {
 
 interface SwissMatchColumnProps {
   rounds: SwissRound[]
+  matchContextName?: string
   isLastColumn?: boolean
   className?: string
 }
 
 export function SwissMatchColumn({
   rounds,
+  matchContextName,
   isLastColumn = false,
   className
 }: SwissMatchColumnProps) {
@@ -70,6 +74,7 @@ export function SwissMatchColumn({
           <SwissMatchCardWrapper
             key={index}
             title={round.title}
+            matchContextName={matchContextName}
             arrowStyle="none"
           >
             <TopCutTeamGrid
@@ -80,6 +85,7 @@ export function SwissMatchColumn({
           <SwissMatchCardWrapper
             key={index}
             title={round.title}
+            matchContextName={matchContextName}
             teamPairs={round.teamPairs || round.matches || []}
             arrowStyle={arrowStyle}
           />

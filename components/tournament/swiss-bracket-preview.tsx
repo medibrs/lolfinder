@@ -25,6 +25,7 @@ interface SwissRound {
     team2: SwissMatchCardTeam | null
     status: 'live' | 'scheduled' | 'done'
     winner?: 'team1' | 'team2' | null
+    matchId?: string
   }>
   topCut?: {
     title?: string
@@ -46,6 +47,7 @@ interface SwissFormatData {
 interface SwissBracketPreviewProps {
   /** New data-driven prop — when provided, overlays real results onto the bracket skeleton */
   data?: SwissBracketData
+  tournamentName?: string
   /** Legacy props — used to generate the skeleton when data is not available */
   teams?: Team[]
   maxWins?: number
@@ -246,6 +248,8 @@ function overlayRealData(skeleton: SwissFormatData, data: SwissBracketData): Swi
 
   // Build a lookup: roundNumber → bucketKey (w:l) → matches
   const matchesByRoundBucket: Record<number, Record<string, Array<{
+    id: string
+    matchNumber: number
     team1Id: string | null
     team2Id: string | null
     winnerId: string | null
@@ -274,6 +278,8 @@ function overlayRealData(skeleton: SwissFormatData, data: SwissBracketData): Swi
         matchesByRoundBucket[r][bucketKey] = []
       }
       matchesByRoundBucket[r][bucketKey].push({
+        id: m.id,
+        matchNumber: m.matchNumber,
         team1Id: m.team1Id,
         team2Id: m.team2Id,
         winnerId: m.winnerId,
@@ -337,6 +343,7 @@ function overlayRealData(skeleton: SwissFormatData, data: SwissBracketData): Swi
             if (rm.team2Id) {
               round.teamPairs[i].team2 = teamToCard(rm.team2Id) || round.teamPairs[i].team2
             }
+            round.teamPairs[i].matchId = String(rm.matchNumber || rm.id)
             // Set status
             if (rm.status === 'Completed') {
               round.teamPairs[i].status = 'done'
@@ -392,7 +399,7 @@ function overlayRealData(skeleton: SwissFormatData, data: SwissBracketData): Swi
   return skeleton
 }
 
-export function SwissBracketPreview({ data, teams, maxWins = 2, maxLosses = 2, teamCount: forcedTeamCount }: SwissBracketPreviewProps) {
+export function SwissBracketPreview({ data, tournamentName, teams, maxWins = 2, maxLosses = 2, teamCount: forcedTeamCount }: SwissBracketPreviewProps) {
   const [bracketData, setBracketData] = useState<SwissFormatData | null>(null)
 
   useEffect(() => {
@@ -440,5 +447,5 @@ export function SwissBracketPreview({ data, teams, maxWins = 2, maxLosses = 2, t
     return <div className="text-zinc-500">Loading bracket...</div>
   }
 
-  return <SwissMatchContainer columns={bracketData.columns} />
+  return <SwissMatchContainer columns={bracketData.columns} matchContextName={tournamentName} />
 }
