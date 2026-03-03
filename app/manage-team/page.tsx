@@ -145,16 +145,9 @@ export default function ManageTeamPage() {
 
       setTournaments(tournamentsData || [])
 
-      // Check if team is in an active tournament (Current time is between start and end date)
-      const now = new Date()
-      const inActive = tournamentsData?.some(reg => {
-        const tournament = reg.tournament as any
-        if (!tournament) return false
-        const start = new Date(tournament.start_date)
-        const end = new Date(tournament.end_date)
-        return now >= start && now <= end
-      })
-      setIsTeamInActiveTournament(!!inActive)
+      // Lock team editing if team has any approved tournament registration
+      const hasApprovedRegistration = (tournamentsData?.length || 0) > 0
+      setIsTeamInActiveTournament(hasApprovedRegistration)
 
     } catch (error) {
 
@@ -539,19 +532,94 @@ export default function ManageTeamPage() {
                     <Settings className="w-5 h-5" />
                     Team Settings
                   </CardTitle>
-                  <Button
-                    onClick={() => setEditing(!editing)}
-                    variant="ghost"
-                    className={`border transition-all ${editing 
-                      ? "border-slate-800 text-slate-500 hover:bg-slate-800/50" 
-                      : "border-slate-700 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500 hover:text-cyan-400"}`}
-                  >
-                    {editing ? 'Cancel' : 'Edit'}
-                  </Button>
+                  {!isTeamInActiveTournament && (
+                    <Button
+                      onClick={() => setEditing(!editing)}
+                      variant="ghost"
+                      className={`border transition-all ${editing 
+                        ? "border-slate-800 text-slate-500 hover:bg-slate-800/50" 
+                        : "border-slate-700 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500 hover:text-cyan-400"}`}
+                    >
+                      {editing ? 'Cancel' : 'Edit'}
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {editing ? (
+                {isTeamInActiveTournament ? (
+                  <div className="space-y-4">
+                    <div className="p-5 rounded-lg border border-orange-500/20 bg-orange-500/5">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-orange-500/10 rounded-lg">
+                          <Trophy className="w-5 h-5 text-orange-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-orange-400 uppercase tracking-wider">Team Locked</p>
+                          <p className="text-xs text-slate-500">Registered in an active tournament</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        Your team name and logo cannot be changed while you have an approved tournament registration. 
+                        This ensures consistency across brackets, match history, and standings.
+                      </p>
+                      {tournaments.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-orange-500/10">
+                          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2">Active Registrations</p>
+                          <div className="space-y-1">
+                            {tournaments.map((reg: any) => (
+                              <div key={reg.id} className="flex items-center gap-2 text-xs">
+                                <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                                <span className="text-slate-300">{(reg.tournament as any)?.name || 'Tournament'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Still show current team info in read-only */}
+                    <div>
+                      <h3 className="text-xl font-semibold">{team.name}</h3>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium mb-2 text-slate-300">Looking For:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {team.open_positions?.length > 0 ? (
+                          team.open_positions.map((role: string) => (
+                            <Badge 
+                              key={role} 
+                              variant="secondary"
+                              className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
+                            >
+                              {role}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge 
+                            variant="outline"
+                            className="text-slate-500 border-slate-800 bg-slate-900/50 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
+                          >
+                            Not recruiting
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-slate-300 mb-2">Status:</p>
+                      <Badge
+                        className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${
+                          team.recruiting_status === 'Open' 
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                            : 'bg-slate-900/50 text-slate-500 border border-slate-800'
+                        }`}
+                      >
+                        {team.recruiting_status}
+                      </Badge>
+                    </div>
+                  </div>
+                ) : editing ? (
                   <>
                     <div>
                       <label className="block text-sm font-medium mb-2 text-slate-300">Team Name</label>
