@@ -67,8 +67,6 @@ export default function ManageTeamPage() {
   const [adminMsgSubject, setAdminMsgSubject] = useState('')
   const [adminMsgBody, setAdminMsgBody] = useState('')
   const [sendingAdminMsg, setSendingAdminMsg] = useState(false)
-  const [adminMessages, setAdminMessages] = useState<any[]>([])
-  const [showAdminMessages, setShowAdminMessages] = useState(false)
 
   useEffect(() => {
     loadTeamData()
@@ -1255,53 +1253,7 @@ export default function ManageTeamPage() {
         </DialogContent>
       </Dialog>
 
-      {/* View Admin Messages Dialog */}
-      <Dialog open={showAdminMessages} onOpenChange={setShowAdminMessages}>
-        <DialogContent className="bg-card border-border max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Admin Messages</DialogTitle>
-            <DialogDescription>
-              Conversation history with tournament administrators
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto space-y-3 py-2">
-            {adminMessages.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageSquare className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-500">No messages yet</p>
-              </div>
-            ) : (
-              adminMessages
-                .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-                .map((msg: any) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.sender_role === 'captain' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[80%] rounded-lg p-3 ${
-                        msg.sender_role === 'captain'
-                          ? 'bg-cyan-500/10 border border-cyan-500/20'
-                          : 'bg-amber-500/10 border border-amber-500/20'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          {msg.sender_role === 'admin' ? 'Admin' : 'You'}
-                        </span>
-                        <span className="text-[10px] text-slate-600">
-                          {new Date(msg.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="text-xs font-semibold text-slate-300 mb-1">{msg.subject}</p>
-                      <p className="text-xs text-slate-400 whitespace-pre-wrap">{msg.message}</p>
-                    </div>
-                  </div>
-                ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+
 
     </main>
   )
