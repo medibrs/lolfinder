@@ -188,12 +188,22 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Remove team_id from all players in this team and reset looking_for_team
-    await supabase
-      .from('players')
-      .update({ team_id: null, looking_for_team: true })
-      .eq('team_id', id);
+    // Block deletion if team has an approved tournament registration
+    const { data: approvedRegs } = await supabase
+      .from('tournament_registrations')
+      .select('id')
+      .eq('team_id', id)
+      .eq('status', 'approved')
+      .limit(1);
 
+    if (approvedRegs && approvedRegs.length > 0) {
+      return NextResponse.json(
+        { error: 'Cannot delete a team with an approved tournament registration. Withdraw from the tournament first.' },
+        { status: 403 }
+      );
+    }
+
+    // Delete the team first, then detach players only on success
     const { error } = await supabase
       .from('teams')
       .delete()
@@ -202,6 +212,12 @@ export async function DELETE(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // Remove team_id from all players in this team and reset looking_for_team
+    await supabase
+      .from('players')
+      .update({ team_id: null, looking_for_team: true })
+      .eq('team_id', id);
 
     return NextResponse.json({ message: 'Team deleted successfully' });
   } catch (error) {

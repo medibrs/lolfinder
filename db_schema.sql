@@ -86,6 +86,7 @@ CREATE TABLE public.feature_requests (
   admin_id uuid,
   vote_count integer DEFAULT 0,
   comment_count integer DEFAULT 0,
+  category character varying,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   category_id uuid,

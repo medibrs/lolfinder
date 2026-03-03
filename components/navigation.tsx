@@ -492,6 +492,16 @@ export default function Navigation() {
                                 >
                                   Feature Requests
                                 </Link>
+                                <Link
+                                  href="/admin?tab=messages"
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={cn(
+                                    "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                    activeAdminTab === 'messages' && "text-primary font-medium bg-accent"
+                                  )}
+                                >
+                                  Messages
+                                </Link>
                               </div>
                             )}
                           </div>
@@ -686,6 +696,15 @@ export default function Navigation() {
                   )}
                 >
                   Feature Requests
+                </Link>
+                <Link
+                  href="/admin?tab=messages"
+                  className={cn(
+                    "text-sm font-medium px-3 py-2 rounded-md transition",
+                    activeAdminTab === 'messages' && "text-primary font-medium"
+                  )}
+                >
+                  Messages
                 </Link>
               </>
             ) : user ? (

@@ -13,6 +13,7 @@ import CreateTournamentCard from '@/components/admin/CreateTournamentCard'
 import SystemHealthCard from '@/components/admin/SystemHealthCard'
 import ComprehensiveUserManagement from '@/components/admin/ComprehensiveUserManagement'
 import RiotApiStatsCard from '@/components/admin/RiotApiStatsCard'
+import AdminMessagesTable from '@/components/admin/AdminMessagesTable'
 import { createClient } from '@/lib/supabase/client'
 
 interface AdminTabsProps {
@@ -183,6 +184,17 @@ export default function AdminTabs({ stats }: AdminTabsProps) {
             Manage and respond to user-submitted feature requests. Total requests: {stats.featureRequestsCount}
           </p>
           <FeatureRequestsTable />
+        </Card>
+      )}
+
+      {activeTab === 'messages' && (
+        <Card className="bg-card border-border p-6">
+          <div className="text-4xl mb-4">✉️</div>
+          <h3 className="text-xl font-bold mb-4">Captain Messages</h3>
+          <p className="text-muted-foreground mb-6">
+            Messages from team captains. Respond to questions and requests.
+          </p>
+          <AdminMessagesTable />
         </Card>
       )}
     </div>

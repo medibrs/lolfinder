@@ -23,11 +23,14 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle, Edit, MessageSquare, Upload, Plus, Pencil } from 'lucide-react'
+import { Shield, Trophy, Users, Zap, Settings, UserPlus, UserMinus, Crown, Trash2, AlertTriangle, Edit, MessageSquare, Upload, Plus, Pencil, Send } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
@@ -37,6 +40,7 @@ const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'] as const
 
 export default function ManageTeamPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [team, setTeam] = useState<any>(null)
@@ -59,6 +63,12 @@ export default function ManageTeamPage() {
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isTeamInActiveTournament, setIsTeamInActiveTournament] = useState(false)
+  const [adminMessageOpen, setAdminMessageOpen] = useState(false)
+  const [adminMsgSubject, setAdminMsgSubject] = useState('')
+  const [adminMsgBody, setAdminMsgBody] = useState('')
+  const [sendingAdminMsg, setSendingAdminMsg] = useState(false)
+  const [adminMessages, setAdminMessages] = useState<any[]>([])
+  const [showAdminMessages, setShowAdminMessages] = useState(false)
 
   useEffect(() => {
     loadTeamData()
@@ -360,6 +370,15 @@ export default function ManageTeamPage() {
   }
 
   const handleDeleteTeam = async () => {
+    if (isTeamInActiveTournament) {
+      toast({
+        title: 'Team Locked',
+        description: 'Cannot delete a team with an approved tournament registration. Withdraw from the tournament first.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     if (!confirm('Are you sure you want to delete your team? This action cannot be undone and will remove all team members.')) {
       return
     }
@@ -374,7 +393,20 @@ export default function ManageTeamPage() {
         .eq('team_id', team.id)
         .neq('id', user.id)  // Exclude captain
 
-      // Send notifications to all team members
+      // Delete the team via API (which checks tournament registration)
+      const response = await fetch(`/api/teams/${team.id}`, { method: 'DELETE' })
+
+      if (!response.ok) {
+        const data = await response.json()
+        toast({
+          title: 'Delete Failed',
+          description: data.error || 'Failed to delete team.',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      // Send notifications to all team members (after successful delete)
       if (members && members.length > 0) {
         const notifications = members.map(member => ({
           user_id: member.id,
@@ -390,28 +422,6 @@ export default function ManageTeamPage() {
         await supabase
           .from('notifications')
           .insert(notifications)
-      }
-
-      // Remove all team members (set team_id to null)
-      const { error: memberError } = await supabase
-        .from('players')
-        .update({ team_id: null, looking_for_team: true })
-        .eq('team_id', team.id)
-
-      if (memberError) {
-
-        return
-      }
-
-      // Delete the team
-      const { error: teamError } = await supabase
-        .from('teams')
-        .delete()
-        .eq('id', team.id)
-
-      if (teamError) {
-
-        return
       }
 
       window.dispatchEvent(new Event('team-updated'))
@@ -994,17 +1004,16 @@ export default function ManageTeamPage() {
                   </Link>
                 </Button>
 
-                <Button asChild variant="ghost" className="w-full border border-slate-700 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500 hover:text-cyan-400">
-                  <Link href="/teams">
-                    <Users className="w-4 h-4 mr-2" />
-                    Browse Teams
-                  </Link>
-                </Button>
-
                 <Button
                   onClick={handleDeleteTeam}
                   variant="ghost"
-                  className="w-full border border-slate-800 text-slate-500 hover:bg-red-900/20 hover:border-red-500 hover:text-red-400 transition-all duration-300"
+                  disabled={isTeamInActiveTournament}
+                  className={`w-full border transition-all duration-300 ${
+                    isTeamInActiveTournament
+                      ? 'border-slate-800 text-slate-600 cursor-not-allowed opacity-50'
+                      : 'border-slate-800 text-slate-500 hover:bg-red-900/20 hover:border-red-500 hover:text-red-400'
+                  }`}
+                  title={isTeamInActiveTournament ? 'Cannot delete team while registered in a tournament' : undefined}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Team
@@ -1017,6 +1026,19 @@ export default function ManageTeamPage() {
                 >
                   <Crown className="w-4 h-4 mr-2" />
                   Transfer Captain
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setAdminMessageOpen(true)
+                    setAdminMsgSubject('')
+                    setAdminMsgBody('')
+                  }}
+                  variant="ghost"
+                  className="w-full border border-slate-700 text-slate-300 hover:bg-amber-500/10 hover:border-amber-500 hover:text-amber-400"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Message Admin
                 </Button>
               </CardContent>
             </Card>
@@ -1153,6 +1175,130 @@ export default function ManageTeamPage() {
             >
               {transferringCaptain ? 'Transferring...' : 'Transfer Captain'}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Admin Message Dialog */}
+      <Dialog open={adminMessageOpen} onOpenChange={setAdminMessageOpen}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Message Admin</DialogTitle>
+            <DialogDescription>
+              Send a message to the tournament administrators
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-1 block">Subject</label>
+              <Input
+                value={adminMsgSubject}
+                onChange={(e) => setAdminMsgSubject(e.target.value)}
+                placeholder="e.g. Ready for tournament, Schedule question..."
+                maxLength={200}
+                className="bg-slate-900/50 border-slate-700 focus:border-cyan-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-1 block">Message</label>
+              <Textarea
+                value={adminMsgBody}
+                onChange={(e) => setAdminMsgBody(e.target.value)}
+                placeholder="Type your message to admin..."
+                maxLength={2000}
+                rows={5}
+                className="bg-slate-900/50 border-slate-700 focus:border-cyan-500 resize-none"
+              />
+              <p className="text-[10px] text-slate-600 mt-1 text-right">{adminMsgBody.length}/2000</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAdminMessageOpen(false)}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!adminMsgSubject.trim() || !adminMsgBody.trim()) return
+                setSendingAdminMsg(true)
+                try {
+                  const supabase = createClient()
+                  const { data: { session } } = await supabase.auth.getSession()
+                  const res = await fetch('/api/admin-messages', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${session?.access_token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      team_id: team.id,
+                      subject: adminMsgSubject,
+                      message: adminMsgBody,
+                    }),
+                  })
+                  if (res.ok) {
+                    toast({ title: 'Message Sent', description: 'Your message has been sent to the admins.' })
+                    setAdminMessageOpen(false)
+                  } else {
+                    const data = await res.json()
+                    toast({ title: 'Error', description: data.error || 'Failed to send message', variant: 'destructive' })
+                  }
+                } catch {
+                  toast({ title: 'Error', description: 'Failed to send message', variant: 'destructive' })
+                } finally {
+                  setSendingAdminMsg(false)
+                }
+              }}
+              disabled={sendingAdminMsg || !adminMsgSubject.trim() || !adminMsgBody.trim()}
+              className="bg-[#C89B3C] hover:bg-[#A67E22] text-zinc-900 font-bold"
+            >
+              {sendingAdminMsg ? 'Sending...' : 'Send Message'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Admin Messages Dialog */}
+      <Dialog open={showAdminMessages} onOpenChange={setShowAdminMessages}>
+        <DialogContent className="bg-card border-border max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Admin Messages</DialogTitle>
+            <DialogDescription>
+              Conversation history with tournament administrators
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-3 py-2">
+            {adminMessages.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageSquare className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">No messages yet</p>
+              </div>
+            ) : (
+              adminMessages
+                .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                .map((msg: any) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.sender_role === 'captain' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-lg p-3 ${
+                        msg.sender_role === 'captain'
+                          ? 'bg-cyan-500/10 border border-cyan-500/20'
+                          : 'bg-amber-500/10 border border-amber-500/20'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          {msg.sender_role === 'admin' ? 'Admin' : 'You'}
+                        </span>
+                        <span className="text-[10px] text-slate-600">
+                          {new Date(msg.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-xs font-semibold text-slate-300 mb-1">{msg.subject}</p>
+                      <p className="text-xs text-slate-400 whitespace-pre-wrap">{msg.message}</p>
+                    </div>
+                  </div>
+                ))
+            )}
           </div>
         </DialogContent>
       </Dialog>
