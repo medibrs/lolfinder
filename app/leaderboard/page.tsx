@@ -11,6 +11,7 @@ import { getProfileIconUrl } from '@/lib/ddragon'
 import RoleIcon from '@/components/RoleIcon'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { getCached, setCache } from '@/lib/cache'
 import {
   Tooltip,
   TooltipContent,
@@ -112,6 +113,15 @@ export default function LeaderboardPage() {
   }
 
   const fetchPlayers = async () => {
+    // Check SWR cache first for instant display
+    const { data: cached, isFresh } = getCached<Player[]>('leaderboard_players')
+    if (cached) {
+      setPlayers(cached)
+      setLoading(false)
+      if (cached.length > 0) fetchProfileIconUrls(cached)
+      if (isFresh) return // Still fresh, skip network
+    }
+
     try {
       // Fetch all players
       const response = await fetch('/api/players?limit=100')
@@ -134,6 +144,7 @@ export default function LeaderboardPage() {
         })
 
       setPlayers(sortedPlayers)
+      setCache('leaderboard_players', sortedPlayers)
 
       // Fetch profile icons
       if (sortedPlayers.length > 0) {

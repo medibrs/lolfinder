@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import { getCompactMatchRouteId, getMatchPath } from '@/lib/slugs'
+import { getCached, setCache } from '@/lib/cache'
 
 type MatchStatus = 'Scheduled' | 'In_Progress' | 'Completed' | string
 
@@ -149,15 +150,25 @@ export default function MatchesPage() {
 
   useEffect(() => {
     const load = async () => {
+      // Check SWR cache first for instant display
+      const { data: cached, isFresh } = getCached<MatchRow[]>('matches_feed')
+      if (cached) {
+        setMatches(cached)
+        setLoading(false)
+        if (isFresh) return // Still fresh, skip network
+      }
+
       try {
         const response = await fetch('/api/matches?limit=200')
         if (!response.ok) {
-          setMatches([])
+          if (!cached) setMatches([])
           return
         }
 
         const payload = await response.json()
-        setMatches(payload.matches || [])
+        const freshMatches = payload.matches || []
+        setMatches(freshMatches)
+        setCache('matches_feed', freshMatches)
       } finally {
         setLoading(false)
       }

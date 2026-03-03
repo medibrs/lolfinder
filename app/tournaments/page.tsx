@@ -12,6 +12,7 @@ import { CalendarIcon, ClockIcon, TrophyIcon, TeamsIcon, UpcomingIcon, LiveIcon,
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { getTournamentPath } from '@/lib/slugs'
+import { getCached, setCache } from '@/lib/cache'
 
 interface Tournament {
   id: string
@@ -125,6 +126,14 @@ export default function TournamentsPage() {
         setProfileChecked(true)
       }
 
+      // Check SWR cache first for instant display
+      const { data: cachedTournaments, isFresh } = getCached<Tournament[]>('tournaments_list')
+      if (cachedTournaments && initialLoad) {
+        setTournaments(cachedTournaments)
+        setInitialLoad(false)
+        if (isFresh) return // Still fresh, skip network
+      }
+
       // Fetch tournaments data
       const { data, error } = await supabase
         .from('tournaments')
@@ -140,6 +149,7 @@ export default function TournamentsPage() {
       }
 
       setTournaments(data || [])
+      setCache('tournaments_list', data || [])
     } catch (error) {
     } finally {
       setInitialLoad(false) // Mark initial load as complete
