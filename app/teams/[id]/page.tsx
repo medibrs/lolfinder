@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import ProfileSetupBanner from '@/components/ProfileSetupBanner'
 import { getRankImage } from '@/lib/rank-utils'
 import { getProfileIconUrl } from '@/lib/ddragon'
 import RoleIcon from '@/components/RoleIcon'
@@ -433,22 +434,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
       {/* Profile Setup Banner */}
       {currentUserId && !hasPlayerProfile && (
         <div className="max-w-6xl mx-auto px-4 -mt-4 mb-6 relative z-10">
-          <div className="p-4 bg-cyan-950/30 border border-cyan-500/20 rounded-lg backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                  <UserPlus className="h-4 w-4 text-cyan-400" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-cyan-100">Complete Your Player Profile</h3>
-                  <p className="text-xs text-slate-400">Create your profile to join teams and participate in tournaments</p>
-                </div>
-              </div>
-              <Button asChild className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider h-8 px-4 shadow-[0_0_10px_rgba(8,145,178,0.2)]">
-                <Link href="/setup-profile">Set Up Profile</Link>
-              </Button>
-            </div>
-          </div>
+          <ProfileSetupBanner description="Create your profile to join teams and participate in tournaments" />
         </div>
       )}
 

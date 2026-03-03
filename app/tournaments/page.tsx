@@ -11,8 +11,10 @@ import { Share2, CheckCircle, XCircle, User, Coins } from 'lucide-react'
 import { CalendarIcon, ClockIcon, TrophyIcon, TeamsIcon, UpcomingIcon, LiveIcon, EndedIcon } from '@/components/TournamentIcons'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { getTournamentPath } from '@/lib/slugs'
 import { getCached, setCache } from '@/lib/cache'
+import ProfileSetupBanner from '@/components/ProfileSetupBanner'
 
 interface Tournament {
   id: string
@@ -32,6 +34,7 @@ interface Tournament {
 }
 
 export default function TournamentsPage() {
+  const isMobile = useIsMobile()
   const router = useRouter()
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
@@ -231,10 +234,10 @@ export default function TournamentsPage() {
       <div className="max-w-6xl mx-auto px-4 mt-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-5xl font-bold mb-3 font-beaufort tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] uppercase">
+            <h1 className={`${isMobile ? 'text-3xl' : 'text-5xl'} font-bold mb-3 font-beaufort tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] uppercase`}>
               Tournament Arena
             </h1>
-            <p className="text-gray-400 uppercase tracking-[0.3em] font-beaufort text-sm">
+            <p className={`text-gray-400 uppercase tracking-[0.3em] font-beaufort ${isMobile ? 'text-xs' : 'text-sm'}`}>
               Forge your legacy and compete for elite rewards
             </p>
           </div>
@@ -242,23 +245,7 @@ export default function TournamentsPage() {
 
         {/* Profile Setup Banner */}
         {user && !hasPlayerProfile && profileChecked && (
-          <div className="mb-8 p-6 bg-slate-900/60 backdrop-blur-md border border-cyan-500/30 rounded-xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-transparent pointer-events-none"></div>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-cyan-500/10 rounded-full flex items-center justify-center border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-all">
-                  <User className="w-6 h-6 text-cyan-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white font-beaufort tracking-wide">Complete Your Profile</h3>
-                  <p className="text-slate-400 text-sm">Unlock registration for upcoming competitive events.</p>
-                </div>
-              </div>
-              <Button asChild className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-6 rounded-lg shadow-[0_0_15px_rgba(8,145,178,0.3)] transition-all">
-                <Link href="/setup-profile">Set Up Profile Now</Link>
-              </Button>
-            </div>
-          </div>
+          <ProfileSetupBanner className="mb-8" description="Unlock registration for upcoming competitive events." />
         )}
 
         {initialLoad ? (

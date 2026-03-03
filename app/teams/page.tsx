@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,13 +11,14 @@ import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Shield, Users, Trophy, Search, Crown, Target, User } from 'lucide-react'
+import { Shield, Users, Trophy, Search, Crown, Target } from 'lucide-react'
 import { TeamAvatar } from '@/components/ui/team-avatar'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
 import { getCached, setCache } from '@/lib/cache'
+import ProfileSetupBanner from '@/components/ProfileSetupBanner'
 // DDragon version is stable - hardcode to avoid network fetch blocking render
 const DDRAGON_VERSION = '16.4.1'
 
@@ -40,6 +42,7 @@ interface Team {
 
 export default function TeamsPage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [teams, setTeams] = useState<any[]>([])
@@ -350,10 +353,10 @@ export default function TeamsPage() {
       <div className="max-w-6xl mx-auto px-4 mt-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-5xl font-bold mb-3 font-beaufort tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+            <h1 className={`${isMobile ? 'text-3xl' : 'text-5xl'} font-bold mb-3 font-beaufort tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]`}>
               Team Directory
             </h1>
-            <p className="text-gray-400 uppercase tracking-[0.3em] font-beaufort text-sm">
+            <p className={`text-gray-400 uppercase tracking-[0.3em] font-beaufort ${isMobile ? 'text-xs' : 'text-sm'}`}>
               Find your perfect squad and dominate the Rift
             </p>
           </div>
@@ -374,23 +377,7 @@ export default function TeamsPage() {
 
         {/* Profile Setup Banner */}
         {user && !hasPlayerProfile && profileChecked && (
-          <div className="mb-8 p-6 bg-slate-900/60 backdrop-blur-md border border-cyan-500/30 rounded-xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-transparent pointer-events-none"></div>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-cyan-500/10 rounded-full flex items-center justify-center border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-all">
-                  <User className="w-6 h-6 text-cyan-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white font-beaufort tracking-wide">Complete Your Profile</h3>
-                  <p className="text-slate-400 text-sm">Unlock invitations and team recruitment tools.</p>
-                </div>
-              </div>
-              <Button asChild className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-6 rounded-lg shadow-[0_0_15px_rgba(8,145,178,0.3)] transition-all">
-                <Link href="/setup-profile">Set Up Profile Now</Link>
-              </Button>
-            </div>
-          </div>
+          <ProfileSetupBanner className="mb-8" description="Unlock invitations and team recruitment tools." />
         )}
 
         <div className="mb-12 space-y-6">

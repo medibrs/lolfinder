@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Trophy, Users, Target, Zap, Shield, Crown, Bell, Settings, User, Medal } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Footer from '@/components/footer'
+import ProfileSetupBanner from '@/components/ProfileSetupBanner'
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
@@ -430,22 +431,7 @@ export default function Home() {
         {user && !playerProfile && profileChecked && (
           <section className="px-4 py-6 bg-black">
             <div className="max-w-6xl mx-auto">
-              <div className="p-4 bg-gray-900 border border-gray-800 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">
-                      <User className="w-5 h-5 text-gray-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-200">Complete Your Player Profile</h3>
-                      <p className="text-sm text-gray-500">Create your profile to join teams and participate in tournaments</p>
-                    </div>
-                  </div>
-                  <Button asChild className="bg-gray-800 hover:bg-gray-700 text-gray-100">
-                    <Link href="/setup-profile">Set Up Profile</Link>
-                  </Button>
-                </div>
-              </div>
+              <ProfileSetupBanner description="Create your profile to join teams and participate in tournaments" />
             </div>
           </section>
         )}
