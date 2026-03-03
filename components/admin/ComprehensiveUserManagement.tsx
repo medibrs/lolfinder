@@ -9,9 +9,15 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Shield, User, Crown, Trash2, Search, Mail, Calendar, AlertTriangle, MessageSquare, UserX } from 'lucide-react'
+import { Shield, User, Crown, Trash2, Search, Mail, Calendar, AlertTriangle, MessageSquare, UserX, RefreshCw, X, Bot, UserCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface AuthUser {
   id: string
@@ -28,12 +34,14 @@ interface UserProfile {
   role: string
   tier: string
   created_at: string
+  profile_icon_id?: number
 }
 
 export default function ComprehensiveUserManagement() {
-  const [users, setUsers] = useState<(AuthUser & { profile?: UserProfile })[]>([])
+  const [users, setUsers] = useState<(AuthUser & { profile?: UserProfile & { is_bot?: boolean } })[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [excludeBots, setExcludeBots] = useState(false)
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null)
   const [updating, setUpdating] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -255,10 +263,14 @@ export default function ComprehensiveUserManagement() {
     }
   }
 
-  const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.profile?.summoner_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.profile?.summoner_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesBotFilter = !excludeBots || !user.profile?.is_bot
+    
+    return matchesSearch && matchesBotFilter
+  })
 
   if (loading) {
     return (
@@ -269,247 +281,316 @@ export default function ComprehensiveUserManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* User Management Header */}
-      <Card className="bg-card border-border p-6">
-        <CardHeader className="p-0 mb-6">
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Comprehensive User Management
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* User Management Header */}
+      <div className="flex flex-wrap items-center gap-6 px-4 py-2 bg-slate-900/40 border border-slate-800 rounded-lg text-xs font-bold uppercase tracking-widest mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-slate-500">Users</span>
+          <span className="text-primary">{users.filter(u => !u.profile?.is_bot).length}</span>
+        </div>
+        <div className="w-[1px] h-3 bg-slate-800 hidden sm:block" />
+        <div className="flex items-center gap-2">
+          <span className="text-slate-500">Admins</span>
+          <span className="text-green-500">{users.filter(u => u.app_metadata?.role === 'admin' && !u.profile?.is_bot).length}</span>
+        </div>
+        <div className="w-[1px] h-3 bg-slate-800 hidden sm:block" />
+        <div className="flex items-center gap-2">
+          <span className="text-slate-500">Profiles</span>
+          <span className="text-blue-500">{users.filter(u => u.profile && !u.profile.is_bot).length}</span>
+        </div>
+        <div className="w-[1px] h-3 bg-slate-800 hidden sm:block" />
+        <div className="flex items-center gap-2">
+          <span className="text-slate-500">Bots</span>
+          <span className="text-orange-500">{users.filter(u => u.profile?.is_bot).length}</span>
+        </div>
+      </div>
+
+      <Card className="bg-card border-border p-4">
+        <CardHeader className="p-0 mb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Shield className="h-4 w-4" />
+            User Management
           </CardTitle>
-          <CardDescription>
-            Manage users, roles, and support tickets
-          </CardDescription>
         </CardHeader>
 
-        {/* Search Bar */}
-        <div className="flex gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        {/* Search Bar - Streamlined */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search users by email or summoner name..."
+              placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-9 h-9 text-sm"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant={excludeBots ? "default" : "outline"}
+              size="sm"
+              onClick={() => setExcludeBots(!excludeBots)}
+              className="h-9 px-3 text-xs flex items-center gap-2"
+              title={excludeBots ? "Showing only humans" : "Excluding bots hidden"}
+            >
+              {excludeBots ? <UserCheck className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+              {excludeBots ? "Humans" : "Include Bots"}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => { setLoading(true); fetchUsers() }}
+              disabled={loading}
+              className="h-9 w-9"
+              title="Refresh users"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
 
-        {/* User Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 bg-background rounded-lg text-center">
-            <p className="text-2xl font-bold text-primary">{users.length}</p>
-            <p className="text-sm text-muted-foreground">Total Users</p>
-          </div>
-          <div className="p-4 bg-background rounded-lg text-center">
-            <p className="text-2xl font-bold text-green-600">
-              {users.filter(u => u.app_metadata?.role === 'admin').length}
-            </p>
-            <p className="text-sm text-muted-foreground">Admins</p>
-          </div>
-          <div className="p-4 bg-background rounded-lg text-center">
-            <p className="text-2xl font-bold text-blue-600">
-              {users.filter(u => u.profile).length}
-            </p>
-            <p className="text-sm text-muted-foreground">With Profiles</p>
-          </div>
-          <div className="p-4 bg-background rounded-lg text-center">
-            <p className="text-2xl font-bold text-orange-600">
-              {users.filter(u => !u.profile).length}
-            </p>
-            <p className="text-sm text-muted-foreground">Need Setup</p>
-          </div>
-        </div>
-
-        {/* Users List */}
-        <div className="space-y-3">
+        {/* Users List - Tightened */}
+        <div className="space-y-1">
           {filteredUsers.map((user) => (
             <div
               key={user.id}
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-background/50 transition"
+              className="flex items-center justify-between p-2 px-3 border border-transparent rounded-md hover:bg-slate-900/50 hover:border-slate-800/50 transition group"
             >
-              <div className="flex items-center gap-4">
-                <div className="flex-shrink-0 h-10 w-10 relative rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  {(user.user_metadata?.avatar_url || user.user_metadata?.picture) ? (
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex-shrink-0 h-8 w-8 relative rounded overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center">
+                  {user.profile?.profile_icon_id ? (
                     <img
-                      src={user.user_metadata.avatar_url || user.user_metadata.picture}
+                      src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${user.profile.profile_icon_id}.png`}
                       alt={user.email}
-                      className="object-cover w-full h-full"
+                      className="object-cover w-full h-full opacity-80 group-hover:opacity-100"
                     />
                   ) : (
-                    <User className="h-5 w-5 text-gray-600" />
+                    <User className="h-4 w-4 text-slate-700" />
                   )}
                 </div>
-                <div>
-                  <p className="font-medium">{user.email}</p>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-3 w-3" />
-                    <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm truncate max-w-[150px] sm:max-w-none text-slate-200">{user.email}</p>
+                    {user.profile && (
+                      <Badge variant="outline" className={`text-[9px] h-4 py-0 font-mono flex items-center gap-1 ${user.profile.is_bot ? 'border-orange-500/50 text-orange-500 bg-orange-500/5' : 'bg-slate-900/50'}`}>
+                        {user.profile.is_bot && <Bot className="h-2.5 w-2.5" />}
+                        {user.profile.summoner_name}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-tight font-bold text-slate-500">
+                    <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /> {new Date(user.created_at).toLocaleDateString()}</span>
                     {user.profile && (
                       <>
-                        <span>•</span>
-                        <span>{user.profile.summoner_name}</span>
-                        <span>•</span>
+                        <span className="w-0.5 h-0.5 rounded-full bg-slate-800" />
+                        <span className="text-cyan-600/80">{user.profile.tier || 'Unranked'}</span>
+                        <span className="w-0.5 h-0.5 rounded-full bg-slate-800" />
                         <span>{user.profile.role}</span>
+                      </>
+                    )}
+                    {!user.profile && (
+                      <>
+                        <span className="w-0.5 h-0.5 rounded-full bg-slate-800" />
+                        <span className="text-orange-500 text-[8px]">No profile</span>
                       </>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity translate-x-1 group-hover:translate-x-0">
                 <Badge
                   variant={user.app_metadata?.role === 'admin' ? 'default' : 'secondary'}
-                  className="flex items-center gap-1"
+                  className="h-5 px-1.5 text-[9px] uppercase tracking-tighter"
                 >
-                  {user.app_metadata?.role === 'admin' ? (
-                    <Crown className="h-3 w-3" />
-                  ) : (
-                    <User className="h-3 w-3" />
-                  )}
-                  {user.app_metadata?.role || 'user'}
+                  {user.app_metadata?.role === 'admin' ? 'ADMIN' : 'USER'}
                 </Badge>
 
-                <Dialog
-                  open={selectedUser?.id === user.id}
-                  onOpenChange={(open) => {
-                    if (open) {
-                      setSelectedUser(user)
-                      setSupportTicket({ userId: user.id, issue: '', resolution: '' })
-                    } else {
-                      setSelectedUser(null)
-                    }
-                  }}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                    >
-                      Support
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Support for {user.email}</DialogTitle>
-                      <DialogDescription>
-                        Help resolve user issues and problems
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="issue">Issue Description</Label>
-                        <Textarea
-                          id="issue"
-                          placeholder="Describe the user's problem..."
-                          value={supportTicket.issue}
-                          onChange={(e) => setSupportTicket({ ...supportTicket, issue: e.target.value, userId: user.id })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="resolution">Resolution</Label>
-                        <Textarea
-                          id="resolution"
-                          placeholder="How was the issue resolved?"
-                          value={supportTicket.resolution}
-                          onChange={(e) => setSupportTicket({ ...supportTicket, resolution: e.target.value })}
-                        />
-                      </div>
-                      <Button onClick={solveUserProblem} className="w-full">
-                        Mark as Resolved
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
-                <Dialog
-                  open={messagingUser?.id === user.id}
-                  onOpenChange={(open) => {
-                    if (open) {
-                      setMessagingUser(user)
-                      setAdminMessage({ userId: user.id, title: '', message: '' })
-                    } else {
-                      setMessagingUser(null)
-                    }
-                  }}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Message
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Message {user.profile?.summoner_name || user.email}</DialogTitle>
-                      <DialogDescription>
-                        Send a direct administrative message to this user's notification inbox.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="msg-title">Title</Label>
-                        <Input
-                          id="msg-title"
-                          placeholder="E.g., Warning, Account Update, etc."
-                          value={adminMessage.title}
-                          onChange={(e) => setAdminMessage({ ...adminMessage, title: e.target.value, userId: user.id })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="msg-body">Message</Label>
-                        <Textarea
-                          id="msg-body"
-                          rows={4}
-                          placeholder="Type your message here..."
-                          value={adminMessage.message}
-                          onChange={(e) => setAdminMessage({ ...adminMessage, message: e.target.value })}
-                        />
-                      </div>
-                      <Button onClick={sendAdminMessage} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                        Send Message
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleAdminRole(user.id, user.app_metadata?.role || 'user')}
-                  disabled={updating === user.id}
-                >
-                  {updating === user.id ? 'Updating...' :
-                    user.app_metadata?.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
-                </Button>
-
-                {user.profile && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteProfile(user.id)}
-                    disabled={deleting === user.id}
-                    title="Delete Profile (Keeps Auth)"
+                <div className="flex items-center gap-1 border-l border-slate-800 pl-1.5 ml-1">
+                  <Dialog
+                    open={selectedUser?.id === user.id}
+                    onOpenChange={(open) => {
+                      if (open) {
+                        setSelectedUser(user)
+                        setSupportTicket({ userId: user.id, issue: '', resolution: '' })
+                      } else {
+                        setSelectedUser(null)
+                      }
+                    }}
                   >
-                    {deleting === user.id ? '...' : <UserX className="h-4 w-4" />}
-                  </Button>
-                )}
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:text-slate-200">
+                            <Shield className="h-3.5 w-3.5" />
+                          </Button>
+                        </DialogTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Support Ticket</TooltipContent>
+                    </Tooltip>
+                    <DialogContent className="max-w-md bg-slate-950 border-cyan-900/50 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                      <DialogHeader>
+                        <DialogTitle className="text-cyan-100 flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-cyan-500" />
+                          Support for {user.email}
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400">
+                          Help resolve user issues and problems
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="issue" className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Issue Description</Label>
+                          <Textarea
+                            id="issue"
+                            placeholder="Describe the user's problem..."
+                            value={supportTicket.issue}
+                            onChange={(e) => setSupportTicket({ ...supportTicket, issue: e.target.value, userId: user.id })}
+                            className="bg-slate-900/50 border-slate-800 focus:border-cyan-500/50 min-h-[100px] resize-none"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="resolution" className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Resolution</Label>
+                          <Textarea
+                            id="resolution"
+                            placeholder="How was the issue resolved?"
+                            value={supportTicket.resolution}
+                            onChange={(e) => setSupportTicket({ ...supportTicket, resolution: e.target.value })}
+                            className="bg-slate-900/50 border-slate-800 focus:border-cyan-500/50 min-h-[100px] resize-none"
+                          />
+                        </div>
+                        <Button 
+                          onClick={solveUserProblem} 
+                          className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold uppercase tracking-widest text-xs h-10 shadow-[0_0_10px_rgba(8,145,178,0.2)]"
+                        >
+                          Mark as Resolved
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
 
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => deleteUser(user.id)}
-                  disabled={deleting === user.id}
-                >
-                  {deleting === user.id ? 'Deleting...' : (
-                    <>
-                      <Trash2 className="h-4 w-4" />
-                    </>
+                  <Dialog
+                    open={messagingUser?.id === user.id}
+                    onOpenChange={(open) => {
+                      if (open) {
+                        setMessagingUser(user)
+                        setAdminMessage({ userId: user.id, title: '', message: '' })
+                      } else {
+                        setMessagingUser(null)
+                      }
+                    }}
+                  >
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:text-slate-200">
+                            <MessageSquare className="h-3.5 w-3.5" />
+                          </Button>
+                        </DialogTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Send Message</TooltipContent>
+                    </Tooltip>
+                    <DialogContent className="max-w-md bg-slate-950 border-purple-900/50 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                      <DialogHeader>
+                        <DialogTitle className="text-purple-100 flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-purple-500" />
+                          Message {user.profile?.summoner_name || user.email}
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400 font-medium">
+                          Send a direct administrative message to this user's notification inbox.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="msg-title" className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Title</Label>
+                          <Input
+                            id="msg-title"
+                            placeholder="E.g., Warning, Account Update, etc."
+                            value={adminMessage.title}
+                            onChange={(e) => setAdminMessage({ ...adminMessage, title: e.target.value, userId: user.id })}
+                            className="bg-slate-900/50 border-slate-800 focus:border-purple-500/50"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="msg-body" className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Message</Label>
+                          <Textarea
+                            id="msg-body"
+                            rows={4}
+                            placeholder="Type your message here..."
+                            value={adminMessage.message}
+                            onChange={(e) => setAdminMessage({ ...adminMessage, message: e.target.value })}
+                            className="bg-slate-900/50 border-slate-800 focus:border-purple-500/50 resize-none"
+                          />
+                        </div>
+                        <Button 
+                          onClick={sendAdminMessage} 
+                          className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase tracking-widest text-xs h-10 shadow-[0_0_10px_rgba(147,51,234,0.2)]"
+                        >
+                          Send Message
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-slate-500 hover:text-yellow-500"
+                        onClick={() => toggleAdminRole(user.id, user.app_metadata?.role || 'user')}
+                        disabled={updating === user.id}
+                      >
+                        <Crown className={`h-3.5 w-3.5 ${updating === user.id ? 'animate-pulse' : ''}`} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      {user.app_metadata?.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {user.profile && (
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-slate-500 hover:text-orange-500"
+                          onClick={() => deleteProfile(user.id)}
+                          disabled={deleting === user.id}
+                        >
+                          <UserX className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Delete Profile</TooltipContent>
+                    </Tooltip>
                   )}
-                </Button>
+
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-slate-500 hover:text-red-500"
+                        onClick={() => deleteUser(user.id)}
+                        disabled={deleting === user.id}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Delete Account</TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
             </div>
           ))}
@@ -522,5 +603,6 @@ export default function ComprehensiveUserManagement() {
         </div>
       </Card>
     </div>
+    </TooltipProvider>
   )
 }

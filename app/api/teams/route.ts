@@ -140,11 +140,15 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
 
-      // 2. Validate Image (if provided) - we will do this later after initial name validation
+      // 2. Validate Image (if provided) — must happen BEFORE team creation
       if (file) {
-        // Just prepare for later use
         const arrayBuffer = await file.arrayBuffer();
         imageBuffer = Buffer.from(arrayBuffer);
+
+        // Run full image safety + tag validation now, before any DB writes
+        const fileUrl = await validateAndUploadTeamAvatar(imageBuffer, file.name, 'logos');
+        // Store the URL for later use after team is created
+        (body as any).__uploadedAvatarUrl = fileUrl;
       }
     } catch (safetyError: any) {
       return NextResponse.json({ error: safetyError.message || 'Failed to verify content safety' }, { status: 400 });
@@ -222,21 +226,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- Upload Avatar strictly after DB creation ---
-    if (file && imageBuffer) {
-      try {
-        const fileUrl = await validateAndUploadTeamAvatar(imageBuffer, file.name, 'logos');
+    // --- Attach pre-validated avatar after DB creation ---
+    const uploadedAvatarUrl = (body as any).__uploadedAvatarUrl;
+    if (uploadedAvatarUrl) {
+      await supabase
+        .from('teams')
+        .update({ team_avatar: uploadedAvatarUrl })
+        .eq('id', data.id);
 
-        await supabase
-          .from('teams')
-          .update({ team_avatar: fileUrl })
-          .eq('id', data.id);
-
-        data.team_avatar = fileUrl;
-      } catch (uploadError: any) {
-        console.error('Failed to validate/upload avatar:', uploadError);
-        return NextResponse.json({ error: uploadError.message || 'Failed to process avatar' }, { status: 400 });
-      }
+      data.team_avatar = uploadedAvatarUrl;
     }
 
     return NextResponse.json(data, { status: 201 });

@@ -49,8 +49,6 @@ export async function GET(request: Request) {
         }
 
         const email = userData.email
-        const username = userData.login // This is their 42 intra name
-        const avatarUrl = userData.image?.link || userData.image?.url
 
         if (!email) {
             return NextResponse.redirect(`${origin}/auth?error=Your+42+account+must+have+an+associated+email`)
@@ -64,14 +62,13 @@ export async function GET(request: Request) {
         )
 
         // 4. Ensure User Exists in Supabase GoTrue Auth
+        // PRIVACY: Only store the auth provider identifier. No PII (username, avatar, full_name)
+        // from 42 is stored — users consent to sharing profile data when they create a player profile.
         const { error: createError } = await supabaseAdmin.auth.admin.createUser({
             email,
             email_confirm: true, // Auto confirm so they don't have to verify via email
             user_metadata: {
                 provider: '42',
-                username: username,
-                avatar_url: avatarUrl,
-                full_name: userData.displayname
             }
         })
 

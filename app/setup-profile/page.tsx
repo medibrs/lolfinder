@@ -363,6 +363,12 @@ export default function SetupProfilePage() {
                   >
                     {loading ? (isEditing ? 'TRANSITIONING...' : 'INITIALIZING...') : (isEditing ? 'COMMIT PROFILE' : 'COMMIT PROFILE')}
                   </button>
+
+                  {/* Data Consent */}
+                  <p className="text-[9px] text-slate-500 uppercase tracking-wider leading-relaxed text-center pt-2">
+                    By creating or updating your profile, you consent to storing and displaying your Riot Games summoner data (name, rank, icon) on this platform. You can delete your profile and all associated data at any time via{' '}
+                    <Link href="/settings" className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2">Settings</Link>.
+                  </p>
                 </form>
               </div>
             </div>
@@ -438,6 +444,8 @@ export default function SetupProfilePage() {
                     All profile data provided is indexed for public recruitment and tournament qualification.
                   </p>
                 </div>
+
+
             </div>
           </div>
         </div>

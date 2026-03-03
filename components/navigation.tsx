@@ -23,6 +23,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
+import { useCurrentUserName } from '@/hooks/use-current-user-name'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { Menu, HelpCircle, MessageSquare, Lightbulb, Crown, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -45,6 +46,7 @@ export default function Navigation() {
 
   // Global notifications hook
   const { notifications, unreadCount } = useRealtimeNotifications(user?.id || null)
+  const currentUserName = useCurrentUserName()
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -865,7 +867,7 @@ export default function Navigation() {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none capitalize">
-                        {user.user_metadata?.name || user.user_metadata?.full_name || 'Player'}
+                        {currentUserName}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
                         Account Settings
