@@ -9,8 +9,8 @@ import { getRankImage } from "@/lib/rank-utils"
 import RoleIcon from "@/components/RoleIcon"
 
 // --- Constants ---
-
-const STANDINGS_GRID_CLASS = "grid grid-cols-[48px_1fr_160px_120px_96px_128px] items-center"
+// Same columns at all sizes, just fluid widths
+const STANDINGS_GRID_CLASS = "grid grid-cols-[28px_minmax(80px,1fr)_minmax(60px,160px)_minmax(32px,80px)_minmax(32px,64px)_minmax(40px,96px)] gap-x-1 sm:gap-x-2 items-center"
 
 // --- Components ---
 
@@ -18,7 +18,7 @@ function Standings({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="standings"
-            className={cn("space-y-2 max-w-4xl mx-auto", className)}
+            className={cn("space-y-1 sm:space-y-2 max-w-4xl mx-auto", className)}
             {...props}
         />
     )
@@ -30,7 +30,7 @@ function StandingsHeader({ className, ...props }: React.ComponentProps<"div">) {
             data-slot="standings-header"
             className={cn(
                 STANDINGS_GRID_CLASS,
-                "mb-4 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]",
+                "mb-2 sm:mb-4 px-2 sm:px-6 text-[7px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] sm:tracking-[0.2em]",
                 className
             )}
             {...props}
@@ -45,10 +45,9 @@ function StandingsRow({ className, ...props }: React.ComponentProps<"div">) {
             className={cn(
                 "group relative",
                 STANDINGS_GRID_CLASS,
-                "p-3 bg-[#0c121d]/60 border border-slate-800/60 hover:border-cyan-500/50 transition-all duration-300 rounded-lg overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] hover:translate-x-1",
+                "p-1.5 sm:p-3 bg-[#0c121d]/60 border border-slate-800/60 hover:border-cyan-500/50 transition-all duration-300 rounded-md sm:rounded-lg overflow-hidden shadow-sm hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] hover:translate-x-1",
                 className
             )}
-            {...props}
         >
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 pointer-events-none" />
             {props.children}
@@ -112,7 +111,7 @@ export default function StandingsList({ players, profileIconUrls }: StandingsLis
         <Standings>
             <StandingsHeader>
                 <div className="text-left">#</div>
-                <div className="text-left pl-4">Player</div>
+                <div className="text-left pl-2 sm:pl-4">Player</div>
                 <div className="text-center">Performance</div>
                 <div className="text-center">Rank</div>
                 <div className="text-center">Standing</div>
@@ -129,47 +128,48 @@ export default function StandingsList({ players, profileIconUrls }: StandingsLis
                 return (
                     <StandingsRow key={player.id}>
                         {/* Rank Number */}
-                        <div className="text-center font-beaufort font-black text-slate-500 group-hover:text-cyan-400 transition-colors">
+                        <div className="text-center text-xs sm:text-base font-beaufort font-black text-slate-500 group-hover:text-cyan-400 transition-colors">
                             {actualRank}
                         </div>
 
                         {/* Avatar & Name */}
-                        <div className="flex items-center gap-4 min-w-0 pl-4">
-                            <div className="relative">
+                        <div className="flex items-center gap-1.5 sm:gap-4 min-w-0 pl-1 sm:pl-4">
+                            <div className="relative shrink-0">
                                 {profileIconUrls[player.id] ? (
                                     <Image
                                         src={profileIconUrls[player.id]}
                                         alt=""
                                         width={40}
                                         height={40}
-                                        className="rounded-full border border-slate-700/50 grayscale-[0.2] group-hover:grayscale-0 transition-all"
+                                        className="rounded-full border border-slate-700/50 grayscale-[0.2] group-hover:grayscale-0 transition-all w-6 h-6 sm:w-10 sm:h-10"
                                         unoptimized
                                     />
                                 ) : (
-                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700/50">?</div>
+                                    <div className="w-6 h-6 sm:w-10 sm:h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700/50 text-[8px] sm:text-base">?</div>
                                 )}
-                                <div className="absolute -bottom-1 -right-1 bg-slate-900 rounded-full border border-slate-800 flex items-center justify-center p-[2px]">
-                                    <RoleIcon role={player.main_role} size={10} />
+                                <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 bg-slate-900 rounded-full border border-slate-800 flex items-center justify-center p-[1px] sm:p-[2px]">
+                                    <RoleIcon role={player.main_role} size={8} className="sm:hidden" />
+                                    <RoleIcon role={player.main_role} size={10} className="hidden sm:block" />
                                 </div>
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="font-bold text-slate-200 group-hover:text-white truncate">
+                                <span className="font-bold text-slate-200 group-hover:text-white truncate text-[10px] sm:text-base">
                                     {player.summoner_name.split("#")[0]}
                                 </span>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                                <span className="text-[7px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate">
                                     #{player.summoner_name.split("#")[1]}
                                 </span>
                             </div>
                         </div>
 
                         {/* Performance (Winrate Bar) */}
-                        <div className="flex flex-col gap-1.5 px-4">
-                            <div className="flex justify-between text-[9px] font-black uppercase tracking-wider opacity-60">
+                        <div className="flex flex-col gap-0.5 sm:gap-1.5 px-1 sm:px-4">
+                            <div className="flex justify-between text-[6px] sm:text-[9px] font-black uppercase tracking-wider opacity-60">
                                 <span className="text-green-500">{wins}W</span>
                                 <span className="text-slate-400">{winRate}%</span>
                                 <span className="text-red-500">{losses}L</span>
                             </div>
-                            <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+                            <div className="h-1 sm:h-1.5 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
                                 <div
                                     className="h-full bg-green-500/80 shadow-[0_0_8px_rgba(34,197,94,0.3)]"
                                     style={{ width: `${winRate}%` }}
@@ -185,18 +185,18 @@ export default function StandingsList({ players, profileIconUrls }: StandingsLis
                                 alt={player.tier}
                                 width={28}
                                 height={28}
-                                className="object-contain mb-0.5"
+                                className="object-contain mb-0.5 w-4 h-4 sm:w-7 sm:h-7"
                             />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                            <span className="text-[7px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                                 {player.tier}
                             </span>
                         </div>
 
                         {/* LP Standing */}
                         <div className="text-center">
-                            <span className="text-sm font-black text-[#c9aa71] group-hover:text-[#e5c48b] drop-shadow-[0_0_8px_rgba(201,170,113,0.2)] transition-colors">
+                            <span className="text-[10px] sm:text-sm font-black text-[#c9aa71] group-hover:text-[#e5c48b] drop-shadow-[0_0_8px_rgba(201,170,113,0.2)] transition-colors">
                                 {player.league_points}{" "}
-                                <span className="text-[10px] text-slate-500 font-bold uppercase ml-0.5">LP</span>
+                                <span className="text-[7px] sm:text-[10px] text-slate-500 font-bold uppercase ml-0.5">LP</span>
                             </span>
                         </div>
 
@@ -205,10 +205,11 @@ export default function StandingsList({ players, profileIconUrls }: StandingsLis
                             <Button
                                 asChild
                                 variant="ghost"
-                                className="w-full text-[10px] font-black uppercase tracking-[0.2em] h-9 border border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-500/5 hover:text-cyan-400 transition-all rounded-md"
+                                className="w-full text-[7px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] h-6 sm:h-9 border border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-500/5 hover:text-cyan-400 transition-all rounded-md px-1 sm:px-3"
                             >
                                 <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
-                                    View OP.GG
+                                    <span className="sm:hidden">OP.GG</span>
+                                    <span className="hidden sm:inline">View OP.GG</span>
                                 </a>
                             </Button>
                         </div>
