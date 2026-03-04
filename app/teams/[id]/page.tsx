@@ -433,7 +433,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
 
       {/* Profile Setup Banner */}
       {currentUserId && !hasPlayerProfile && (
-        <div className="max-w-6xl mx-auto px-4 -mt-4 mb-6 relative z-10">
+        <div className="max-w-6xl mx-auto px-4 -mt-4 mb-12 relative z-10">
           <ProfileSetupBanner description="Create your profile to join teams and participate in tournaments" />
         </div>
       )}

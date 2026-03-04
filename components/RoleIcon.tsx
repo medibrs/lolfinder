@@ -1,35 +1,44 @@
-import Image from 'next/image'
+"use client"
 
-interface RoleIconProps {
+import * as React from "react"
+import { cn } from "@/lib/utils"
+
+interface RoleIconProps extends React.ComponentProps<"img"> {
   role: string
   size?: number
-  className?: string
 }
 
-export default function RoleIcon({ role, size = 24, className = '' }: RoleIconProps) {
-  const getRoleIcon = (role: string) => {
-    const icons: { [key: string]: string } = {
-      'Top': '/roles/top.svg',
-      'Jungle': '/roles/jungle.svg',
-      'Mid': '/roles/mid.svg',
-      'ADC': '/roles/adc.svg',
-      'Support': '/roles/support.svg'
+export default function RoleIcon({
+  role,
+  size = 24,
+  className,
+  style,
+  ...props
+}: RoleIconProps) {
+  const getRoleIconUri = (roleName: string) => {
+    const icons: Record<string, string> = {
+      Top: "/roles/top.svg",
+      Jungle: "/roles/jungle.svg",
+      Mid: "/roles/mid.svg",
+      ADC: "/roles/adc.svg",
+      Support: "/roles/support.svg",
     }
-    return icons[role] || '/roles/top.svg' // fallback to top icon
+    return icons[roleName] || "/roles/top.svg"
   }
 
   return (
     <img
-      src={getRoleIcon(role)}
+      data-slot="role-icon"
+      src={getRoleIconUri(role)}
       alt={role}
-      width={size}
-      height={size}
-      className={`inline-block ${className}`}
-      style={{ 
-        width: size, 
+      className={cn("block", className)}
+      style={{
+        width: size,
         height: size,
-        filter: 'brightness(0) invert(1)' // Makes SVG white
+        filter: "brightness(0) invert(1)", // Makes SVG white
+        ...style,
       }}
+      {...props}
     />
   )
 }
