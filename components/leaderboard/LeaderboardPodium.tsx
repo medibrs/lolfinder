@@ -56,7 +56,7 @@ function FirstPlace({ player, profileIconUrl }: PodiumPlayerProps) {
     return (
         <div data-slot="podium-rank-1" className="relative w-full group/p1 mb-6 md:mb-0">
             {/* Avatar — positioned above the card */}
-            <div className="absolute -top-10 sm:-top-14 md:-top-16 left-1/2 md:right-16 md:left-auto -translate-x-1/2 md:translate-x-0 z-40">
+            <div className="absolute -top-10 sm:-top-14 md:-top-16 left-1/2 -translate-x-1/2 z-40">
                 <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-20 opacity-60 -top-5 sm:-top-8 md:-top-10 w-10 sm:w-16 md:w-20 h-10 sm:h-16 md:h-20">
                     <Image
                         src="/tournament_assets/halo.png"
@@ -76,12 +76,12 @@ function FirstPlace({ player, profileIconUrl }: PodiumPlayerProps) {
             </div>
 
             {/* Card body */}
-            <div className="relative h-[150px] sm:h-[180px] md:h-[220px] bg-[#0c121d] border border-[#c9aa71] md:border-2 shadow-[0_0_80px_rgba(201,170,113,0.1)] flex items-center justify-end px-4 sm:px-8 md:px-12 pt-4 overflow-hidden">
+            <div className="relative h-[150px] sm:h-[180px] md:h-[220px] bg-[#0c121d] border border-[#c9aa71] md:border-2 shadow-[0_0_80px_rgba(201,170,113,0.1)] flex items-center justify-end px-4 sm:px-8 md:px-12 pt-4 overflow-hidden md:overflow-visible">
                 <div className="absolute inset-0 bg-[#c9aa71]/15 blur-[60px] opacity-0 group-hover/p1:opacity-100 transition-opacity duration-700 -z-10" />
                 <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[#c9aa71]/10 to-transparent" />
 
                 {/* Trophy — left side */}
-                <div className="absolute z-50 pointer-events-none -left-3 sm:-left-6 md:-left-14 bottom-0 sm:-bottom-2 md:-bottom-8 w-[90px] sm:w-[160px] md:w-[260px] h-[130px] sm:h-[200px] md:h-[340px]">
+                <div className="absolute z-50 pointer-events-none -left-10 sm:-left-6 md:-left-16 bottom-1 sm:-bottom-2 md:-top-20 md:bottom-auto w-[190px] sm:w-[150px] md:w-[280px] h-[130px] sm:h-[200px] md:h-[360px]">
                     <FirstPlaceTrophyIcon size={40} className="!w-full !h-full [&_img]:object-contain drop-shadow-[0_40px_60px_rgba(0,0,0,0.9)]" />
                 </div>
 

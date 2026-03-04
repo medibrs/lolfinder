@@ -150,30 +150,17 @@ export default function LeaderboardPage() {
 
         {loading ? (
           <div className="space-y-16">
-            {/* Podium skeleton — desktop: row, mobile: stacked */}
-            <div className="hidden md:flex flex-row items-end justify-center gap-3 px-4 max-w-6xl mx-auto">
-              <div className="relative flex-1 max-w-[280px] h-[110px] bg-slate-800/40 rounded-sm skew-x-[-1deg] animate-pulse">
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-slate-700/50" />
+            {/* Podium skeleton — always horizontal */}
+            <div className="flex flex-row items-end justify-center gap-1 sm:gap-3 px-1 sm:px-4 max-w-6xl mx-auto">
+              <div className="relative flex-1 max-w-[280px] h-[90px] sm:h-[110px] bg-slate-800/40 rounded-sm skew-x-[-1deg] animate-pulse">
+                <div className="absolute -top-5 sm:-top-7 left-1/2 -translate-x-1/2 w-10 sm:w-14 h-10 sm:h-14 rounded-full bg-slate-700/50" />
               </div>
-              <div className="relative flex-[1.7] max-w-[480px] h-[220px] bg-slate-800/60 rounded-sm animate-pulse">
-                <div className="absolute -top-16 right-16 w-24 h-24 rounded-full bg-slate-700/60" />
-                <div className="absolute top-1/2 right-8 w-32 h-6 bg-slate-700/40 rounded" />
+              <div className="relative flex-1 max-w-[480px] h-[160px] sm:h-[220px] bg-slate-800/60 rounded-sm animate-pulse">
+                <div className="absolute -top-10 sm:-top-16 left-1/2 -translate-x-1/2 w-16 sm:w-24 h-16 sm:h-24 rounded-full bg-slate-700/60" />
+                <div className="absolute top-1/2 right-4 sm:right-8 w-20 sm:w-32 h-4 sm:h-6 bg-slate-700/40 rounded" />
               </div>
-              <div className="relative flex-1 max-w-[280px] h-[110px] bg-slate-800/40 rounded-sm skew-x-[1deg] animate-pulse">
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-slate-700/50" />
-              </div>
-            </div>
-            <div className="md:hidden flex flex-col gap-8 px-3 sm:px-4">
-              <div className="relative h-[150px] bg-slate-800/60 rounded-sm animate-pulse">
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-slate-700/60" />
-              </div>
-              <div className="flex flex-row gap-2 sm:gap-3">
-                <div className="relative flex-1 h-[100px] bg-slate-800/40 rounded-sm skew-x-[-1deg] animate-pulse">
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-slate-700/50" />
-                </div>
-                <div className="relative flex-1 h-[100px] bg-slate-800/40 rounded-sm skew-x-[1deg] animate-pulse">
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-slate-700/50" />
-                </div>
+              <div className="relative flex-1 max-w-[280px] h-[90px] sm:h-[110px] bg-slate-800/40 rounded-sm skew-x-[1deg] animate-pulse">
+                <div className="absolute -top-5 sm:-top-7 left-1/2 -translate-x-1/2 w-10 sm:w-14 h-10 sm:h-14 rounded-full bg-slate-700/50" />
               </div>
             </div>
 
