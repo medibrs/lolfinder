@@ -133,22 +133,22 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // 2. Perform Ownership Verification using the Profile Icon challenge
-    const expectedIconId = getExpectedIconId(user.id);
-    console.log(`[Riot Verification - POST] User ${user.email} (${user.id}) attempting to claim ${riotData.summonerName}. Current Icon: ${riotData.profileIconId} | Expected Icon: ${expectedIconId}`);
+    // 2. Ownership Verification via Profile Icon challenge — DISABLED to reduce signup friction
+    // TODO: Re-enable when ready. The icon check was blocking new users who didn't want to open LoL client.
+    // const expectedIconId = getExpectedIconId(user.id);
+    // console.log(`[Riot Verification - POST] User ${user.email} (${user.id}) attempting to claim ${riotData.summonerName}. Current Icon: ${riotData.profileIconId} | Expected Icon: ${expectedIconId}`);
+    // if (riotData.profileIconId !== expectedIconId) {
+    //   console.log(`   -> Failed: Icon Mismatch.`);
+    //   return NextResponse.json({
+    //     error: `Ownership Verification Required.`,
+    //     requiresVerification: true,
+    //     expectedIconId,
+    //     currentIconId: riotData.profileIconId,
+    //     summonerName: riotData.summonerName
+    //   }, { status: 400 });
+    // }
 
-    if (riotData.profileIconId !== expectedIconId) {
-      console.log(`   -> Failed: Icon Mismatch.`);
-      return NextResponse.json({
-        error: `Ownership Verification Required.`,
-        requiresVerification: true,
-        expectedIconId,
-        currentIconId: riotData.profileIconId,
-        summonerName: riotData.summonerName
-      }, { status: 400 });
-    }
-
-    console.log(`   -> SUCCESS! User successfully proved ownership of ${riotData.summonerName}. Generating Profile.`);
+    console.log(`[Riot Verification - POST] Ownership verification SKIPPED. User ${user.email} (${user.id}) claiming ${riotData.summonerName}.`);
 
     // Use the authenticated user's ID as the player ID
     const playerData = {

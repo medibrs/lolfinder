@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import RoleIcon from '@/components/RoleIcon'
 import RoleSelect from '@/components/RoleSelect'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
-import { Shield, Trophy, Users, Zap } from 'lucide-react'
+import { Trophy, Users, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
@@ -47,12 +47,12 @@ export default function SetupProfilePage() {
   const [fetchedTier, setFetchedTier] = useState<string | null>(null)
   const [profileIconId, setProfileIconId] = useState<number>(29)
 
-  // Ownership Verification State
-  const [verificationRequired, setVerificationRequired] = useState<{
-    expectedIconId: number;
-    currentIconId: number;
-    summonerName: string;
-  } | null>(null)
+  // Ownership Verification State — DISABLED to reduce signup friction
+  // const [verificationRequired, setVerificationRequired] = useState<{
+  //   expectedIconId: number;
+  //   currentIconId: number;
+  //   summonerName: string;
+  // } | null>(null)
 
   useEffect(() => {
     // Load existing profile if it exists (auth is handled by middleware)
@@ -174,27 +174,15 @@ export default function SetupProfilePage() {
       } else {
         const errorData = await response.json()
 
-        if (errorData.requiresVerification) {
-          setProfileIconId(errorData.currentIconId || 29)
-          setVerificationRequired({
-            expectedIconId: errorData.expectedIconId,
-            currentIconId: errorData.currentIconId,
-            summonerName: errorData.summonerName
-          });
-          setRiotError(errorData.error);
-        } else {
-          let errorMessage = errorData.error;
-          if (errorData.error === 'Validation error' && errorData.details?.length > 0) {
-            errorMessage = errorData.details[0].message;
-          }
-
-          setRiotError(errorMessage || 'Failed to save profile')
-          setVerificationRequired(null)
+        let errorMessage = errorData.error;
+        if (errorData.error === 'Validation error' && errorData.details?.length > 0) {
+          errorMessage = errorData.details[0].message;
         }
+
+        setRiotError(errorMessage || 'Failed to save profile')
       }
     } catch (error) {
       setRiotError('An unexpected error occurred')
-      setVerificationRequired(null)
     } finally {
       setLoading(false)
     }
@@ -279,40 +267,9 @@ export default function SetupProfilePage() {
                       </div>
 
                       {/* Error State */}
-                      {riotError && !verificationRequired && (
+                      {riotError && (
                         <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
                           <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider">{riotError}</div>
-                        </div>
-                      )}
-
-                      {/* Verification Required */}
-                      {verificationRequired && (
-                        <div className="mt-4 p-5 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-4">
-                          <div className="flex items-center gap-3">
-                            <Shield className="w-5 h-5 text-amber-500" />
-                            <h4 className="text-xs font-bold text-amber-500 uppercase tracking-widest">Verification Required</h4>
-                          </div>
-                          <p className="text-[10px] text-slate-400 leading-relaxed uppercase tracking-wider">
-                            Change your LoL client profile icon to match the one below, wait 30s, and submit again.
-                          </p>
-                          <div className="flex items-center justify-center gap-8 py-2">
-                            <div className="text-center">
-                              <p className="text-[8px] text-slate-500 font-bold uppercase mb-2">TARGET ICON</p>
-                              <img
-                                src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${verificationRequired.expectedIconId}.png`}
-                                alt="Expected"
-                                className="w-16 h-16 rounded-xl border-2 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
-                              />
-                            </div>
-                            <div className="text-center opacity-30">
-                              <p className="text-[8px] text-slate-500 font-bold uppercase mb-2">CURRENT</p>
-                              <img
-                                src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${verificationRequired.currentIconId}.png`}
-                                alt="Current"
-                                className="w-12 h-12 rounded-xl border border-slate-700"
-                              />
-                            </div>
-                          </div>
                         </div>
                       )}
                     </div>
@@ -373,77 +330,77 @@ export default function SetupProfilePage() {
               </div>
             </div>
 
-              {/* Right Column: Visual Preview */}
-              <div className="hidden lg:flex w-2/5 flex-col justify-center items-center h-full self-stretch border-l border-slate-800/50 pl-12 space-y-8">
-                <div className="relative group w-full max-w-[280px]">
-                  {/* Hextech Frame Around Preview Card */}
-                  <div className="absolute -inset-1 bg-gradient-to-b from-cyan-500/20 to-transparent rounded-2xl blur-sm opacity-50 transition-opacity group-hover:opacity-100" />
+            {/* Right Column: Visual Preview */}
+            <div className="hidden lg:flex w-2/5 flex-col justify-center items-center h-full self-stretch border-l border-slate-800/50 pl-12 space-y-8">
+              <div className="relative group w-full max-w-[280px]">
+                {/* Hextech Frame Around Preview Card */}
+                <div className="absolute -inset-1 bg-gradient-to-b from-cyan-500/20 to-transparent rounded-2xl blur-sm opacity-50 transition-opacity group-hover:opacity-100" />
 
-                  <div className="relative bg-[#0c121d]/60 border border-slate-800/60 rounded-xl p-6 space-y-6 backdrop-blur-xl shadow-sm hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all duration-300">
-                    <div className="flex flex-col items-center text-center space-y-4">
-                      {/* Avatar Preview */}
-                      <div className="relative">
-                        <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#c9aa71]/30 p-1 bg-[#0c121d]/60">
-                          <img
-                            src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${profileIconId || 29}.png`}
-                            alt="Avatar"
-                            className="w-full h-full object-cover rounded-xl opacity-60 group-hover:opacity-100 transition-opacity"
-                          />
-                        </div>
-                        <div className="absolute -bottom-2 -right-2 bg-[#0c121d]/60 border border-slate-800/60 p-1.5 rounded-lg shadow-lg">
-                          {formData.main_role ? (
-                            <RoleIcon role={formData.main_role} size={20} className="brightness-150" />
-                          ) : (
-                            <Trophy className="w-5 h-5 text-slate-600" />
-                          )}
-                        </div>
+                <div className="relative bg-[#0c121d]/60 border border-slate-800/60 rounded-xl p-6 space-y-6 backdrop-blur-xl shadow-sm hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all duration-300">
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    {/* Avatar Preview */}
+                    <div className="relative">
+                      <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#c9aa71]/30 p-1 bg-[#0c121d]/60">
+                        <img
+                          src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${profileIconId || 29}.png`}
+                          alt="Avatar"
+                          className="w-full h-full object-cover rounded-xl opacity-60 group-hover:opacity-100 transition-opacity"
+                        />
                       </div>
-
-                      <div className="space-y-1 w-full overflow-hidden">
-                        <h3 className="text-xl font-bold font-beaufort text-white tracking-widest truncate uppercase drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">
-                          {formData.summoner_name || 'NO NAME'}
-                        </h3>
-                        <div className="flex items-center justify-center gap-2">
-                          {fetchedTier ? (
-                            <Badge className={`${getTierColor(fetchedTier)} text-white text-[8px] font-bold uppercase tracking-tight py-0.5 px-2 rounded-sm h-auto shadow-[0_0_8px_rgba(0,0,0,0.3)]`}>
-                              {fetchedTier}
-                            </Badge>
-                          ) : (
-                            <span className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">UNRANKED</span>
-                          )}
-                          <div className="w-1 h-1 rounded-full bg-slate-700" />
-                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
-                            {formData.main_role || 'ROLE TBD'}
-                          </span>
-                        </div>
+                      <div className="absolute -bottom-2 -right-2 bg-[#0c121d]/60 border border-slate-800/60 p-1.5 rounded-lg shadow-lg">
+                        {formData.main_role ? (
+                          <RoleIcon role={formData.main_role} size={20} className="brightness-150" />
+                        ) : (
+                          <Trophy className="w-5 h-5 text-slate-600" />
+                        )}
                       </div>
                     </div>
 
-                    <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
-
-                    <div className="flex justify-center">
-                      {formData.looking_for_team ? (
-                        <div className="px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[9px] font-bold uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(34,211,238,0.1)] flex items-center gap-2 animate-pulse">
-                          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                          LFT Status Active
-                        </div>
-                      ) : (
-                        <div className="px-4 py-1.5 rounded-full bg-[#0c121d]/60 border border-slate-800/60 text-slate-500 text-[9px] font-bold uppercase tracking-[0.2em]">
-                          Private Profile
-                        </div>
-                      )}
+                    <div className="space-y-1 w-full overflow-hidden">
+                      <h3 className="text-xl font-bold font-beaufort text-white tracking-widest truncate uppercase drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">
+                        {formData.summoner_name || 'NO NAME'}
+                      </h3>
+                      <div className="flex items-center justify-center gap-2">
+                        {fetchedTier ? (
+                          <Badge className={`${getTierColor(fetchedTier)} text-white text-[8px] font-bold uppercase tracking-tight py-0.5 px-2 rounded-sm h-auto shadow-[0_0_8px_rgba(0,0,0,0.3)]`}>
+                            {fetchedTier}
+                          </Badge>
+                        ) : (
+                          <span className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">UNRANKED</span>
+                        )}
+                        <div className="w-1 h-1 rounded-full bg-slate-700" />
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                          {formData.main_role || 'ROLE TBD'}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="max-w-[280px] w-full p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="text-[#c89b3c] text-[8px] font-bold uppercase tracking-wider">Public Disclaimer</div>
+                  <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+
+                  <div className="flex justify-center">
+                    {formData.looking_for_team ? (
+                      <div className="px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[9px] font-bold uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(34,211,238,0.1)] flex items-center gap-2 animate-pulse">
+                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                        LFT Status Active
+                      </div>
+                    ) : (
+                      <div className="px-4 py-1.5 rounded-full bg-[#0c121d]/60 border border-slate-800/60 text-slate-500 text-[9px] font-bold uppercase tracking-[0.2em]">
+                        Private Profile
+                      </div>
+                    )}
                   </div>
-                  <p className="text-[9px] text-slate-500 uppercase tracking-wider leading-relaxed">
-                    All profile data provided is indexed for public recruitment and tournament qualification.
-                  </p>
                 </div>
+              </div>
+
+              <div className="max-w-[280px] w-full p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-xl space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="text-[#c89b3c] text-[8px] font-bold uppercase tracking-wider">Public Disclaimer</div>
+                </div>
+                <p className="text-[9px] text-slate-500 uppercase tracking-wider leading-relaxed">
+                  All profile data provided is indexed for public recruitment and tournament qualification.
+                </p>
+              </div>
 
 
             </div>
