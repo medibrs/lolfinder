@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { cdnUrl } from "@/lib/cdn"
 
 interface RoleIconProps extends React.ComponentProps<"img"> {
   role: string
@@ -17,13 +18,13 @@ export default function RoleIcon({
 }: RoleIconProps) {
   const getRoleIconUri = (roleName: string) => {
     const icons: Record<string, string> = {
-      Top: "/roles/top.svg",
-      Jungle: "/roles/jungle.svg",
-      Mid: "/roles/mid.svg",
-      ADC: "/roles/adc.svg",
-      Support: "/roles/support.svg",
+      Top: cdnUrl("/roles/top.svg"),
+      Jungle: cdnUrl("/roles/jungle.svg"),
+      Mid: cdnUrl("/roles/mid.svg"),
+      ADC: cdnUrl("/roles/adc.svg"),
+      Support: cdnUrl("/roles/support.svg"),
     }
-    return icons[roleName] || "/roles/top.svg"
+    return icons[roleName] || cdnUrl("/roles/top.svg")
   }
 
   return (

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { cdnUrl } from '@/lib/cdn'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { CurrentUserAvatar } from '@/components/current-user-avatar'
@@ -196,13 +197,14 @@ export default function Navigation() {
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
               <Image
-                src="/logo.png"
+                src={cdnUrl("/logo.png")}
                 alt="TeamFinder"
                 width={180}
                 height={48}
                 className="h-12 w-auto object-contain"
                 style={{ width: 'auto', height: '48px' }}
                 priority
+                unoptimized
               />
             </Link>
             <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
@@ -218,13 +220,14 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/logo.png"
+              src={cdnUrl("/logo.png")}
               alt="TeamFinder"
               width={180}
               height={48}
               className="h-12 w-auto object-contain"
               style={{ width: 'auto', height: '48px' }}
               priority
+              unoptimized
             />
           </Link>
 
@@ -274,11 +277,12 @@ export default function Navigation() {
                 <div className="px-4 py-6 border-b bg-background/50 backdrop-blur-sm">
                   <div className="flex items-center gap-3">
                     <Image
-                      src="/logo.png"
+                      src={cdnUrl("/logo.png")}
                       alt="lolfinder"
                       width={32}
                       height={32}
                       className="object-contain"
+                      unoptimized
                     />
                     <span className="font-bold text-lg">lolfinder</span>
                   </div>

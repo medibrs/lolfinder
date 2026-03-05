@@ -8,10 +8,11 @@ import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Share2, CheckCircle, XCircle, User, Coins } from 'lucide-react'
-import { CalendarIcon, ClockIcon, TrophyIcon, TeamsIcon, UpcomingIcon, LiveIcon, EndedIcon } from '@/components/TournamentIcons'
+import { CalendarIcon, ClockIcon, TrophyIcon, TeamsIcon, UpcomingIcon, LiveIcon, EndedIcon, ScrollIcon } from '@/components/TournamentIcons'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { cdnUrl } from '@/lib/cdn'
 import { getTournamentPath } from '@/lib/slugs'
 import { getCached, setCache } from '@/lib/cache'
 import ProfileSetupBanner from '@/components/ProfileSetupBanner'
@@ -282,21 +283,21 @@ export default function TournamentsPage() {
                     {/* TOP SECTION: Cinematic Ultrawide Image (29:9) */}
                     <div className="relative w-full aspect-[2.5/1] md:aspect-[29/9] overflow-hidden bg-slate-950 flex-shrink-0">
                       <img
-                        src={tournament.banner_image || '/leet_lol_header.jpg'}
+                        src={tournament.banner_image || cdnUrl('/leet_lol_header.jpg')}
                         alt={tournament.name}
                         className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 opacity-80 group-hover:opacity-100"
                       />
 
                       {/* Floating Status Badge (Top Right - Flushed Top) */}
-                      <div className="absolute top-0 right-20 z-20">
+                      <div className="absolute top-0 right-4 md:right-20 z-20">
                         {tournamentStatus.status === 'upcoming' && (
-                          <UpcomingIcon size={100} className="drop-shadow-2xl" />
+                          <UpcomingIcon size={isMobile ? 60 : 100} className="drop-shadow-2xl" />
                         )}
                         {tournamentStatus.status === 'live' && (
-                          <LiveIcon size={100} className="drop-shadow-2xl animate-pulse" />
+                          <LiveIcon size={isMobile ? 60 : 100} className="drop-shadow-2xl animate-pulse" />
                         )}
                         {tournamentStatus.status === 'completed' && (
-                          <EndedIcon size={100} className="opacity-80" />
+                          <EndedIcon size={isMobile ? 60 : 100} className="opacity-80" />
                         )}
                       </div>
 
@@ -309,55 +310,58 @@ export default function TournamentsPage() {
                     </div>
 
                     {/* BOTTOM SECTION: Rigid Stats Strip - Consistent inset */}
-                    <div className="w-full px-8 py-3 bg-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4 border-t-0">
+                    <div className="w-full px-4 md:px-8 py-3 bg-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-4 border-t-0">
 
-                      {/* Stats Flex Grid */}
-                      <div className="flex flex-row flex-wrap items-center gap-8 lg:gap-16">
+                      {/* Stats Flex Grid - 2 columns on mobile, row on desktop */}
+                      <div className="grid grid-cols-2 md:flex md:flex-row items-center gap-x-3 gap-y-3 md:gap-8 lg:gap-16">
                         {/* Stat 1: Date */}
-                        <div className="flex flex-row items-center gap-3">
-                          <CalendarIcon size={20} className="opacity-50" />
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Date</span>
-                            <span className="text-xs md:text-sm text-slate-200 font-bold uppercase tracking-wide">
-                              {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        <div className="flex flex-row items-center gap-2 md:gap-3 h-full">
+                          <CalendarIcon size={isMobile ? 12 : 20} className="opacity-50 flex-shrink-0" />
+                          <div className="flex flex-col justify-center">
+                            <span className="text-[7px] md:text-[10px] text-slate-500 font-bold uppercase tracking-[0.15em] mb-0 font-sans leading-none">Date</span>
+                            <span className="text-[8px] md:text-sm text-slate-200 font-bold uppercase tracking-tight whitespace-nowrap leading-normal mt-0.5">
+                              {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </span>
                           </div>
                         </div>
 
                         {/* Stat 2: Prize Pool */}
-                        <div className="flex flex-row items-center gap-3">
-                          <TrophyIcon size={20} />
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Prize Pool</span>
-                            <span className="text-xs md:text-sm text-yellow-500 font-bold">{tournament.prize_pool || 'TBD'}</span>
+                        <div className="flex flex-row items-center gap-2 md:gap-3 h-full">
+                          <TrophyIcon size={isMobile ? 12 : 20} className="flex-shrink-0" />
+                          <div className="flex flex-col justify-center">
+                            <span className="text-[7px] md:text-[10px] text-slate-500 font-bold uppercase tracking-[0.15em] mb-0 font-sans leading-none">Prize Pool</span>
+                            <span className="text-[8px] md:text-sm text-yellow-500 font-bold leading-normal mt-0.5">{tournament.prize_pool || 'TBD'}</span>
                           </div>
                         </div>
 
                         {/* Stat 3: Contestants */}
-                        <div className="flex flex-row items-center gap-3">
-                          <TeamsIcon size={20} />
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Teams</span>
-                            <span className="text-xs md:text-sm text-slate-200 font-bold">{participantCount} / {tournament.max_teams}</span>
+                        <div className="flex flex-row items-center gap-2 md:gap-3 h-full">
+                          <TeamsIcon size={isMobile ? 12 : 20} className="flex-shrink-0" />
+                          <div className="flex flex-col justify-center">
+                            <span className="text-[7px] md:text-[10px] text-slate-500 font-bold uppercase tracking-[0.15em] mb-0 font-sans leading-none">Teams</span>
+                            <span className="text-[8px] md:text-sm text-slate-200 font-bold leading-normal mt-0.5">{participantCount} / {tournament.max_teams}</span>
                           </div>
                         </div>
 
                         {/* Stat 4: Format */}
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-0.5 font-sans">Format</span>
-                          <div className="flex items-center gap-2 text-xs md:text-sm text-slate-200 font-bold uppercase">
-                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
-                            {tournament.format ? tournament.format.replace(/_/g, ' ') : 'Single Elim'}
+                        <div className="flex flex-row items-center gap-2 md:gap-3 h-full">
+                          <ScrollIcon size={isMobile ? 12 : 20} className="opacity-50 flex-shrink-0" />
+                          <div className="flex flex-col justify-center">
+                            <span className="text-[7px] md:text-[10px] text-slate-500 font-bold uppercase tracking-[0.15em] mb-0 font-sans leading-none">Format</span>
+                            <div className="flex items-center gap-1 text-[8px] md:text-sm text-slate-200 font-bold uppercase leading-normal mt-0.5 h-3 md:h-auto">
+                              <span className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+                              <span className="whitespace-nowrap">{tournament.format ? tournament.format.replace(/_/g, ' ') : 'Single Elim'}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
 
                       {/* Call to Action Button */}
-                      <div className="md:ml-auto">
+                      <div className="md:ml-auto w-full md:w-auto flex justify-center md:justify-end mt-1 md:mt-0">
                         {tournamentStatus.status === 'upcoming' && (
                           !user ? (
                             <Button
-                              className="px-8 py-3 bg-slate-900/50 border border-slate-700 text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-amber-500 hover:text-amber-400 hover:bg-amber-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]"
+                              className="w-full md:w-auto px-6 md:px-8 py-2 md:py-3 bg-slate-900/50 border border-slate-700 text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-amber-500 hover:text-amber-400 hover:bg-amber-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 router.push('/auth')
@@ -367,7 +371,7 @@ export default function TournamentsPage() {
                             </Button>
                           ) : !hasPlayerProfile ? (
                             <Button
-                              className="px-8 py-3 bg-slate-900/50 border border-cyan-800 text-cyan-500 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-cyan-400 hover:text-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]"
+                              className="w-full md:w-auto px-6 md:px-8 py-2 md:py-3 bg-slate-900/50 border border-cyan-800 text-cyan-500 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-cyan-400 hover:text-cyan-400 hover:bg-cyan-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 router.push('/setup-profile')
@@ -377,7 +381,7 @@ export default function TournamentsPage() {
                             </Button>
                           ) : !userTeam ? (
                             <Button
-                              className="px-8 py-3 bg-slate-900/50 border border-indigo-800 text-indigo-400 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-indigo-400 hover:text-indigo-400 hover:bg-indigo-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(129,140,248,0.15)]"
+                              className="w-full md:w-auto px-6 md:px-8 py-2 md:py-3 bg-slate-900/50 border border-indigo-800 text-indigo-400 font-bold uppercase tracking-[0.2em] text-[10px] rounded-none hover:border-indigo-400 hover:text-indigo-400 hover:bg-indigo-500/5 transition-all duration-300 font-beaufort shadow-none hover:shadow-[0_0_20px_rgba(129,140,248,0.15)]"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 router.push('/create-team')
@@ -387,12 +391,12 @@ export default function TournamentsPage() {
                             </Button>
                           ) : (
                             registrationStatuses[tournament.id] === 'approved' ? (
-                              <div className="px-6 py-2 rounded bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-[10px] uppercase tracking-widest shadow-inner">
-                                <CheckCircle className="h-3.5 w-3.5 inline mr-2" /> Confirmed
+                              <div className="w-full md:w-auto text-center px-6 py-2 rounded bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-[9px] md:text-[10px] uppercase tracking-widest shadow-inner">
+                                <CheckCircle className="h-3 w-3 md:h-3.5 md:w-3.5 inline mr-2" /> Confirmed
                               </div>
                             ) : registrationStatuses[tournament.id] === 'pending' ? (
-                              <div className="px-6 py-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 font-bold text-[10px] uppercase tracking-widest shadow-inner">
-                                <ClockIcon size={14} className="inline mr-2" /> Pending
+                              <div className="w-full md:w-auto text-center px-6 py-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 font-bold text-[9px] md:text-[10px] uppercase tracking-widest shadow-inner">
+                                <ClockIcon size={12} className="inline mr-2 md:size-14" /> Pending
                               </div>
                             ) : (
                               <button
@@ -402,12 +406,12 @@ export default function TournamentsPage() {
                                 }}
                                 disabled={registering === tournament.id}
                                 style={{
-                                  backgroundImage: `url(${registering === tournament.id ? '/tournament_assets/regester_button_pressed.png' : '/tournament_assets/regester_button.png'})`,
+                                  backgroundImage: `url(${registering === tournament.id ? cdnUrl('/tournament_assets/regester_button_pressed.png') : cdnUrl('/tournament_assets/regester_button.png')})`,
                                   backgroundSize: '100% 100%'
                                 }}
-                                className="group/btn relative h-14 w-52 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-125"
+                                className="group/btn relative h-10 w-36 md:h-14 md:w-52 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-125"
                               >
-                                <span className="text-slate-950 font-bold text-xs tracking-[0.15em] uppercase drop-shadow-sm mt-0.5 group-active/btn:mt-1 group-active/btn:text-slate-900 transition-all">
+                                <span className="text-slate-950 font-bold text-[8px] md:text-xs tracking-[0.15em] uppercase drop-shadow-sm mt-0.5 group-active/btn:mt-1 group-active/btn:text-slate-900 transition-all">
                                   {registering === tournament.id ? 'TRANSMITTING' : 'Register Squad'}
                                 </span>
                               </button>

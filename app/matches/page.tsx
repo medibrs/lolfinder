@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { Share2, CheckCircle, Clock } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { cdnUrl } from '@/lib/cdn'
 import Link from 'next/link'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import { getCompactMatchRouteId, getMatchPath } from '@/lib/slugs'
@@ -211,7 +214,7 @@ export default function MatchesPage() {
           <div
             className="absolute inset-0 bg-cover bg-center opacity-30"
             style={{
-              backgroundImage: `url(${featuredMatch?.tournament?.banner_image || '/leet_lol_header.jpg'})`,
+              backgroundImage: `url(${featuredMatch?.tournament?.banner_image || cdnUrl('/leet_lol_header.jpg')})`,
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/90" />
@@ -301,11 +304,10 @@ export default function MatchesPage() {
               <button
                 key={item}
                 onClick={() => setFilter(item)}
-                className={`px-4 py-1.5 rounded-md text-xs uppercase tracking-widest border transition ${
-                  filter === item
+                className={`px-4 py-1.5 rounded-md text-xs uppercase tracking-widest border transition ${filter === item
                     ? 'border-cyan-500/50 text-cyan-300 bg-cyan-500/10'
                     : 'border-slate-700 text-slate-400 hover:border-slate-500'
-                }`}
+                  }`}
               >
                 {item}
               </button>
@@ -344,13 +346,12 @@ export default function MatchesPage() {
                       {getStageLabel(match)} • BO{match.best_of || 1}
                     </span>
                     <span className="text-sm font-medium text-slate-300 mt-2 flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${
-                        isLive
+                      <span className={`w-2 h-2 rounded-full ${isLive
                           ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
                           : isComplete
                             ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]'
                             : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]'
-                      }`} />
+                        }`} />
                       {isLive ? 'Live' : isComplete ? 'Finished' : formatWhen(match)}
                     </span>
                   </div>
@@ -385,11 +386,10 @@ export default function MatchesPage() {
                     <Link
                       href={matchPath}
                       onClick={(event) => event.stopPropagation()}
-                      className={`px-5 py-2 border text-xs font-bold uppercase tracking-widest rounded transition-colors ${
-                        isComplete
+                      className={`px-5 py-2 border text-xs font-bold uppercase tracking-widest rounded transition-colors ${isComplete
                           ? 'border-slate-700 text-slate-300 hover:border-cyan-500 hover:text-cyan-400'
                           : 'border-slate-700 text-slate-300 hover:border-[#c9aa71] hover:text-[#c9aa71]'
-                      }`}
+                        }`}
                     >
                       {isComplete ? 'View Stats' : 'Set Reminder'}
                     </Link>

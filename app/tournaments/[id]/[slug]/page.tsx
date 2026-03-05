@@ -15,6 +15,7 @@ import { SingleEliminationBracketPreview } from '@/components/tournament/single-
 import { buildSwissBracketData } from '@/lib/swiss-bracket-data';
 import { TournamentRegistrationBtn } from '@/components/tournament/tournament-registration-btn';
 import { TeamsAttendingSection } from '@/components/tournament/teams-attending-section';
+import { cdnUrl } from '@/lib/cdn';
 type Props = {
   params: Promise<{
     id: string;
@@ -224,7 +225,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${tournament.name} | LoL Tournament`,
       description,
       type: 'website',
-      images: ['/og-image.png'],
+      images: [cdnUrl('/og-image.png')],
     },
     twitter: {
       card: 'summary_large_image',
@@ -278,7 +279,7 @@ export default async function TournamentEventPage({ params }: Props) {
         {/* Background image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-zinc-900"
-          style={{ backgroundImage: `url(${tournament.banner_image || '/leet_lol_header.jpg'})` }}
+          style={{ backgroundImage: `url(${tournament.banner_image || cdnUrl('/leet_lol_header.jpg')})` }}
         />
         {/* Dark overlay */}
         <div className="absolute inset-0 bg-black/50" />
@@ -308,7 +309,7 @@ export default async function TournamentEventPage({ params }: Props) {
               <span className="text-zinc-500 text-sm font-mono">#{tournament.tournament_number}</span>
             </div>
             {/* Title */}
-            {!(tournament.name === "1337 Leet E-Sports LoL Tournament" && (!tournament.banner_image || tournament.banner_image === '/leet_lol_header.jpg')) && (
+            {!(tournament.name === "1337 Leet E-Sports LoL Tournament" && (!tournament.banner_image || tournament.banner_image === '/leet_lol_header.jpg' || tournament.banner_image === cdnUrl('/leet_lol_header.jpg'))) && (
               <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-5 drop-shadow-lg">
                 {tournament.name}
               </h1>

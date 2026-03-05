@@ -1,23 +1,25 @@
+import { cdnUrl } from '@/lib/cdn';
+
 export function getRankImage(tier: string): string {
   const tierLower = tier.toLowerCase()
-  
+
   // Map tier names to image files
   const rankMap: Record<string, string> = {
-    'iron': '/iron.webp',
-    'bronze': '/bronze.webp',
-    'silver': '/silver.webp',
-    'gold': '/gold.webp',
-    'platinum': '/platinum.webp',
-    'emerald': '/emerald.webp',
-    'diamond': '/diamond.webp',
-    'master': '/master.webp',
-    'grandmaster': '/grandmaster.webp',
-    'challenger': '/challenger.webp',
-    'unranked': '/unranked.png',
+    'iron': cdnUrl('/iron.webp'),
+    'bronze': cdnUrl('/bronze.webp'),
+    'silver': cdnUrl('/silver.webp'),
+    'gold': cdnUrl('/gold.webp'),
+    'platinum': cdnUrl('/platinum.webp'),
+    'emerald': cdnUrl('/emerald.webp'),
+    'diamond': cdnUrl('/diamond.webp'),
+    'master': cdnUrl('/master.webp'),
+    'grandmaster': cdnUrl('/grandmaster.webp'),
+    'challenger': cdnUrl('/challenger.webp'),
+    'unranked': cdnUrl('/unranked.png'),
   }
-  
+
   // Extract base rank (e.g., "Gold II" -> "gold")
   const baseRank = tierLower.split(' ')[0]
-  
-  return rankMap[baseRank] || '/iron.webp' // Default to iron if not found
+
+  return rankMap[baseRank] || cdnUrl('/iron.webp') // Default to iron if not found
 }

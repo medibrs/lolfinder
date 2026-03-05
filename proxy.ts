@@ -31,27 +31,27 @@ export async function proxy(request: NextRequest) {
   // the line above, as it could accidentally interfere with the refresh process
 
   let user = null
-  
+
   try {
     const { data, error } = await supabase.auth.getUser()
-    
+
     // Only clear cookies for actual token errors, not "session missing" (normal for logged out users)
     if (error) {
       const isTokenError = error.message?.toLowerCase().includes('refresh token') ||
-                           error.message?.toLowerCase().includes('invalid') ||
-                           error.message?.toLowerCase().includes('expired')
-      
+        error.message?.toLowerCase().includes('invalid') ||
+        error.message?.toLowerCase().includes('expired')
+
       if (isTokenError) {
         console.error('Token error in proxy, clearing cookies:', error.message)
-        
+
         // Clear all Supabase auth cookies to force fresh login
         const cookiesToClear = request.cookies.getAll()
           .filter(cookie => cookie.name.includes('supabase') || cookie.name.includes('sb-'))
-        
+
         cookiesToClear.forEach(cookie => {
           supabaseResponse.cookies.set(cookie.name, '', { maxAge: 0 })
         })
-        
+
         // Sign out to clear server-side session
         await supabase.auth.signOut()
       }
@@ -65,7 +65,7 @@ export async function proxy(request: NextRequest) {
 
   // Protected routes that require authentication
   const protectedRoutes = ['/setup-profile', '/admin']
-  const isProtectedRoute = protectedRoutes.some(route => 
+  const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
   )
 
@@ -79,7 +79,7 @@ export async function proxy(request: NextRequest) {
 
   // Special handling for auth routes when user is already authenticated
   const authRoutes = ['/auth']
-  const isAuthRoute = authRoutes.some(route => 
+  const isAuthRoute = authRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
   ) && !request.nextUrl.pathname.startsWith('/auth/signout') && !request.nextUrl.pathname.startsWith('/auth/callback')
 
@@ -92,7 +92,7 @@ export async function proxy(request: NextRequest) {
       .single()
 
     const url = request.nextUrl.clone()
-    
+
     // Redirect based on profile existence
     if (playerProfile) {
       // User has established profile, check if they have a team
@@ -101,7 +101,7 @@ export async function proxy(request: NextRequest) {
         .select('teams(*)')
         .eq('id', user.id)
         .single()
-      
+
       if (playerWithTeam?.teams && Array.isArray(playerWithTeam.teams) && playerWithTeam.teams.length > 0) {
         const team = playerWithTeam.teams[0]
         // Check if user is captain or member to determine correct page
@@ -118,7 +118,7 @@ export async function proxy(request: NextRequest) {
       // User needs to set up profile
       url.pathname = '/setup-profile'
     }
-    
+
     return NextResponse.redirect(url)
   }
 

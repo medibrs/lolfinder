@@ -5,6 +5,7 @@ import { Trash2 } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getProfileIconUrl } from '@/lib/ddragon'
 import Image from 'next/image'
+import { cdnUrl } from '@/lib/cdn'
 
 interface ChatMessageItemProps {
   message: ChatMessage
@@ -23,7 +24,7 @@ export const ChatMessageItem = ({
   canDelete = false,
   onDelete
 }: ChatMessageItemProps) => {
-  const [avatarUrl, setAvatarUrl] = useState<string>('/default-avatar.svg')
+  const [avatarUrl, setAvatarUrl] = useState<string>(cdnUrl('/default-avatar.svg'))
   const [showDeleteButton, setShowDeleteButton] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
   const isLongPress = useRef(false)
@@ -106,7 +107,7 @@ export const ChatMessageItem = ({
               className="rounded-full"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
-                target.src = '/default-avatar.svg'
+                target.src = cdnUrl('/default-avatar.svg')
               }}
             />
           )}
@@ -180,7 +181,7 @@ export const ChatMessageItem = ({
               className="rounded-full"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
-                target.src = '/default-avatar.svg'
+                target.src = cdnUrl('/default-avatar.svg')
               }}
             />
           )}

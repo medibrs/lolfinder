@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, Clock } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { cdnUrl } from '@/lib/cdn'
 
 interface TournamentRegistrationBtnProps {
     tournamentId: string
@@ -172,7 +173,7 @@ export function TournamentRegistrationBtn({ tournamentId }: TournamentRegistrati
             onClick={handleRegister}
             disabled={loading}
             style={{
-                backgroundImage: `url(${loading ? '/tournament_assets/regester_button_pressed.png' : '/tournament_assets/regester_button.png'})`,
+                backgroundImage: `url(${loading ? cdnUrl('/tournament_assets/regester_button_pressed.png') : cdnUrl('/tournament_assets/regester_button.png')})`,
                 backgroundSize: '100% 100%'
             }}
             className="group/btn relative h-10 w-36 md:h-12 md:w-48 bg-no-repeat bg-center flex items-center justify-center transition-all active:scale-95 hover:brightness-110"

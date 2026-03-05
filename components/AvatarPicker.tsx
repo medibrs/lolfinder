@@ -83,7 +83,7 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
                     fill
                     className="object-cover"
                     sizes="48px"
-                    unoptimized={process.env.NODE_ENV === 'development'}
+                    unoptimized
                   />
                   {isCurrentAvatar && (
                     <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
@@ -148,7 +148,7 @@ export function AvatarPreview({ avatarId, onEdit, showEditButton = false, size =
             className="w-full h-full object-cover"
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
-            unoptimized={process.env.NODE_ENV === 'development'}
+            unoptimized
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

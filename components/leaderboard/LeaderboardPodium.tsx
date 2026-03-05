@@ -4,6 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { getRankImage } from "@/lib/rank-utils"
+import { cdnUrl } from "@/lib/cdn"
 import {
     FirstPlaceTrophyIcon,
     SecondPlaceMedalIcon,
@@ -59,11 +60,12 @@ function FirstPlace({ player, profileIconUrl }: PodiumPlayerProps) {
             <div className="absolute -top-10 sm:-top-14 md:-top-16 left-1/2 -translate-x-1/2 z-40">
                 <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-20 opacity-60 -top-5 sm:-top-8 md:-top-10 w-10 sm:w-16 md:w-20 h-10 sm:h-16 md:h-20">
                     <Image
-                        src="/tournament_assets/halo.png"
+                        src={cdnUrl("/tournament_assets/halo.png")}
                         alt=""
                         width={100}
                         height={100}
                         className="object-contain w-full h-full"
+                        unoptimized
                     />
                 </div>
                 <div className="relative w-14 sm:w-20 md:w-26 h-14 sm:h-20 md:h-26 rounded-full border-2 md:border-[3px] border-[#c9aa71] p-1 md:p-1.5 bg-[#060a13] shadow-[0_0_40px_rgba(201,170,113,0.6)] z-10">
@@ -92,7 +94,7 @@ function FirstPlace({ player, profileIconUrl }: PodiumPlayerProps) {
                         {player.summoner_name.split("#")[0]}
                     </h3>
                     <div className="flex items-center justify-end gap-1.5 sm:gap-2 mb-2 sm:mb-3 md:mb-4">
-                        <Image src={getRankImage(player.tier)} alt="" width={24} height={24} className="object-contain w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6" />
+                        <Image src={getRankImage(player.tier)} alt="" width={24} height={24} className="object-contain w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6" unoptimized />
                         <p className="text-[9px] sm:text-[10px] md:text-[12px] font-black text-slate-300 uppercase tracking-widest leading-none">{player.tier}</p>
                     </div>
                     <div className="flex items-center justify-end gap-1 sm:gap-1.5 -mt-2 sm:-mt-3 md:-mt-4">
@@ -175,7 +177,7 @@ function RunnerUp({ player, profileIconUrl, rank }: PodiumPlayerProps & { rank: 
                         {player.summoner_name.split("#")[0]}
                     </h4>
                     <div className="flex items-center justify-end gap-1 sm:gap-1.5 mb-1 sm:mb-1.5 opacity-60">
-                        <Image src={getRankImage(player.tier)} alt="" width={14} height={14} className="object-contain w-2.5 sm:w-3 md:w-3.5 h-2.5 sm:h-3 md:h-3.5" />
+                        <Image src={getRankImage(player.tier)} alt="" width={14} height={14} className="object-contain w-2.5 sm:w-3 md:w-3.5 h-2.5 sm:h-3 md:h-3.5" unoptimized />
                         <p className="text-[7px] sm:text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">{player.tier}</p>
                     </div>
                     <p className={cn("text-[10px] sm:text-xs md:text-sm font-black tracking-wider transition-colors", hoverTextColor)}>

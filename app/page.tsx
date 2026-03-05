@@ -8,6 +8,7 @@ import { Trophy, Users, Target, Zap, Shield, Crown, Bell, Settings, User, Medal 
 import { createClient } from '@/lib/supabase/client'
 import Footer from '@/components/footer'
 import ProfileSetupBanner from '@/components/ProfileSetupBanner'
+import { cdnUrl } from '@/lib/cdn'
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
@@ -346,7 +347,7 @@ export default function Home() {
           {/* Background Banner Image with improved Vignette */}
           <div className="absolute inset-0">
             <img
-              src="/home-page-banner.jpg"
+              src={cdnUrl("/home-page-banner.jpg")}
               alt="League of Legends Banner"
               className="w-full h-full object-cover opacity-40 scale-105"
             />
@@ -448,7 +449,7 @@ export default function Home() {
                     <div className="mb-2 flex h-48 w-48 items-center justify-center group-hover:rotate-6 transition-all duration-700 transform relative">
                       {/* Ambient Backlight */}
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-purple-600/30 blur-[60px] rounded-full group-hover:bg-purple-500/50 transition-all duration-500" />
-                      <img src="/gemstone.webp" alt="Gemstone" className="relative z-10 h-40 w-40 object-contain group-hover:scale-110 transition-all duration-500" />
+                      <img src={cdnUrl("/gemstone.webp")} alt="Gemstone" className="relative z-10 h-40 w-40 object-contain group-hover:scale-110 transition-all duration-500" />
                     </div>
 
                     <h3 className="text-3xl font-bold text-white group-hover:text-purple-400 transition-colors tracking-tight">
@@ -471,7 +472,7 @@ export default function Home() {
                     <div className="mb-2 flex h-48 w-48 items-center justify-center group-hover:-rotate-6 transition-all duration-700 transform relative">
                       {/* Ambient Backlight */}
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-yellow-600/20 blur-[60px] rounded-full group-hover:bg-yellow-500/40 transition-all duration-500" />
-                      <img src="/key-fragment.png" alt="Key Fragment" className="relative z-10 h-40 w-40 object-contain group-hover:scale-110 transition-all duration-500" />
+                      <img src={cdnUrl("/key-fragment.png")} alt="Key Fragment" className="relative z-10 h-40 w-40 object-contain group-hover:scale-110 transition-all duration-500" />
                     </div>
 
                     <h3 className="text-3xl font-bold text-white group-hover:text-yellow-400 transition-colors tracking-tight">
@@ -572,7 +573,7 @@ export default function Home() {
                     {/* Ambient Glow */}
                     <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-full bg-yellow-500/20 blur-[50px] rounded-full group-hover:bg-yellow-500/40 transition-all duration-500" />
                     <img
-                      src="/Hextech_Crafting_Masterwork_Chest.webp"
+                      src={cdnUrl("/Hextech_Crafting_Masterwork_Chest.webp")}
                       alt="Tournaments"
                       className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(234,179,8,0.7)] group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500 transform"
                     />
@@ -596,7 +597,7 @@ export default function Home() {
                     {/* Ambient Glow */}
                     <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-full bg-cyan-500/20 blur-[50px] rounded-full group-hover:bg-cyan-500/40 transition-all duration-500" />
                     <img
-                      src="/LoR_Rare_Wildcard_icon.webp"
+                      src={cdnUrl("/LoR_Rare_Wildcard_icon.webp")}
                       alt="Players"
                       className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(34,211,238,0.7)] group-hover:scale-110 group-hover:-translate-y-2 rotate-12 group-hover:rotate-6 transition-all duration-500 transform"
                     />
@@ -620,7 +621,7 @@ export default function Home() {
                     {/* Ambient Glow */}
                     <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-full bg-red-500/20 blur-[50px] rounded-full group-hover:bg-red-500/40 transition-all duration-500" />
                     <img
-                      src="/LoR_Blue_Nexus.webp"
+                      src={cdnUrl("/LoR_Blue_Nexus.webp")}
                       alt="Matches"
                       className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(239,68,68,0.7)] group-hover:scale-125 group-hover:-translate-y-4 transition-all duration-500 transform"
                     />

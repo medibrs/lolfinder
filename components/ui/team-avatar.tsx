@@ -101,7 +101,7 @@ export function TeamAvatar({
             height={48}
             className="w-full h-full object-cover"
             onError={handleImageError}
-            unoptimized={process.env.NODE_ENV === 'development'}
+            unoptimized
           />
         ) : (
           <div className="w-full h-full bg-[#0c121d]/60 flex items-center justify-center">

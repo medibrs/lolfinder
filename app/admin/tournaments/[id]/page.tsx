@@ -525,7 +525,7 @@ export default function TournamentManagePage() {
                     <div className="relative group">
                       {tournament.banner_image ? (
                         <div className="relative aspect-[29/9] w-full rounded-lg overflow-hidden border border-border bg-muted">
-                          <Image src={tournament.banner_image} alt="Banner" fill className="object-cover" />
+                          <Image src={tournament.banner_image} alt="Banner" fill className="object-cover" unoptimized={process.env.NODE_ENV === 'development'} />
                           <button onClick={removeBanner} className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10">
                             <X className="h-4 w-4" />
                           </button>

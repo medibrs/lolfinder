@@ -6,7 +6,8 @@ import Image from 'next/image'
 import { getTournamentPath } from '@/lib/slugs'
 import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
-import { Trophy, Clock, Share2, ExternalLink, Calendar, ChevronRight, Zap, Target, Shield, Info, InfoIcon } from 'lucide-react'
+import { Trophy, Clock, Share2, ExternalLink, Calendar, ChevronRight, Zap, Target, Shield, Info, InfoIcon, Users } from 'lucide-react'
+import { cdnUrl } from '@/lib/cdn';
 import { cn } from '@/lib/utils'
 
 type Props = {
@@ -283,7 +284,7 @@ export default async function MatchPage({ params }: Props) {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-0.5 bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent"></div>
 
           {/* Background Banner Elements */}
-          <div className="absolute inset-0 bg-cover bg-center opacity-[0.05] pointer-events-none" style={{ backgroundImage: `url(${match.tournament?.banner_image || '/leet_lol_header.jpg'})` }} />
+          <div className="absolute inset-0 bg-cover bg-center opacity-[0.05] pointer-events-none" style={{ backgroundImage: `url(${match.tournament?.banner_image || cdnUrl('/leet_lol_header.jpg')})` }} />
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#0c121d] via-[#0c121d]/80 to-transparent"></div>
 
           <div className="relative p-6 md:p-10">

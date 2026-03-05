@@ -8,7 +8,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: isLocal,
+    unoptimized: true,
     dangerouslyAllowSVG: true,
     remotePatterns: [
       {

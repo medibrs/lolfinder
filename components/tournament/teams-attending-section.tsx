@@ -8,6 +8,7 @@ import { AlertCircle, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRankImage } from '@/lib/rank-utils';
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar';
+import { cdnUrl } from '@/lib/cdn';
 
 export interface TeamsAttendingSectionProps {
     registeredTeams: any[];
@@ -51,7 +52,7 @@ export function TeamsAttendingSection({ registeredTeams, maxTeams }: TeamsAttend
                                                 alt="Team Avatar"
                                                 fill
                                                 className="object-cover"
-                                                unoptimized={process.env.NODE_ENV === 'development'}
+                                                unoptimized
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-gradient-to-br from-zinc-700 to-zinc-800" />
@@ -68,6 +69,7 @@ export function TeamsAttendingSection({ registeredTeams, maxTeams }: TeamsAttend
                                                 width={16}
                                                 height={16}
                                                 className="w-4 h-4"
+                                                unoptimized
                                             />
                                         </div>
                                     )}
@@ -92,6 +94,7 @@ export function TeamsAttendingSection({ registeredTeams, maxTeams }: TeamsAttend
                                                             width={14}
                                                             height={14}
                                                             className="w-3.5 h-3.5 flex-shrink-0"
+                                                            unoptimized
                                                         />
                                                     ) : (
                                                         <div className="w-3.5 h-3.5 flex-shrink-0" />

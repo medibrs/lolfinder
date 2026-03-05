@@ -86,12 +86,13 @@ export default function ManageTeamPage() {
 
       setUser(authUser)
 
-      // Get team where user is captain using the view
+      // Get team where user is captain (query teams table directly to ensure team_avatar is included)
       const { data: teamData, error: teamError } = await supabase
-        .from('team_with_players')
+        .from('teams')
         .select('*')
         .eq('captain_id', authUser.id)
         .single()
+
 
       if (teamError || !teamData) {
         router.push('/create-team')
@@ -553,8 +554,8 @@ export default function ManageTeamPage() {
                     <Button
                       onClick={() => setEditing(!editing)}
                       variant="ghost"
-                      className={`border transition-all ${editing 
-                        ? "border-slate-800 text-slate-500 hover:bg-slate-800/50" 
+                      className={`border transition-all ${editing
+                        ? "border-slate-800 text-slate-500 hover:bg-slate-800/50"
                         : "border-slate-700 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500 hover:text-cyan-400"}`}
                     >
                       {editing ? 'Cancel' : 'Edit'}
@@ -576,7 +577,7 @@ export default function ManageTeamPage() {
                         </div>
                       </div>
                       <p className="text-xs text-slate-400 leading-relaxed">
-                        Your team name and logo cannot be changed while you have an approved tournament registration. 
+                        Your team name and logo cannot be changed while you have an approved tournament registration.
                         This ensures consistency across brackets, match history, and standings.
                       </p>
                       {tournaments.length > 0 && (
@@ -598,8 +599,8 @@ export default function ManageTeamPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-slate-900 flex items-center justify-center shrink-0">
                         {team.team_avatar ? (
-                          <img 
-                            src={getTeamAvatarUrl(team.team_avatar)} 
+                          <img
+                            src={getTeamAvatarUrl(team.team_avatar) || undefined}
                             alt={team.name}
                             className="w-full h-full object-cover"
                           />
@@ -618,8 +619,8 @@ export default function ManageTeamPage() {
                       <div className="flex flex-wrap gap-2">
                         {team.open_positions?.length > 0 ? (
                           team.open_positions.map((role: string) => (
-                            <Badge 
-                              key={role} 
+                            <Badge
+                              key={role}
                               variant="secondary"
                               className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
                             >
@@ -627,7 +628,7 @@ export default function ManageTeamPage() {
                             </Badge>
                           ))
                         ) : (
-                          <Badge 
+                          <Badge
                             variant="outline"
                             className="text-slate-500 border-slate-800 bg-slate-900/50 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
                           >
@@ -640,11 +641,10 @@ export default function ManageTeamPage() {
                     <div>
                       <p className="text-sm font-medium text-slate-300 mb-2">Status:</p>
                       <Badge
-                        className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${
-                          team.recruiting_status === 'Open' 
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                            : 'bg-slate-900/50 text-slate-500 border border-slate-800'
-                        }`}
+                        className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${team.recruiting_status === 'Open'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-slate-900/50 text-slate-500 border border-slate-800'
+                          }`}
                       >
                         {team.recruiting_status}
                       </Badge>
@@ -674,21 +674,20 @@ export default function ManageTeamPage() {
                       <div className="flex items-center gap-6">
                         <div className="relative group">
                           {/* Avatar Container */}
-                          <div className={`w-24 h-24 rounded-lg overflow-hidden border-2 transition-all duration-300 bg-slate-900 flex items-center justify-center ${
-                            isTeamInActiveTournament 
-                              ? 'border-orange-500/30' 
-                              : 'border-slate-700 group-hover:border-cyan-500 shadow-lg group-hover:shadow-cyan-500/20'
-                          }`}>
+                          <div className={`w-24 h-24 rounded-lg overflow-hidden border-2 transition-all duration-300 bg-slate-900 flex items-center justify-center ${isTeamInActiveTournament
+                            ? 'border-orange-500/30'
+                            : 'border-slate-700 group-hover:border-cyan-500 shadow-lg group-hover:shadow-cyan-500/20'
+                            }`}>
                             {(avatarPreview || team?.team_avatar) ? (
-                              <img 
-                                src={avatarPreview || getTeamAvatarUrl(team.team_avatar) || ''} 
-                                alt="Team Avatar" 
-                                className="w-full h-full object-cover" 
+                              <img
+                                src={avatarPreview || getTeamAvatarUrl(team.team_avatar) || ''}
+                                alt="Team Avatar"
+                                className="w-full h-full object-cover"
                               />
                             ) : (
                               <Shield className="w-10 h-10 text-slate-700 group-hover:text-slate-500 transition-colors" />
                             )}
-                            
+
                             {/* Hover Overlay */}
                             {!isTeamInActiveTournament && (
                               <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
@@ -751,18 +750,16 @@ export default function ManageTeamPage() {
                             key={role}
                             type="button"
                             onClick={() => handleRoleToggle(role)}
-                            className={`group relative flex flex-col items-center justify-center w-14 h-14 rounded-md border transition-all duration-200 ${
-                              formData.open_positions.includes(role)
-                                ? 'bg-cyan-500/10 border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.2)]'
-                                : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'
-                            }`}
+                            className={`group relative flex flex-col items-center justify-center w-14 h-14 rounded-md border transition-all duration-200 ${formData.open_positions.includes(role)
+                              ? 'bg-cyan-500/10 border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.2)]'
+                              : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'
+                              }`}
                             title={role}
                           >
-                            <div className={`transition-all duration-200 ${
-                              formData.open_positions.includes(role) 
-                                ? 'text-cyan-400 scale-110' 
-                                : 'text-slate-500 group-hover:text-slate-300'
-                            }`}>
+                            <div className={`transition-all duration-200 ${formData.open_positions.includes(role)
+                              ? 'text-cyan-400 scale-110'
+                              : 'text-slate-500 group-hover:text-slate-300'
+                              }`}>
                               <RoleIcon role={role} size={24} />
                             </div>
                             {formData.open_positions.includes(role) && (
@@ -830,7 +827,7 @@ export default function ManageTeamPage() {
                       </div>
                     )}
 
-                    <Button 
+                    <Button
                       onClick={handleSaveTeam}
                       disabled={saving}
                       className="w-full bg-[#C89B3C] hover:bg-[#A67E22] text-zinc-900 font-bold shadow-[0_0_15px_rgba(200,155,60,0.2)] uppercase tracking-wider disabled:opacity-60 disabled:cursor-not-allowed"
@@ -857,8 +854,8 @@ export default function ManageTeamPage() {
                       <div className="flex flex-wrap gap-2">
                         {team.open_positions?.length > 0 ? (
                           team.open_positions.map((role: string) => (
-                            <Badge 
-                              key={role} 
+                            <Badge
+                              key={role}
                               variant="secondary"
                               className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
                             >
@@ -866,7 +863,7 @@ export default function ManageTeamPage() {
                             </Badge>
                           ))
                         ) : (
-                          <Badge 
+                          <Badge
                             variant="outline"
                             className="text-slate-500 border-slate-800 bg-slate-900/50 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold"
                           >
@@ -879,11 +876,10 @@ export default function ManageTeamPage() {
                     <div>
                       <p className="text-sm font-medium text-slate-300 mb-2">Status:</p>
                       <Badge
-                        className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${
-                          team.recruiting_status === 'Open' 
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                            : 'bg-slate-900/50 text-slate-500 border border-slate-800'
-                        }`}
+                        className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${team.recruiting_status === 'Open'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-slate-900/50 text-slate-500 border border-slate-800'
+                          }`}
                       >
                         {team.recruiting_status}
                       </Badge>
@@ -1038,11 +1034,10 @@ export default function ManageTeamPage() {
                   onClick={handleDeleteTeam}
                   variant="ghost"
                   disabled={isTeamInActiveTournament}
-                  className={`w-full border transition-all duration-300 ${
-                    isTeamInActiveTournament
-                      ? 'border-slate-800 text-slate-600 cursor-not-allowed opacity-50'
-                      : 'border-slate-800 text-slate-500 hover:bg-red-900/20 hover:border-red-500 hover:text-red-400'
-                  }`}
+                  className={`w-full border transition-all duration-300 ${isTeamInActiveTournament
+                    ? 'border-slate-800 text-slate-600 cursor-not-allowed opacity-50'
+                    : 'border-slate-800 text-slate-500 hover:bg-red-900/20 hover:border-red-500 hover:text-red-400'
+                    }`}
                   title={isTeamInActiveTournament ? 'Cannot delete team while registered in a tournament' : undefined}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
