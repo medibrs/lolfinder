@@ -76,13 +76,13 @@ function FirstPlace({ player, profileIconUrl }: PodiumPlayerProps) {
             </div>
 
             {/* Card body */}
-            <div className="relative h-[150px] sm:h-[180px] md:h-[220px] bg-[#0c121d] border border-[#c9aa71] md:border-2 shadow-[0_0_80px_rgba(201,170,113,0.1)] flex items-center justify-end px-4 sm:px-8 md:px-12 pt-4 overflow-hidden md:overflow-visible">
+            <div className="relative h-[150px] sm:h-[180px] md:h-[220px] bg-[#0c121d] border border-[#c9aa71] md:border-2 shadow-[0_0_80px_rgba(201,170,113,0.1)] flex items-center justify-end px-4 sm:px-8 md:px-12 pt-4 overflow-visible">
                 <div className="absolute inset-0 bg-[#c9aa71]/15 blur-[60px] opacity-0 group-hover/p1:opacity-100 transition-opacity duration-700 -z-10" />
                 <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[#c9aa71]/10 to-transparent" />
 
                 {/* Trophy — left side */}
-                <div className="absolute z-50 pointer-events-none -left-10 sm:-left-6 md:-left-16 bottom-1 sm:-bottom-2 md:-top-20 md:bottom-auto w-[190px] sm:w-[150px] md:w-[280px] h-[130px] sm:h-[200px] md:h-[360px]">
-                    <FirstPlaceTrophyIcon size={40} className="!w-full !h-full [&_img]:object-contain drop-shadow-[0_40px_60px_rgba(0,0,0,0.9)]" />
+                <div className="absolute z-60 w-[200px] h-[170px] pointer-events-none -left-10 -top-10 sm:-left-6 md:-left-16 sm:-top-12 md:-top-20 w-[200px] sm:w-[150px] md:w-[280px] h-[170px] sm:h-[200px] md:h-[360px]">
+                    <FirstPlaceTrophyIcon size={50} className="!w-full !h-full [&_img]:object-contain drop-shadow-[0_40px_60px_rgba(0,0,0,0.9)]" />
                 </div>
 
                 {/* Text content — right side */}
@@ -158,13 +158,13 @@ function RunnerUp({ player, profileIconUrl, rank }: PodiumPlayerProps & { rank: 
 
             {/* Card body */}
             <div className={cn(
-                "relative h-[100px] sm:h-[105px] md:h-[110px] bg-[#0c121d]/90 border backdrop-blur-xl flex items-center justify-end px-2 sm:px-3 md:px-4 pt-3 shadow-2xl overflow-hidden",
+                "relative h-[100px] sm:h-[105px] md:h-[110px] bg-[#0c121d]/90 border backdrop-blur-xl flex items-center justify-end px-2 sm:px-3 md:px-4 pt-3 shadow-2xl overflow-visible",
                 isRank2 ? "border-slate-500/40 skew-x-[-1deg]" : "border-[#b45309]/30 skew-x-[1deg]"
             )}>
                 <div className={cn("absolute inset-0 blur-[40px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10", glowBg)} />
 
                 {/* Medal icon */}
-                <div className="absolute z-10 pointer-events-none -left-2 sm:-left-4 md:-left-6 -top-1 sm:-top-2 md:-top-4 w-[55px] sm:w-[90px] md:w-[120px] h-[65px] sm:h-[100px] md:h-[140px]">
+                <div className="absolute z-10 pointer-events-none -left-4 sm:-left-6 md:-left-10 -top-4 sm:-top-6 md:-top-10 w-[70px] sm:w-[110px] md:w-[150px] h-[80px] sm:h-[120px] md:h-[170px]">
                     <MedalIcon size={40} className="!w-full !h-full [&_img]:object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
                 </div>
 
