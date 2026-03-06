@@ -145,9 +145,12 @@ export default function MatchDirector({
     const currentRoundMatches = useMemo(() => {
         return matches.filter(m => {
             const r = m.bracket?.round_number || m.round_number || 0
-            return r === selectedRound
+            if (r !== selectedRound) return false
+            // Hide bye matches (null team) for Round Robin, since they don't require admin input
+            if (tournamentFormat === 'Round_Robin' && (!m.team1_id || !m.team2_id)) return false
+            return true
         })
-    }, [matches, selectedRound])
+    }, [matches, selectedRound, tournamentFormat])
 
     const completedCount = currentRoundMatches.filter(m => m.status === 'Completed').length
     const totalCount = currentRoundMatches.length
@@ -489,6 +492,18 @@ export default function MatchDirector({
         return bw !== aw ? bw - aw : al - bl
     })
 
+    // Round Robin grouping for current round
+    const isRoundRobin = tournamentFormat === 'Round_Robin'
+    const rrGroups: Record<string, any[]> = {}
+    if (isRoundRobin) {
+        for (const m of currentRoundMatches) {
+            const groupName = m.group_name || 'Ungrouped'
+            if (!rrGroups[groupName]) rrGroups[groupName] = []
+            rrGroups[groupName].push(m)
+        }
+    }
+    const sortedRRGroups = Object.entries(rrGroups).sort((a, b) => a[0].localeCompare(b[0]))
+
     return (
         <>
             <Card>
@@ -592,6 +607,20 @@ export default function MatchDirector({
                                     </div>
                                 )
                             })}
+                        </div>
+                    ) : isRoundRobin && sortedRRGroups.length > 0 ? (
+                        <div className="space-y-5">
+                            {sortedRRGroups.map(([groupName, groupMatches]: [string, any[]]) => (
+                                <div key={groupName}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-sm font-bold text-primary">{groupName}</span>
+                                        <div className="flex-1 h-px bg-border" />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {groupMatches.map((m: any) => renderMatchCard(m, !isCurrentRound))}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

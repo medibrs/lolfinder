@@ -29,6 +29,7 @@ import { SingleEliminationEngine } from './formats/single-elim-core'
 import { DoubleEliminationEngine } from './formats/double-elim-core'
 import type { SwissProposal, RoundAdvanceResult } from './swiss-core'
 import { transitionTournament } from './lifecycle/lifecycle-service'
+import type { TournamentState } from './lifecycle/state-machine'
 import {
     loadSwissContext,
     createSwissDraft,
@@ -36,6 +37,10 @@ import {
     advanceSwissRound,
     regenerateSwissDraft,
 } from './swiss-service'
+import {
+    generateRoundRobinBracket,
+    advanceRoundRobinRound,
+} from './rr-service'
 
 // ─── Engine Registry ────────────────────────────────────────────────
 
@@ -165,6 +170,17 @@ export const TournamentOrchestrator = {
             }
         }
 
+        if (format === 'Round_Robin') {
+            const { proposal, matchIds } = await generateRoundRobinBracket(id)
+            if (tournament.status !== 'In_Progress') {
+                await transitionTournament(id, 'In_Progress')
+            }
+            return {
+                success: true,
+                data: { proposal, matchIds, total_rounds: proposal.total_rounds },
+            }
+        }
+
         // ── Elimination formats: use engine ─────────────────────────
         const engine = getEngine(format)
         const teams = participants.map((p: any) => ({
@@ -291,6 +307,21 @@ export const TournamentOrchestrator = {
                 message: result.tournament_completed
                     ? 'Tournament completed'
                     : `Round ${currentRound} advanced. Draft pairings generated for round ${currentRound + 1}.`,
+                data: result,
+            }
+        }
+
+        // ── Round Robin: delegate to rr-service ─────────────────────
+        if (format === 'Round_Robin') {
+            const result = await advanceRoundRobinRound(id, userId)
+            if (result.tournament_completed) {
+                await transitionTournament(id, 'Completed')
+            }
+            return {
+                success: true,
+                message: result.tournament_completed
+                    ? 'Round Robin completed!'
+                    : `Advanced to round ${result.next_round}`,
                 data: result,
             }
         }
@@ -440,6 +471,8 @@ export const TournamentOrchestrator = {
             await recalculateSwissScores(id)
         }
 
+        // Round Robin doesn't need score recalculation — standings are computed live
+
         // Log action
         await supabase.from('tournament_logs').insert({
             tournament_id: id,
@@ -463,7 +496,7 @@ export const TournamentOrchestrator = {
     /**
      * Full bracket reset — wipes all matches, brackets, and resets participant state.
      */
-    async resetBracket(tournamentId: string, userId?: string): Promise<{ success: boolean }> {
+    async resetBracket(tournamentId: string, userId?: string, targetState: TournamentState = 'Seeding'): Promise<{ success: boolean; error?: string }> {
         const supabase = getServiceClient()
         const tournament = await loadTournament(tournamentId)
         const id = tournament.id
@@ -472,12 +505,15 @@ export const TournamentOrchestrator = {
         await supabase.from('tournament_brackets').delete().eq('tournament_id', id)
         await supabase.from('swiss_pairings').delete().eq('tournament_id', id)
         await supabase.from('tournament_participants')
-            .update({ swiss_score: 0, is_active: true })
+            .update({ swiss_score: 0, is_active: true, group_id: null, group_name: null })
             .eq('tournament_id', id)
         await supabase.from('tournaments')
             .update({ current_round: 0 })
             .eq('id', id)
-        await transitionTournament(id, 'Seeding')
+        const tResult = await transitionTournament(id, targetState, userId, 'Bracket Reset', true)
+        if (!tResult.success) {
+            return { success: false, error: tResult.error }
+        }
 
         await supabase.from('tournament_logs').insert({
             tournament_id: id,

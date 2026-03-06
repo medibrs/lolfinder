@@ -68,10 +68,20 @@ export async function POST(
             return NextResponse.json({ error: '"to" state is required' }, { status: 400 })
         }
 
-        const result = await transitionTournament(tournamentUuid, to, undefined, reason)
+        const lifecycleBefore = await getTournamentLifecycle(tournamentUuid)
+        const fromState = lifecycleBefore.state
 
-        if (!result.success) {
-            return NextResponse.json({ error: result.error }, { status: 400 })
+        let result
+        if (fromState === 'Cancelled' && to === 'Registration') {
+            result = await TournamentOrchestrator.resetBracket(tournamentUuid, undefined, to)
+            if (!result.success) {
+                return NextResponse.json({ error: 'Failed to reset stage for revival' }, { status: 500 })
+            }
+        } else {
+            result = await transitionTournament(tournamentUuid, to, undefined, reason)
+            if (!result.success) {
+                return NextResponse.json({ error: result.error }, { status: 400 })
+            }
         }
 
         // Auto-generate bracket when starting the tournament

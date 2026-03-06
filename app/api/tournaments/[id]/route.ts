@@ -30,6 +30,7 @@ const updateTournamentSchema = z.object({
   elimination_best_of: z.number().int().min(1).max(5).optional(),
   finals_best_of: z.number().int().min(1).max(5).optional(),
   banner_image: z.string().optional().nullable(),
+  rr_group_count: z.number().int().min(1).max(8).optional(),
 });
 
 // GET /api/tournaments/[id] - Get a single tournament

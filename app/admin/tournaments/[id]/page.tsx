@@ -12,6 +12,7 @@ import LifecycleBar from '@/components/admin/tournament/LifecycleBar'
 import BracketManager from '@/components/admin/tournament/BracketManager'
 import MatchDirector from '@/components/admin/tournament/MatchDirector'
 import SeedingManager from '@/components/admin/tournament/SeedingManager'
+import GroupStandings from '@/components/admin/tournament/GroupStandings'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -53,6 +54,7 @@ interface Tournament {
   elimination_best_of?: number
   finals_best_of?: number
   banner_image?: string
+  rr_group_count?: number
 }
 
 interface StateCapabilities {
@@ -111,6 +113,7 @@ export default function TournamentManagePage() {
         enable_top_cut: data.enable_top_cut || false,
         top_cut_size: data.top_cut_size || 8,
         registration_count: data.registered_teams_count || 0,
+        rr_group_count: data.rr_group_count || 4,
       })
     } catch (_) {
     } finally {
@@ -219,6 +222,7 @@ export default function TournamentManagePage() {
         elimination_best_of: tournament.elimination_best_of,
         finals_best_of: tournament.finals_best_of,
         banner_image: tournament.banner_image || null,
+        rr_group_count: tournament.rr_group_count,
       }
       const response = await fetch(`/api/tournaments/${tournament.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -454,16 +458,26 @@ export default function TournamentManagePage() {
               </div>
 
               {/* Bracket Preview */}
-              <BracketManager
-                tournamentId={tournament.id}
-                tournamentFormat={tournament.format}
-                maxTeams={tournament.max_teams}
-                participants={participants}
-                matchData={matchData}
-                bracketGenerated={bracketGenerated}
-                canGenerate={capabilities?.can_generate_bracket !== false && participants.length >= 2}
-                onBracketChanged={handleBracketChanged}
-              />
+              {tournament.format === 'Round_Robin' ? (
+                <div className="pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Group Stage</h3>
+                  <GroupStandings
+                    tournamentId={tournament.id}
+                    matchData={matchData}
+                  />
+                </div>
+              ) : (
+                <BracketManager
+                  tournamentId={tournament.id}
+                  tournamentFormat={tournament.format}
+                  maxTeams={tournament.max_teams}
+                  participants={participants}
+                  matchData={matchData}
+                  bracketGenerated={bracketGenerated}
+                  canGenerate={capabilities?.can_generate_bracket !== false && participants.length >= 2}
+                  onBracketChanged={handleBracketChanged}
+                />
+              )}
             </TabsContent>
 
             {/* ─── Seeding Tab ───────────────────────────────────── */}
@@ -636,6 +650,18 @@ export default function TournamentManagePage() {
                           <Input type="number" value={tournament.top_cut_size} onChange={(e) => handleInputChange('top_cut_size', parseInt(e.target.value))} min={2} max={16} />
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {tournament.format === 'Round_Robin' && (
+                    <div className="bg-muted/50 p-4 rounded-lg border space-y-4">
+                      <h3 className="font-medium flex items-center gap-2"><Users className="h-4 w-4" />Round Robin Settings</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Number of Groups</Label>
+                          <Input type="number" value={tournament.rr_group_count} onChange={(e) => handleInputChange('rr_group_count', parseInt(e.target.value))} min={1} max={8} />
+                        </div>
+                      </div>
                     </div>
                   )}
 

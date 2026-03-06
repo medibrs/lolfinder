@@ -66,7 +66,8 @@ export async function transitionTournament(
     tournamentId: string,
     toState: TournamentState,
     userId?: string,
-    reason?: string
+    reason?: string,
+    force: boolean = false
 ): Promise<{ success: boolean; error?: string }> {
     const supabase = getServiceClient()
 
@@ -85,10 +86,12 @@ export async function transitionTournament(
 
     // 2. Build context and validate
     const context = await buildTransitionContext(tournamentId)
-    const validation = validateTransition(fromState, toState, context)
 
-    if (!validation.allowed) {
-        return { success: false, error: validation.reason }
+    if (!force) {
+        const validation = validateTransition(fromState, toState, context)
+        if (!validation.allowed) {
+            return { success: false, error: validation.reason }
+        }
     }
 
     // 3. Persist state change

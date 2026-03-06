@@ -108,6 +108,9 @@ export async function POST(
 
       case 'reset_bracket': {
         const result = await TournamentOrchestrator.resetBracket(tournamentUuid)
+        if (!result.success) {
+          return NextResponse.json({ error: result.error || 'Failed to reset bracket' }, { status: 400 })
+        }
         return NextResponse.json({ message: 'Bracket reset successfully' })
       }
 

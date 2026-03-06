@@ -69,10 +69,26 @@ export async function GET(
             }
         }
 
-        // Attach bracket info to each match
+        // Fetch participants to get group info (needed for Round Robin)
+        const { data: participants } = await supabase
+            .from('tournament_participants')
+            .select('team_id, group_name')
+            .eq('tournament_id', tournamentUuid);
+
+        const teamGroupMap: Record<string, string> = {};
+        if (participants) {
+            for (const p of participants) {
+                if (p.team_id && p.group_name) {
+                    teamGroupMap[p.team_id] = p.group_name;
+                }
+            }
+        }
+
+        // Attach bracket and group info to each match
         const enrichedMatches = (matches || []).map(m => ({
             ...m,
-            bracket: bracketsMap[m.bracket_id] || null
+            bracket: bracketsMap[m.bracket_id] || null,
+            group_name: m.team1_id ? teamGroupMap[m.team1_id] : null
         }));
 
         return NextResponse.json({ matches: enrichedMatches });

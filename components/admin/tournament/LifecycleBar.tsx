@@ -139,6 +139,7 @@ export default function LifecycleBar({ tournamentId, onStateChanged }: Lifecycle
     const [loading, setLoading] = useState(true)
     const [transitioning, setTransitioning] = useState<string | null>(null)
     const [confirmDialog, setConfirmDialog] = useState<{ to: TournamentState; label: string } | null>(null)
+    const [confirmReset, setConfirmReset] = useState(false)
 
     const fetchLifecycle = useCallback(async () => {
         try {
@@ -184,6 +185,31 @@ export default function LifecycleBar({ tournamentId, onStateChanged }: Lifecycle
                 title: `Tournament ${config.label}`,
                 description: `Status changed to ${config.label}.`,
             })
+        } catch (err: any) {
+            toast({ title: 'Error', description: err.message, variant: 'destructive' })
+        } finally {
+            setTransitioning(null)
+        }
+    }
+
+    const handleResetTournament = async () => {
+        setTransitioning('Reset')
+        setConfirmReset(false)
+        try {
+            const res = await fetch(`/api/tournaments/${tournamentId}/bracket`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'reset_bracket' }),
+            })
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                toast({ title: 'Error', description: data.error || 'Failed to reset.', variant: 'destructive' })
+                return
+            }
+
+            toast({ title: 'Success', description: 'Tournament has been completely reset to Seeding phase.' })
+            fetchLifecycle()
         } catch (err: any) {
             toast({ title: 'Error', description: err.message, variant: 'destructive' })
         } finally {
@@ -345,6 +371,18 @@ export default function LifecycleBar({ tournamentId, onStateChanged }: Lifecycle
                                 </Button>
                             )
                         })}
+
+                        {/* Universal Reset Button */}
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setConfirmReset(true)}
+                            disabled={!!transitioning}
+                            className="text-xs h-8 bg-red-900/40 text-red-400 hover:bg-red-900/60 border border-red-900/50"
+                        >
+                            {transitioning === 'Reset' && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
+                            Hard Reset
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -369,6 +407,27 @@ export default function LifecycleBar({ tournamentId, onStateChanged }: Lifecycle
                             className={confirmDialog?.to === 'Cancelled' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
                         >
                             {confirmDialog?.label}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Reset Confirmation Dialog */}
+            <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm: Hard Reset Tournament</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you absolutely sure you want to reset the tournament? This will delete all generated matches, brackets, and standings, reverting the tournament to the Seeding phase. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleResetTournament}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Yes, Reset Tournament
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

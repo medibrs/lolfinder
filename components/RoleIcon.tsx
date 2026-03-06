@@ -9,6 +9,16 @@ interface RoleIconProps extends React.ComponentProps<"img"> {
   size?: number
 }
 
+const ROLE_ICONS: Record<string, string> = {
+  Top: cdnUrl("/roles/top.svg"),
+  Jungle: cdnUrl("/roles/jungle.svg"),
+  Mid: cdnUrl("/roles/mid.svg"),
+  ADC: cdnUrl("/roles/adc.svg"),
+  Support: cdnUrl("/roles/support.svg"),
+}
+
+const DEFAULT_ICON = cdnUrl("/roles/top.svg")
+
 export default function RoleIcon({
   role,
   size = 24,
@@ -16,21 +26,12 @@ export default function RoleIcon({
   style,
   ...props
 }: RoleIconProps) {
-  const getRoleIconUri = (roleName: string) => {
-    const icons: Record<string, string> = {
-      Top: cdnUrl("/roles/top.svg"),
-      Jungle: cdnUrl("/roles/jungle.svg"),
-      Mid: cdnUrl("/roles/mid.svg"),
-      ADC: cdnUrl("/roles/adc.svg"),
-      Support: cdnUrl("/roles/support.svg"),
-    }
-    return icons[roleName] || cdnUrl("/roles/top.svg")
-  }
+  const iconUri = ROLE_ICONS[role] || DEFAULT_ICON
 
   return (
     <img
       data-slot="role-icon"
-      src={getRoleIconUri(role)}
+      src={iconUri}
       alt={role}
       className={cn("block", className)}
       style={{
