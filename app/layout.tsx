@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Analytics } from "@vercel/analytics/next"
 import Navigation from '@/components/navigation'
+import AnnouncementBanner from '@/components/AnnouncementBanner'
 import NotificationPermission from '@/components/NotificationPermission'
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css'
@@ -299,6 +300,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-beaufort antialiased ${beaufort.variable} ${spiegel.variable}`} suppressHydrationWarning={true}>
+        <AnnouncementBanner />
         <Suspense fallback={<div className="h-16 w-full bg-background/80 border-b border-border fixed top-0 z-50" />}>
           <Navigation />
         </Suspense>
