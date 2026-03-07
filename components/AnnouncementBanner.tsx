@@ -55,7 +55,7 @@ export default function AnnouncementBanner() {
             Join our Discord community for updates, tournaments &amp; more!
           </span>
           <a
-            href="https://discord.gg/lolfinder"
+            href="https://discord.gg/rwKYggWhgU"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-white/20 px-3 py-1 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/30"
