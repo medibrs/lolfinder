@@ -301,7 +301,7 @@ export default function RootLayout({
       </head>
       <body className={`font-beaufort antialiased ${beaufort.variable} ${spiegel.variable}`} suppressHydrationWarning={true}>
         <AnnouncementBanner />
-        <Suspense fallback={<div className="h-16 w-full bg-background/80 border-b border-border fixed top-0 z-50" />}>
+        <Suspense fallback={<div className="h-16 w-full bg-background/80 border-b border-border fixed left-0 right-0 z-50" style={{ top: 'var(--banner-height, 0px)' }} />}>
           <Navigation />
         </Suspense>
         {children}

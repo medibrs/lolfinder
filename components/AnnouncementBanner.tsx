@@ -1,11 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 const STORAGE_KEY = 'discord-banner-dismissed'
 
 export default function AnnouncementBanner() {
   const [visible, setVisible] = useState(false)
+  const bannerRef = useRef<HTMLDivElement>(null)
+
+  const updateBannerHeight = useCallback((show: boolean) => {
+    if (show && bannerRef.current) {
+      const h = bannerRef.current.offsetHeight
+      document.documentElement.style.setProperty('--banner-height', `${h}px`)
+    } else {
+      document.documentElement.style.setProperty('--banner-height', '0px')
+    }
+  }, [])
 
   useEffect(() => {
     const dismissed = localStorage.getItem(STORAGE_KEY)
@@ -14,15 +24,21 @@ export default function AnnouncementBanner() {
     }
   }, [])
 
+  useEffect(() => {
+    updateBannerHeight(visible)
+  }, [visible, updateBannerHeight])
+
   const handleDismiss = () => {
     localStorage.setItem(STORAGE_KEY, 'true')
+    updateBannerHeight(false)
     setVisible(false)
   }
 
   if (!visible) return null
 
   return (
-    <div className="relative z-[60] w-full bg-[#5865F2] text-white">
+    <>
+    <div ref={bannerRef} className="fixed top-0 left-0 right-0 z-[60] w-full bg-[#5865F2] text-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
         {/* Spacer to keep content centered */}
         <div className="hidden w-8 shrink-0 sm:block" />
@@ -82,5 +98,7 @@ export default function AnnouncementBanner() {
         </button>
       </div>
     </div>
+    <div style={{ height: 'var(--banner-height, 0px)' }} />
+    </>
   )
 }
