@@ -269,11 +269,10 @@ export default function MatchesPage() {
                   <button
                     key={t.id}
                     onClick={() => setSelectedTournament(t.id)}
-                    className={`relative group text-left rounded-lg overflow-hidden border transition-all duration-200 ${
-                      isSelected
+                    className={`relative group text-left rounded-lg overflow-hidden border transition-all duration-200 ${isSelected
                         ? 'border-[#c9aa71]/60 shadow-[0_0_20px_rgba(201,170,113,0.15)]'
                         : 'border-slate-800 hover:border-slate-600'
-                    }`}
+                      }`}
                   >
                     <div className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-30 transition-opacity" style={{ backgroundImage: `url(${t.banner_image || cdnUrl('/leet_lol_header.jpg')})` }} />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#0c121d]/95 to-[#0c121d]/80" />
@@ -284,9 +283,8 @@ export default function MatchesPage() {
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-bold truncate ${isSelected ? 'text-[#c9aa71]' : 'text-slate-200'}`}>{t.name}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${
-                            status === 'live' ? 'text-red-400' : status === 'upcoming' ? 'text-amber-400' : 'text-slate-500'
-                          }`}>
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${status === 'live' ? 'text-red-400' : status === 'upcoming' ? 'text-amber-400' : 'text-slate-500'
+                            }`}>
                             {status === 'live' && <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />}
                             {status}
                           </span>
@@ -381,11 +379,10 @@ export default function MatchesPage() {
                             {/* Match Card */}
                             <button
                               onClick={handleCardClick}
-                              className={`w-full text-left border transition-all ${
-                                isExpanded
+                              className={`w-full text-left border transition-all ${isExpanded
                                   ? 'border-[#c9aa71]/40 rounded-t-lg'
                                   : 'border-slate-700/50 rounded-lg hover:border-slate-600'
-                              } bg-[#111318] overflow-hidden`}
+                                } bg-[#111318] overflow-hidden`}
                             >
                               {/* Top row: Time + Teams + Score */}
                               <div className="relative">
@@ -450,9 +447,8 @@ export default function MatchesPage() {
                                     </div>
 
                                     {/* Expand chevron */}
-                                    <ChevronDown size={16} className={`text-slate-500 transition-transform shrink-0 ${
-                                      isExpanded ? 'rotate-180 text-[#c9aa71]' : ''
-                                    }`} />
+                                    <ChevronDown size={16} className={`text-slate-500 transition-transform shrink-0 ${isExpanded ? 'rotate-180 text-[#c9aa71]' : ''
+                                      }`} />
                                   </div>
                                 )}
                               </div>
@@ -471,96 +467,96 @@ export default function MatchesPage() {
                               </div>
                             </button>
 
-                      {/* Expanded: Match Details */}
-                      {isExpanded && (
-                        <div className="bg-[#0c121d]/80 border border-t-0 border-[#c9aa71]/40 rounded-b-lg p-5 space-y-5">
-                          {/* Scheduling */}
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              <Calendar size={14} className="text-[#c9aa71]" />
-                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Scheduling</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                              <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Scheduled Time</p>
-                                <p className="text-sm text-slate-200 font-medium">{formatDateTime(match.scheduled_at)}</p>
-                              </div>
-                              <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Started At</p>
-                                <p className="text-sm text-slate-200 font-medium">{formatDateTime(match.started_at)}</p>
-                              </div>
-                              <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Completed At</p>
-                                <p className="text-sm text-slate-200 font-medium">{formatDateTime(match.completed_at)}</p>
-                              </div>
-                            </div>
-                          </div>
+                            {/* Expanded: Match Details */}
+                            {isExpanded && (
+                              <div className="bg-[#0c121d]/80 border border-t-0 border-[#c9aa71]/40 rounded-b-lg p-5 space-y-5">
+                                {/* Scheduling */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar size={14} className="text-[#c9aa71]" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Scheduling</span>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
+                                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Scheduled Time</p>
+                                      <p className="text-sm text-slate-200 font-medium">{formatDateTime(match.scheduled_at)}</p>
+                                    </div>
+                                    <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
+                                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Started At</p>
+                                      <p className="text-sm text-slate-200 font-medium">{formatDateTime(match.started_at)}</p>
+                                    </div>
+                                    <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
+                                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Completed At</p>
+                                      <p className="text-sm text-slate-200 font-medium">{formatDateTime(match.completed_at)}</p>
+                                    </div>
+                                  </div>
+                                </div>
 
-                          {/* Location & Media */}
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              <MapPin size={14} className="text-[#c9aa71]" />
-                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Location & Media</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Match Room / Lobby Info</p>
-                                <p className="text-sm text-slate-200 font-medium">{match.match_room || '—'}</p>
-                              </div>
-                              <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Stream URL</p>
-                                {match.stream_url ? (
-                                  <a href={match.stream_url} target="_blank" rel="noreferrer" className="text-sm text-cyan-400 hover:text-cyan-300 font-medium truncate block">
-                                    {match.stream_url}
-                                  </a>
-                                ) : (
-                                  <p className="text-sm text-slate-200 font-medium">—</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+                                {/* Location & Media */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <MapPin size={14} className="text-[#c9aa71]" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Location & Media</span>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
+                                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Match Room / Lobby Info</p>
+                                      <p className="text-sm text-slate-200 font-medium">{match.match_room || '—'}</p>
+                                    </div>
+                                    <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
+                                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Stream URL</p>
+                                      {match.stream_url ? (
+                                        <a href={match.stream_url} target="_blank" rel="noreferrer" className="text-sm text-cyan-400 hover:text-cyan-300 font-medium truncate block">
+                                          {match.stream_url}
+                                        </a>
+                                      ) : (
+                                        <p className="text-sm text-slate-200 font-medium">—</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
 
-                          {/* Rules & Admin */}
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              <Shield size={14} className="text-[#c9aa71]" />
-                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Rules & Admin</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                              <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Best Of (Series)</p>
-                                <p className="text-sm text-slate-200 font-bold">BO{match.best_of || 1}</p>
-                              </div>
-                              <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Match Locked</p>
-                                <p className={`text-sm font-bold ${match.is_locked ? 'text-red-400' : 'text-slate-400'}`}>
-                                  {match.is_locked ? 'Locked' : 'Open'}
-                                </p>
-                              </div>
-                              <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Override Reason</p>
-                                <p className="text-sm text-slate-200 font-medium">{match.override_reason || '—'}</p>
-                              </div>
-                            </div>
-                            {match.notes && (
-                              <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Admin Notes</p>
-                                <p className="text-sm text-slate-300 italic">{match.notes}</p>
+                                {/* Rules & Admin */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Shield size={14} className="text-[#c9aa71]" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Rules & Admin</span>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
+                                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Best Of (Series)</p>
+                                      <p className="text-sm text-slate-200 font-bold">BO{match.best_of || 1}</p>
+                                    </div>
+                                    <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
+                                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Match Locked</p>
+                                      <p className={`text-sm font-bold ${match.is_locked ? 'text-red-400' : 'text-slate-400'}`}>
+                                        {match.is_locked ? 'Locked' : 'Open'}
+                                      </p>
+                                    </div>
+                                    <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
+                                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Override Reason</p>
+                                      <p className="text-sm text-slate-200 font-medium">{match.override_reason || '—'}</p>
+                                    </div>
+                                  </div>
+                                  {match.notes && (
+                                    <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3">
+                                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Admin Notes</p>
+                                      <p className="text-sm text-slate-300 italic">{match.notes}</p>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Link to full match page */}
+                                <div className="flex justify-end pt-2">
+                                  <Link
+                                    href={matchPath}
+                                    className="px-6 py-2.5 bg-[#c9aa71] hover:bg-[#b89961] text-zinc-900 font-beaufort font-black text-xs uppercase tracking-[0.2em] rounded-sm transition-all active:translate-y-[1px]"
+                                  >
+                                    Full Match Page
+                                  </Link>
+                                </div>
                               </div>
                             )}
-                          </div>
-
-                          {/* Link to full match page */}
-                          <div className="flex justify-end pt-2">
-                            <Link
-                              href={matchPath}
-                              className="px-6 py-2.5 bg-[#c9aa71] hover:bg-[#b89961] text-zinc-900 font-beaufort font-black text-xs uppercase tracking-[0.2em] rounded-sm transition-all active:translate-y-[1px]"
-                            >
-                              Full Match Page
-                            </Link>
-                          </div>
-                        </div>
-                      )}
                           </div>
                         )
                       })}

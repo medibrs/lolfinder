@@ -33,7 +33,7 @@ export const ChatMessageItem = ({
     const loadAvatar = async () => {
       if (message.user.profileIconId) {
         try {
-          const url = await getProfileIconUrl(message.user.profileIconId)
+          const url = getProfileIconUrl(message.user.profileIconId)
           setAvatarUrl(url)
         } catch (error) {
 

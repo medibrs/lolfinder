@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { DDRAGON_VERSION } from '@/lib/ddragon'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -905,7 +906,7 @@ export default function ManageTeamPage() {
                         <div className="relative shrink-0">
                           <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 flex items-center justify-center group-hover:border-cyan-500/50 transition-colors">
                             <img
-                              src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${member.profile_icon_id || 29}.png`}
+                              src={`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${member.profile_icon_id || 29}.png`}
                               alt="Summoner Icon"
                               className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                             />

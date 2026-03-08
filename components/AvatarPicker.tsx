@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Shield } from 'lucide-react'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 
+import { DDRAGON_VERSION } from '@/lib/ddragon'
+
 interface AvatarPickerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -78,7 +80,7 @@ export function AvatarPicker({ open, onOpenChange, currentAvatar, onAvatarSelect
                   title={isCurrentAvatar ? 'Current Avatar' : 'Available'}
                 >
                   <Image
-                    src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${avatarId}.png`}
+                    src={`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${avatarId}.png`}
                     alt={`Avatar ${avatarId}`}
                     fill
                     className="object-cover"

@@ -121,7 +121,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
     for (const member of members) {
       if (member.profile_icon_id) {
         try {
-          const url = await getProfileIconUrl(member.profile_icon_id);
+          const url = getProfileIconUrl(member.profile_icon_id);
           urls[member.id] = url;
         } catch (error) {
 
@@ -466,11 +466,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                 return (
                   <div
                     key={i}
-                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md overflow-hidden border transition-all duration-300 ${
-                      member
+                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md overflow-hidden border transition-all duration-300 ${member
                         ? 'border-cyan-500/40 shadow-[0_0_8px_rgba(8,145,178,0.2)] bg-slate-900'
                         : 'border-slate-800/60 bg-slate-900/30'
-                    }`}
+                      }`}
                   >
                     {member ? (
                       profileIconUrls[member.id] ? (

@@ -10,6 +10,7 @@ import RoleSelect from '@/components/RoleSelect'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import { Trophy, Users, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { DDRAGON_VERSION } from '@/lib/ddragon'
 
 const ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
 
@@ -342,7 +343,7 @@ export default function SetupProfilePage() {
                     <div className="relative">
                       <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#c9aa71]/30 p-1 bg-[#0c121d]/60">
                         <img
-                          src={`https://ddragon.leagueoflegends.com/cdn/16.4.1/img/profileicon/${profileIconId || 29}.png`}
+                          src={`https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${profileIconId || 29}.png`}
                           alt="Avatar"
                           className="w-full h-full object-cover rounded-xl opacity-60 group-hover:opacity-100 transition-opacity"
                         />

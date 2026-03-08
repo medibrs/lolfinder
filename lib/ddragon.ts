@@ -1,64 +1,13 @@
-// DDragon (Data Dragon) API utilities for dynamic version management
+// DDragon (Data Dragon) CDN utilities
+// Version is controlled via NEXT_PUBLIC_DDRAGON_VERSION in .env
 
-let cachedVersion: string | null = null;
-let versionCacheTime: number = 0;
-const CACHE_DURATION = 60 * 60 * 1000; // Cache for 1 hour
+/** Current DDragon patch version – single source of truth */
+export const DDRAGON_VERSION = process.env.NEXT_PUBLIC_DDRAGON_VERSION || '16.5.1';
 
-export async function getLatestDDragonVersion(): Promise<string> {
-  // Return cached version if still valid
-  if (cachedVersion && Date.now() - versionCacheTime < CACHE_DURATION) {
-    return cachedVersion;
-  }
-
-  try {
-    const response = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch DDragon versions: ${response.statusText}`);
-    }
-
-    const versions: string[] = await response.json();
-
-    if (!versions || versions.length === 0) {
-      throw new Error('No versions found in DDragon API response');
-    }
-
-    // The first version in the array is always the latest
-    const latestVersion = versions[0];
-
-    // Cache the result
-    cachedVersion = latestVersion;
-    versionCacheTime = Date.now();
-
-
-    return latestVersion;
-
-  } catch (error) {
-
-
-    // Fallback to a known recent version if caching fails
-    if (cachedVersion) {
-
-      return cachedVersion;
-    }
-
-    // Final fallback to a hardcoded recent version
-
-    return '16.4.1';
-  }
+export function getProfileIconUrl(profileIconId: number): string {
+  return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${profileIconId}.png`;
 }
 
-export async function getProfileIconUrl(profileIconId: number): Promise<string> {
-  const version = await getLatestDDragonVersion();
-  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/profileicon/${profileIconId}.png`;
-}
-
-export async function getChampionIconUrl(championId: string): Promise<string> {
-  const version = await getLatestDDragonVersion();
-  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${championId}.png`;
-}
-
-// Utility to pre-warm the version cache (call this during app startup)
-export async function preloadDDragonVersion(): Promise<void> {
-  await getLatestDDragonVersion();
+export function getChampionIconUrl(championId: string): string {
+  return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${championId}.png`;
 }

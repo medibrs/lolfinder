@@ -80,7 +80,7 @@ export default function LeaderboardPage() {
     for (const player of playersList) {
       if (player.profile_icon_id && !profileIconUrls[player.id]) {
         try {
-          const url = await getProfileIconUrl(player.profile_icon_id)
+          const url = getProfileIconUrl(player.profile_icon_id)
           newUrls[player.id] = url
         } catch (error) {
           // Fallback handled by components

@@ -10,6 +10,8 @@ import { Trophy, Clock, Share2, ExternalLink, Calendar, ChevronRight, Zap, Targe
 import { cdnUrl } from '@/lib/cdn';
 import { cn } from '@/lib/utils'
 
+import { DDRAGON_VERSION } from '@/lib/ddragon'
+
 type Props = {
   params: Promise<{
     id: string
@@ -25,7 +27,7 @@ const supabase = createClient(
 function getTeamAvatarUrl(avatarId?: number | string | null): string | null {
   if (!avatarId) return null
   if (typeof avatarId === 'string' && avatarId.startsWith('http')) return avatarId
-  return `https://ddragon.leagueoflegends.com/cdn/14.21.1/img/profileicon/${avatarId}.png`
+  return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${avatarId}.png`
 }
 
 function getStatValue(wins = 0, losses = 0) {

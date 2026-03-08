@@ -16,8 +16,7 @@ import { Target } from 'lucide-react'
 import { getCached, setCache } from '@/lib/cache'
 import ProfileSetupBanner from '@/components/ProfileSetupBanner'
 
-// DDragon version is stable - avoid async fetch
-const DDRAGON_VERSION = '16.4.1'
+import { DDRAGON_VERSION } from '@/lib/ddragon'
 import {
   Tooltip,
   TooltipContent,

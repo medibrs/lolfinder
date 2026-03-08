@@ -32,7 +32,7 @@ export default function ViewTeamPage() {
     for (const member of members) {
       if (member.profile_icon_id) {
         try {
-          const url = await getProfileIconUrl(member.profile_icon_id)
+          const url = getProfileIconUrl(member.profile_icon_id)
           urls[member.id] = url
         } catch (error) {
 

@@ -6,8 +6,7 @@ import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useIsMobile } from '@/hooks/use-mobile'
 
-// Use a stable DDragon version - this rarely changes and avoids async fetch delays
-const DDRAGON_VERSION = '16.4.1'
+import { DDRAGON_VERSION } from '@/lib/ddragon'
 
 export interface TeamAvatarTeam {
   id: string

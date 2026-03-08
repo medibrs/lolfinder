@@ -1,7 +1,6 @@
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
-
-const DDRAGON_VERSION = '16.4.1'
+import { DDRAGON_VERSION } from '@/lib/ddragon'
 
 /**
  * Returns the current user's profile icon URL from the players table (Riot DDragon).
