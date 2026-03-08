@@ -97,7 +97,10 @@ async function getMatch(id: string, slug?: string) {
       started_at,
       completed_at,
       stream_url,
+      match_room,
       notes,
+      is_locked,
+      override_reason,
       team1_id,
       team2_id,
       winner:teams!tournament_matches_winner_id_fkey(id, name),
@@ -406,6 +409,93 @@ export default async function MatchPage({ params }: Props) {
             </div>
           </div>
         </section>
+
+        {/* ── Match Information (Scheduling / Location / Rules) ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Scheduling */}
+          <div className="space-y-4 bg-[#0c121d]/60 border border-slate-800 rounded-sm p-5">
+            <div className="flex items-center gap-2 border-b border-white/5 pb-3">
+              <Calendar size={14} className="text-[#c9aa71]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Scheduling</span>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">Scheduled Time</p>
+                <p className="text-sm text-slate-200 font-medium">
+                  {match.scheduled_at
+                    ? new Date(match.scheduled_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+                    : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">Started At</p>
+                <p className="text-sm text-slate-200 font-medium">
+                  {match.started_at
+                    ? new Date(match.started_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+                    : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">Completed At</p>
+                <p className="text-sm text-slate-200 font-medium">
+                  {match.completed_at
+                    ? new Date(match.completed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+                    : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Location & Media */}
+          <div className="space-y-4 bg-[#0c121d]/60 border border-slate-800 rounded-sm p-5">
+            <div className="flex items-center gap-2 border-b border-white/5 pb-3">
+              <ExternalLink size={14} className="text-[#c9aa71]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Location & Media</span>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">Match Room / Lobby</p>
+                <p className="text-sm text-slate-200 font-medium">{match.match_room || '—'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">Stream URL</p>
+                {match.stream_url ? (
+                  <a href={match.stream_url} target="_blank" rel="noreferrer" className="text-sm text-cyan-400 hover:text-cyan-300 font-medium break-all">
+                    {match.stream_url}
+                  </a>
+                ) : (
+                  <p className="text-sm text-slate-200 font-medium">—</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Rules & Admin */}
+          <div className="space-y-4 bg-[#0c121d]/60 border border-slate-800 rounded-sm p-5">
+            <div className="flex items-center gap-2 border-b border-white/5 pb-3">
+              <Shield size={14} className="text-[#c9aa71]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Rules & Admin</span>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">Best Of (Series)</p>
+                <p className="text-sm text-slate-200 font-bold">BO{match.best_of || 1}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">Match Locked</p>
+                <p className={cn("text-sm font-bold", match.is_locked ? "text-red-400" : "text-slate-400")}>
+                  {match.is_locked ? 'Locked — players cannot report scores' : 'Open'}
+                </p>
+              </div>
+              {match.override_reason && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">Override Reason</p>
+                  <p className="text-sm text-amber-400 font-medium">{match.override_reason}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* ── Lineups Section (New Requested Feature) ── */}
         <div className="space-y-6">

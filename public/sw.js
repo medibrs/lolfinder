@@ -8,7 +8,7 @@
 //   • Everything else: Network-only
 // ──────────────────────────────────────────────────────────────
 
-const CACHE_NAME = 'lolfinder-v3'
+const CACHE_NAME = 'lolfinder-v4'
 
 // All public pages users can visit without auth
 const PAGE_URLS = [

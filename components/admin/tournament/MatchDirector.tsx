@@ -10,7 +10,7 @@ import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import {
     Play, ChevronRight, Loader2, CheckCircle2, Clock,
     Swords, Trophy, AlertTriangle, Settings2, CalendarIcon, Video, LayoutTemplate,
-    Save, Undo
+    Save, Undo, CalendarClock
 } from 'lucide-react'
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -95,6 +95,13 @@ export default function MatchDirector({
     const [showRewindDialog, setShowRewindDialog] = useState(false)
     const [editingMatch, setEditingMatch] = useState<any | null>(null)
     const [pendingScores, setPendingScores] = useState<Record<string, { team1_score?: number; team2_score?: number }>>({})
+    const [showScheduleDialog, setShowScheduleDialog] = useState(false)
+    const [scheduleConfig, setScheduleConfig] = useState({
+        start_hour: 10,
+        matches_per_slot: 2,
+        slots_per_day: 2,
+        interval_hours: 1,
+    })
 
     const fetchMatches = useCallback(async () => {
         try {
@@ -244,6 +251,31 @@ export default function MatchDirector({
 
             // Auto-select new round
             setSelectedRound(0)
+        } catch (err: any) {
+            toast({ title: 'Error', description: err.message, variant: 'destructive' })
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
+    const handleAutoSchedule = async () => {
+        setShowScheduleDialog(false)
+        setActionLoading('auto-schedule')
+        try {
+            const res = await fetch(`/api/tournaments/${tournamentId}/auto-schedule`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(scheduleConfig),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to auto-schedule')
+
+            await fetchMatches()
+            onStateChanged?.()
+            toast({
+                title: 'Matches Scheduled',
+                description: data.message || `${data.scheduled} matches scheduled across ${data.total_days} days.`,
+            })
         } catch (err: any) {
             toast({ title: 'Error', description: err.message, variant: 'destructive' })
         } finally {
@@ -522,6 +554,19 @@ export default function MatchDirector({
                         {/* Action buttons */}
                         {isCurrentRound && canAdvance && (
                             <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowScheduleDialog(true)}
+                                    disabled={!!actionLoading}
+                                    className="text-xs h-8 text-cyan-500 hover:text-cyan-400 border-cyan-500/20 hover:bg-cyan-500/10"
+                                >
+                                    {actionLoading === 'auto-schedule' ? (
+                                        <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                                    ) : (
+                                        <CalendarClock className="h-3 w-3 mr-1.5" />
+                                    )}
+                                    Auto Schedule
+                                </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => setShowRewindDialog(true)}
@@ -813,6 +858,127 @@ export default function MatchDirector({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            {/* Auto Schedule Config Dialog */}
+            <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+                <DialogContent className="border-cyan-500/20 sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-cyan-500">
+                            <CalendarClock className="h-5 w-5" />
+                            Auto Schedule Configuration
+                        </DialogTitle>
+                        <DialogDescription>
+                            Configure how matches are distributed across days and time slots.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-5 py-2">
+                        {/* Start Hour */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">First match starts at</Label>
+                            <Select
+                                value={String(scheduleConfig.start_hour)}
+                                onValueChange={(val) => setScheduleConfig(c => ({ ...c, start_hour: parseInt(val) }))}
+                            >
+                                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {Array.from({ length: 18 }, (_, i) => i + 6).map(h => (
+                                        <SelectItem key={h} value={String(h)}>
+                                            {String(h).padStart(2, '0')}:00
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Matches per slot */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Matches per time slot</Label>
+                            <Select
+                                value={String(scheduleConfig.matches_per_slot)}
+                                onValueChange={(val) => setScheduleConfig(c => ({ ...c, matches_per_slot: parseInt(val) }))}
+                            >
+                                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {[1, 2, 3, 4, 5].map(n => (
+                                        <SelectItem key={n} value={String(n)}>
+                                            {n} match{n > 1 ? 'es' : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Slots per day */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Time slots per day</Label>
+                            <Select
+                                value={String(scheduleConfig.slots_per_day)}
+                                onValueChange={(val) => setScheduleConfig(c => ({ ...c, slots_per_day: parseInt(val) }))}
+                            >
+                                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {[1, 2, 3, 4, 5, 6].map(n => (
+                                        <SelectItem key={n} value={String(n)}>
+                                            {n} slot{n > 1 ? 's' : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Interval between slots */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Hours between slots</Label>
+                            <Select
+                                value={String(scheduleConfig.interval_hours)}
+                                onValueChange={(val) => setScheduleConfig(c => ({ ...c, interval_hours: parseInt(val) }))}
+                            >
+                                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {[1, 2, 3, 4, 5].map(n => (
+                                        <SelectItem key={n} value={String(n)}>
+                                            {n} hour{n > 1 ? 's' : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Preview */}
+                        <div className="rounded-md border border-slate-700 bg-slate-900/60 p-3 space-y-1.5">
+                            <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Daily Preview</p>
+                            {Array.from({ length: scheduleConfig.slots_per_day }, (_, s) => {
+                                const hour = scheduleConfig.start_hour + s * scheduleConfig.interval_hours
+                                return (
+                                    <div key={s} className="flex items-center gap-2 text-sm">
+                                        <span className="text-cyan-400 font-mono font-bold w-14">
+                                            {String(hour).padStart(2, '0')}:00
+                                        </span>
+                                        <span className="text-slate-400">
+                                            {scheduleConfig.matches_per_slot} match{scheduleConfig.matches_per_slot > 1 ? 'es' : ''}
+                                        </span>
+                                    </div>
+                                )
+                            })}
+                            <div className="border-t border-slate-700 mt-2 pt-2 text-xs text-slate-500">
+                                Total: {scheduleConfig.slots_per_day * scheduleConfig.matches_per_slot} matches/day
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowScheduleDialog(false)}>Cancel</Button>
+                        <Button
+                            onClick={handleAutoSchedule}
+                            className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                        >
+                            <CalendarClock className="h-4 w-4 mr-1.5" />
+                            Schedule All Matches
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <AlertDialog open={showRewindDialog} onOpenChange={setShowRewindDialog}>
                 <AlertDialogContent className="border-amber-500/20">
                     <AlertDialogHeader>

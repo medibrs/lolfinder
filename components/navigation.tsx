@@ -337,6 +337,19 @@ export default function Navigation() {
                             Tournaments
                           </Link>
                           <Link
+                            href="/matches"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={cn(
+                              "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
+                              pathname === "/matches" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                            )}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                            </svg>
+                            Matches
+                          </Link>
+                          <Link
                             href="/leaderboard"
                             onClick={() => setMobileMenuOpen(false)}
                             className={cn(
@@ -742,6 +755,15 @@ export default function Navigation() {
                   Tournaments
                 </Link>
                 <Link
+                  href="/matches"
+                  className={cn(
+                    "text-foreground hover:text-primary transition",
+                    pathname === "/matches" && "text-primary font-medium"
+                  )}
+                >
+                  Matches
+                </Link>
+                <Link
                   href="/leaderboard"
                   className={cn(
                     "text-foreground hover:text-primary transition",
@@ -762,6 +784,15 @@ export default function Navigation() {
                   )}
                 >
                   Tournaments
+                </Link>
+                <Link
+                  href="/matches"
+                  className={cn(
+                    "text-foreground hover:text-primary transition",
+                    pathname === "/matches" && "text-primary font-medium"
+                  )}
+                >
+                  Matches
                 </Link>
                 <Link
                   href="/#about"

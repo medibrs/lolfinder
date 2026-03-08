@@ -10,8 +10,9 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const limit = Math.min(parseInt(searchParams.get('limit') || '120', 10), 300)
+    const tournamentId = searchParams.get('tournament_id')
 
-    const { data: matches, error } = await supabase
+    let query = supabase
       .from('tournament_matches')
       .select(`
         id,
@@ -30,14 +31,24 @@ export async function GET(request: NextRequest) {
         team1_score,
         team2_score,
         stream_url,
+        match_room,
+        notes,
+        is_locked,
+        override_reason,
         created_at,
         team1:teams!tournament_matches_team1_id_fkey(id, name, team_avatar),
         team2:teams!tournament_matches_team2_id_fkey(id, name, team_avatar),
         winner:teams!tournament_matches_winner_id_fkey(id, name),
         tournament:tournaments(id, name, format, tournament_number, banner_image, start_date, end_date)
       `)
-      .order('started_at', { ascending: false })
-      .order('scheduled_at', { ascending: false })
+
+    if (tournamentId) {
+      query = query.eq('tournament_id', tournamentId)
+    }
+
+    const { data: matches, error } = await query
+      .order('match_number', { ascending: true })
+      .order('scheduled_at', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
       .limit(limit)
 
