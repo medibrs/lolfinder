@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Trophy, Calendar, Clock, MapPin, Tv, Shield, ChevronRight, ChevronDown, EyeOff } from 'lucide-react'
+import { ChevronRight, ChevronDown, EyeOff } from 'lucide-react'
+import { TrophyIcon, CalendarIcon, ShieldIcon, InfoIcon } from '@/components/TournamentIcons'
 import { cdnUrl } from '@/lib/cdn'
 import Link from 'next/link'
 import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
@@ -168,6 +169,7 @@ export default function MatchesPage() {
       const { data } = await supabase
         .from('tournaments')
         .select('id, name, banner_image, start_date, end_date, format')
+        .eq('is_active', true)
         .order('start_date', { ascending: false })
 
       if (data && data.length > 0) {
@@ -248,7 +250,7 @@ export default function MatchesPage() {
         {/* Tournament Selector */}
         <section className="space-y-3">
           <div className="flex items-center gap-3 mb-4">
-            <Trophy size={16} className="text-[#c9aa71]" />
+            <TrophyIcon size={16} />
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Tournaments</h2>
           </div>
 
@@ -270,15 +272,15 @@ export default function MatchesPage() {
                     key={t.id}
                     onClick={() => setSelectedTournament(t.id)}
                     className={`relative group text-left rounded-lg overflow-hidden border transition-all duration-200 ${isSelected
-                        ? 'border-[#c9aa71]/60 shadow-[0_0_20px_rgba(201,170,113,0.15)]'
-                        : 'border-slate-800 hover:border-slate-600'
+                      ? 'border-[#c9aa71]/60 shadow-[0_0_20px_rgba(201,170,113,0.15)]'
+                      : 'border-slate-800 hover:border-slate-600'
                       }`}
                   >
                     <div className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-30 transition-opacity" style={{ backgroundImage: `url(${t.banner_image || cdnUrl('/leet_lol_header.jpg')})` }} />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#0c121d]/95 to-[#0c121d]/80" />
                     <div className="relative p-4 flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border ${isSelected ? 'bg-[#c9aa71]/20 border-[#c9aa71]/40' : 'bg-slate-800/60 border-slate-700'}`}>
-                        <Trophy size={18} className={isSelected ? 'text-[#c9aa71]' : 'text-slate-500'} />
+                        <TrophyIcon size={18} className={isSelected ? 'opacity-100' : 'opacity-40'} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-bold truncate ${isSelected ? 'text-[#c9aa71]' : 'text-slate-200'}`}>{t.name}</p>
@@ -311,7 +313,7 @@ export default function MatchesPage() {
             {/* Section header with stats */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <Shield size={16} className="text-cyan-400" />
+                <ShieldIcon size={16} />
                 <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
                   {activeTournament?.name || 'Tournament'} — Matches
                 </h2>
@@ -338,7 +340,7 @@ export default function MatchesPage() {
               </div>
             ) : matches.length === 0 ? (
               <div className="text-center py-16 bg-[#0c121d]/40 border border-slate-800 rounded-lg">
-                <Shield size={40} className="mx-auto text-slate-700 mb-4" />
+                <ShieldIcon size={40} className="mx-auto mb-4 opacity-30" />
                 <p className="text-slate-500 text-sm">No matches found for this tournament.</p>
               </div>
             ) : (
@@ -380,8 +382,8 @@ export default function MatchesPage() {
                             <button
                               onClick={handleCardClick}
                               className={`w-full text-left border transition-all ${isExpanded
-                                  ? 'border-[#c9aa71]/40 rounded-t-lg'
-                                  : 'border-slate-700/50 rounded-lg hover:border-slate-600'
+                                ? 'border-[#c9aa71]/40 rounded-t-lg'
+                                : 'border-slate-700/50 rounded-lg hover:border-slate-600'
                                 } bg-[#111318] overflow-hidden`}
                             >
                               {/* Top row: Time + Teams + Score */}
@@ -447,9 +449,8 @@ export default function MatchesPage() {
                                     </div>
 
                                     {/* Expand chevron - hidden on mobile to save space */}
-                                    <ChevronDown size={16} className={`text-slate-500 transition-transform shrink-0 hidden md:block ${
-                                      isExpanded ? 'rotate-180 text-[#c9aa71]' : ''
-                                    }`} />
+                                    <ChevronDown size={16} className={`text-slate-500 transition-transform shrink-0 hidden md:block ${isExpanded ? 'rotate-180 text-[#c9aa71]' : ''
+                                      }`} />
                                   </div>
                                 )}
                               </div>
@@ -474,7 +475,7 @@ export default function MatchesPage() {
                                 {/* Scheduling */}
                                 <div className="space-y-3">
                                   <div className="flex items-center gap-2">
-                                    <Calendar size={14} className="text-[#c9aa71]" />
+                                    <CalendarIcon size={14} />
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Scheduling</span>
                                   </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -496,7 +497,7 @@ export default function MatchesPage() {
                                 {/* Location & Media */}
                                 <div className="space-y-3">
                                   <div className="flex items-center gap-2">
-                                    <MapPin size={14} className="text-[#c9aa71]" />
+                                    <InfoIcon size={14} />
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Location & Media</span>
                                   </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -520,7 +521,7 @@ export default function MatchesPage() {
                                 {/* Rules & Admin */}
                                 <div className="space-y-3">
                                   <div className="flex items-center gap-2">
-                                    <Shield size={14} className="text-[#c9aa71]" />
+                                    <ShieldIcon size={14} />
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9aa71]">Rules & Admin</span>
                                   </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
