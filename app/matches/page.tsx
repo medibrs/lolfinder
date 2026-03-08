@@ -401,56 +401,56 @@ export default function MatchesPage() {
 
                                 {/* Actual match content — hidden when spoiler is active */}
                                 {!isSpoilerHidden && (
-                                  <div className="flex items-center px-4 py-4 md:py-5 gap-4 md:gap-6">
+                                  <div className="flex items-center px-3 py-3 md:px-4 md:py-5 gap-3 md:gap-6">
                                     {/* Time or Play icon for completed */}
                                     {isComplete ? (
-                                      <div className="w-[70px] shrink-0 flex items-center justify-center">
-                                        <div className="w-10 h-10 rounded bg-slate-700/60 flex items-center justify-center">
-                                          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                      <div className="w-[40px] md:w-[70px] shrink-0 flex items-center justify-center">
+                                        <div className="w-8 h-8 md:w-10 md:h-10 rounded bg-slate-700/60 flex items-center justify-center">
+                                          <svg className="w-3 h-3 md:w-4 md:h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M8 5v14l11-7z" />
                                           </svg>
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="text-2xl md:text-3xl font-black text-white tabular-nums shrink-0 min-w-[70px]">
+                                      <div className="text-lg md:text-3xl font-black text-white tabular-nums shrink-0 min-w-[40px] md:min-w-[70px]">
                                         {formatMatchTime(match)}
                                       </div>
                                     )}
 
                                     {/* Teams + Score */}
-                                    <div className="flex items-center justify-center flex-1 gap-3 md:gap-5">
-                                      <span className="font-bold text-white text-sm md:text-base truncate text-right flex-1">
+                                    <div className="flex items-center justify-center flex-1 min-w-0 gap-1.5 md:gap-5">
+                                      <span className="font-bold text-white text-xs md:text-base truncate text-right flex-1 min-w-0">
                                         {match.team1?.name || 'TBD'}
                                       </span>
                                       <img
                                         src={getTeamAvatarUrl(match.team1?.team_avatar) || '/favicon.ico'}
-                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-slate-600 object-cover shrink-0"
+                                        className="w-6 h-6 md:w-10 md:h-10 rounded-full border border-slate-600 object-cover shrink-0"
                                         alt={match.team1?.name || 'Team 1'}
                                       />
 
                                       {/* Score for completed, slash for others */}
                                       {isComplete ? (
-                                        <div className="flex items-center gap-2 tabular-nums">
-                                          <span className="text-xl md:text-2xl font-black text-white">{match.team1_score ?? 0}</span>
-                                          <span className="text-slate-500 text-lg font-light">/</span>
-                                          <span className="text-xl md:text-2xl font-black text-white">{match.team2_score ?? 0}</span>
+                                        <div className="flex items-center gap-1 md:gap-2 tabular-nums shrink-0">
+                                          <span className="text-base md:text-2xl font-black text-white">{match.team1_score ?? 0}</span>
+                                          <span className="text-slate-500 text-sm md:text-lg font-light">/</span>
+                                          <span className="text-base md:text-2xl font-black text-white">{match.team2_score ?? 0}</span>
                                         </div>
                                       ) : (
-                                        <span className="text-slate-500 text-lg font-light">/</span>
+                                        <span className="text-slate-500 text-sm md:text-lg font-light shrink-0">/</span>
                                       )}
 
                                       <img
                                         src={getTeamAvatarUrl(match.team2?.team_avatar) || '/favicon.ico'}
-                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-slate-600 object-cover shrink-0"
+                                        className="w-6 h-6 md:w-10 md:h-10 rounded-full border border-slate-600 object-cover shrink-0"
                                         alt={match.team2?.name || 'Team 2'}
                                       />
-                                      <span className="font-bold text-white text-sm md:text-base truncate flex-1">
+                                      <span className="font-bold text-white text-xs md:text-base truncate flex-1 min-w-0">
                                         {match.team2?.name || 'TBD'}
                                       </span>
                                     </div>
 
-                                    {/* Expand chevron */}
-                                    <ChevronDown size={16} className={`text-slate-500 transition-transform shrink-0 ${
+                                    {/* Expand chevron - hidden on mobile to save space */}
+                                    <ChevronDown size={16} className={`text-slate-500 transition-transform shrink-0 hidden md:block ${
                                       isExpanded ? 'rotate-180 text-[#c9aa71]' : ''
                                     }`} />
                                   </div>
