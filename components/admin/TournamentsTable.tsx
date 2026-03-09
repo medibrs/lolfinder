@@ -39,7 +39,7 @@ interface Tournament {
   created_at: string
   registration_count?: number
   status?: 'Registration' | 'Registration_Closed' | 'Seeding' | 'In_Progress' | 'Completed' | 'Cancelled'
-  format?: 'Single_Elimination' | 'Double_Elimination' | 'Round_Robin' | 'Swiss'
+  format?: 'Single_Elimination' | 'Double_Elimination' | 'Round_Robin' | 'Swiss' | 'RR_Double_Elim'
   registration_deadline?: string
   current_round?: number
   total_rounds?: number
@@ -253,6 +253,7 @@ export default function TournamentsTable() {
       'Single_Elimination': <Zap className="h-4 w-4" />,
       'Double_Elimination': <Shield className="h-4 w-4" />,
       'Round_Robin': <RefreshCw className="h-4 w-4" />,
+      'RR_Double_Elim': <RefreshCw className="h-4 w-4" />,
       'Swiss': <BarChart3 className="h-4 w-4" />
     }
     return icons[format] || <Trophy className="h-4 w-4" />
@@ -425,6 +426,7 @@ export default function TournamentsTable() {
                   <SelectItem value="Single_Elimination">Single Elimination</SelectItem>
                   <SelectItem value="Double_Elimination">Double Elimination</SelectItem>
                   <SelectItem value="Round_Robin">Round Robin</SelectItem>
+                  <SelectItem value="RR_Double_Elim">RR + Double Elim</SelectItem>
                   <SelectItem value="Swiss">Swiss</SelectItem>
                 </SelectContent>
               </Select>

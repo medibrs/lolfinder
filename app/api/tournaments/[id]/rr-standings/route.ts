@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { computeRoundRobinStandings } from '@/lib/tournament/rr-service'
+import { computeRRDEStandings } from '@/lib/tournament/rr-de-service'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -8,13 +9,13 @@ const supabase = createClient(
 )
 
 // Helper: resolve tournament ID (supports both UUID and tournament_number)
-async function resolveTournamentId(id: string): Promise<string | null> {
+async function resolveTournament(id: string): Promise<{ id: string; format: string } | null> {
     const isNumber = /^\d+$/.test(id)
     let q = supabase.from('tournaments').select('id, format')
     if (isNumber) q = q.eq('tournament_number', parseInt(id))
     else q = q.eq('id', id)
     const { data } = await q.single()
-    return data?.id || null
+    return data ? { id: data.id, format: data.format } : null
 }
 
 // GET /api/tournaments/[id]/rr-standings
@@ -25,13 +26,16 @@ export async function GET(
 ) {
     try {
         const { id } = await params
-        const tournamentId = await resolveTournamentId(id)
-        if (!tournamentId) {
+        const tournament = await resolveTournament(id)
+        if (!tournament) {
             return NextResponse.json({ error: 'Tournament not found' }, { status: 404 })
         }
+        const tournamentId = tournament.id
 
-        // Get computed standings
-        const result = await computeRoundRobinStandings(tournamentId)
+        // Get computed standings — use correct service based on format
+        const result = tournament.format === 'RR_Double_Elim'
+            ? await computeRRDEStandings(tournamentId)
+            : await computeRoundRobinStandings(tournamentId)
 
         // Enrich with per-team match data for the expandable UI
         // Load all matches + team info
@@ -46,10 +50,13 @@ export async function GET(
             .select('id, round_number, bracket_position')
             .eq('tournament_id', tournamentId)
 
-        const bracketMap: Record<string, number> = {}
+        const bracketMap: Record<string, { round_number: number; bracket_position: number }> = {}
         for (const b of brackets || []) {
-            bracketMap[b.id] = b.round_number
+            bracketMap[b.id] = { round_number: b.round_number, bracket_position: b.bracket_position }
         }
+
+        // Playoff bracket positions to exclude from group standings
+        const PLAYOFF_POSITIONS = new Set([101, 102, 103, 111, 112, 113, 114, 121])
 
         // Load team info
         const { data: participants } = await supabase
@@ -69,7 +76,10 @@ export async function GET(
         const teamMatches: Record<string, any[]> = {}
         for (const m of rawMatches || []) {
             if (!m.team1_id || !m.team2_id) continue // skip byes
-            const roundNumber = bracketMap[m.bracket_id] || 0
+            const bracketInfo = bracketMap[m.bracket_id]
+            const roundNumber = bracketInfo?.round_number || 0
+            // Skip playoff matches for RR_Double_Elim
+            if (tournament.format === 'RR_Double_Elim' && bracketInfo && PLAYOFF_POSITIONS.has(bracketInfo.bracket_position)) continue
 
             const matchEntry = (teamId: string, opponentId: string, isTeam1: boolean) => {
                 if (!teamMatches[teamId]) teamMatches[teamId] = []

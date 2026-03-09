@@ -11,7 +11,7 @@ const updateTournamentSchema = z.object({
   prize_pool: z.string().optional(),
   max_teams: z.number().int().positive().optional(),
   rules: z.string().optional(),
-  format: z.enum(['Single_Elimination', 'Double_Elimination', 'Round_Robin', 'Swiss']).optional(),
+  format: z.enum(['Single_Elimination', 'Double_Elimination', 'Round_Robin', 'Swiss', 'RR_Double_Elim']).optional(),
   registration_deadline: z.string().optional().nullable(),
   status: z.enum(['Registration', 'Registration_Closed', 'Seeding', 'In_Progress', 'Completed', 'Cancelled']).optional(),
   current_round: z.number().int().min(0).optional(),
@@ -84,6 +84,8 @@ function calculateTotalRounds(format: string, maxTeams: number, swissRounds: num
       return Math.ceil(Math.log2(maxTeams)) * 2;
     case 'Round_Robin':
       return maxTeams - 1;
+    case 'RR_Double_Elim':
+      return (maxTeams % 2 === 0 ? maxTeams - 1 : maxTeams) + 5; // group rounds + 5 playoff rounds
     case 'Swiss':
       return swissRounds;
     default:

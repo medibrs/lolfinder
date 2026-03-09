@@ -154,7 +154,7 @@ export default function MatchDirector({
             const r = m.bracket?.round_number || m.round_number || 0
             if (r !== selectedRound) return false
             // Hide bye matches (null team) for Round Robin, since they don't require admin input
-            if (tournamentFormat === 'Round_Robin' && (!m.team1_id || !m.team2_id)) return false
+            if ((tournamentFormat === 'Round_Robin' || tournamentFormat === 'RR_Double_Elim') && (!m.team1_id || !m.team2_id)) return false
             return true
         })
     }, [matches, selectedRound, tournamentFormat])
@@ -525,7 +525,7 @@ export default function MatchDirector({
     })
 
     // Round Robin grouping for current round
-    const isRoundRobin = tournamentFormat === 'Round_Robin'
+    const isRoundRobin = tournamentFormat === 'Round_Robin' || tournamentFormat === 'RR_Double_Elim'
     const rrGroups: Record<string, any[]> = {}
     if (isRoundRobin) {
         for (const m of currentRoundMatches) {

@@ -13,6 +13,7 @@ import BracketManager from '@/components/admin/tournament/BracketManager'
 import MatchDirector from '@/components/admin/tournament/MatchDirector'
 import SeedingManager from '@/components/admin/tournament/SeedingManager'
 import GroupStandings from '@/components/admin/tournament/GroupStandings'
+import RRDEPlayoffSection from '@/components/admin/tournament/RRDEPlayoffSection'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -55,6 +56,7 @@ interface Tournament {
   finals_best_of?: number
   banner_image?: string
   rr_group_count?: number
+  bracket_settings?: string
 }
 
 interface StateCapabilities {
@@ -114,6 +116,7 @@ export default function TournamentManagePage() {
         top_cut_size: data.top_cut_size || 8,
         registration_count: data.registered_teams_count || 0,
         rr_group_count: data.rr_group_count || 4,
+        bracket_settings: data.bracket_settings || '',
       })
     } catch (_) {
     } finally {
@@ -458,13 +461,23 @@ export default function TournamentManagePage() {
               </div>
 
               {/* Bracket Preview */}
-              {tournament.format === 'Round_Robin' ? (
+              {(tournament.format === 'Round_Robin' || tournament.format === 'RR_Double_Elim') ? (
                 <div className="pt-4">
-                  <h3 className="text-lg font-semibold mb-4">Group Stage</h3>
+                  <h3 className="text-lg font-semibold mb-4">
+                    {tournament.format === 'RR_Double_Elim' ? 'Round Robin + Double Elimination' : 'Group Stage'}
+                  </h3>
                   <GroupStandings
                     tournamentId={tournament.id}
                     matchData={matchData}
                   />
+                  {tournament.format === 'RR_Double_Elim' && (
+                    <RRDEPlayoffSection
+                      tournamentId={tournament.id}
+                      bracketSettings={tournament.bracket_settings}
+                      matchData={matchData}
+                      onPlayoffsGenerated={handleBracketChanged}
+                    />
+                  )}
                 </div>
               ) : (
                 <BracketManager
@@ -626,6 +639,7 @@ export default function TournamentManagePage() {
                         <SelectItem value="Single_Elimination">Single Elimination</SelectItem>
                         <SelectItem value="Double_Elimination">Double Elimination</SelectItem>
                         <SelectItem value="Round_Robin">Round Robin</SelectItem>
+                        <SelectItem value="RR_Double_Elim">Round Robin + Double Elim</SelectItem>
                         <SelectItem value="Swiss">Swiss System</SelectItem>
                       </SelectContent>
                     </Select>

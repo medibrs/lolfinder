@@ -41,6 +41,11 @@ import {
     generateRoundRobinBracket,
     advanceRoundRobinRound,
 } from './rr-service'
+import {
+    generateRRDEBracket,
+    advanceRRDERound,
+    generateRRDEPlayoffs,
+} from './rr-de-service'
 
 // ─── Engine Registry ────────────────────────────────────────────────
 
@@ -178,6 +183,21 @@ export const TournamentOrchestrator = {
             return {
                 success: true,
                 data: { proposal, matchIds, total_rounds: proposal.total_rounds },
+            }
+        }
+
+        if (format === 'RR_Double_Elim') {
+            const result = await generateRRDEBracket(id)
+            if (tournament.status !== 'In_Progress') {
+                await transitionTournament(id, 'In_Progress')
+            }
+            return {
+                success: true,
+                data: {
+                    total_rounds: result.total_rounds,
+                    matchIds: result.matchIds,
+                    totalMatches: result.totalMatches,
+                },
             }
         }
 
@@ -322,6 +342,23 @@ export const TournamentOrchestrator = {
                 message: result.tournament_completed
                     ? 'Round Robin completed!'
                     : `Advanced to round ${result.next_round}`,
+                data: result,
+            }
+        }
+
+        // ── RR + Double Elim: delegate to rr-de-service ──────────────
+        if (format === 'RR_Double_Elim') {
+            const result = await advanceRRDERound(id, userId)
+            if (result.tournament_completed) {
+                await transitionTournament(id, 'Completed')
+            }
+            return {
+                success: true,
+                message: result.tournament_completed
+                    ? 'Tournament completed!'
+                    : result.group_complete
+                        ? 'Group stage complete! Generate playoffs now.'
+                        : `Advanced to round ${result.next_round}`,
                 data: result,
             }
         }
@@ -551,5 +588,17 @@ export const TournamentOrchestrator = {
      */
     async regenerateSwissDraft(tournamentId: string, roundNumber: number, userId?: string) {
         return regenerateSwissDraft(tournamentId, roundNumber, userId)
+    },
+
+    // ────────────────────────────────────────────────────────────────
+    // RR+DE-SPECIFIC (Playoff Generation)
+    // ────────────────────────────────────────────────────────────────
+
+    /**
+     * Generate playoff brackets after group stage completes.
+     * Top 4 → Winners Bracket, 5th-6th → Losers Bracket, rest eliminated.
+     */
+    async generatePlayoffs(tournamentId: string, userId?: string) {
+        return generateRRDEPlayoffs(tournamentId, userId)
     },
 }

@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { SwissBracketPreview } from '@/components/tournament/swiss-bracket-preview';
 import { SingleEliminationBracketPreview } from '@/components/tournament/single-elimination-bracket-preview';
 import GroupStandings from '@/components/admin/tournament/GroupStandings';
+import { RRDEPlayoffBracket } from '@/components/tournament/rrde-playoff-bracket';
 import { buildSwissBracketData } from '@/lib/swiss-bracket-data';
 import { TournamentRegistrationBtn } from '@/components/tournament/tournament-registration-btn';
 import { TeamsAttendingSection } from '@/components/tournament/teams-attending-section';
@@ -388,18 +389,26 @@ export default async function TournamentEventPage({ params }: Props) {
                   tournamentName={tournament.name}
                   matchData={matchData.length > 0 ? matchData : undefined}
                 />
-              ) : tournament.format === 'Round_Robin' ? (
-                <Card className="border-zinc-800 bg-zinc-900/50 overflow-hidden">
-                  <div className="p-6 border-b border-slate-800/50 flex items-center gap-3">
-                    <TrophyIcon size={24} className="text-zinc-400" />
-                    <h3 className="text-xl font-medium text-white tracking-wide">
-                      Group Standings
-                    </h3>
-                  </div>
-                  <CardContent className="p-6 pt-6">
-                    <GroupStandings tournamentId={tournament.id} />
-                  </CardContent>
-                </Card>
+              ) : (tournament.format === 'Round_Robin' || tournament.format === 'RR_Double_Elim') ? (
+                <>
+                  <Card className="border-zinc-800 bg-zinc-900/50 overflow-hidden">
+                    <div className="p-6 border-b border-slate-800/50 flex items-center gap-3">
+                      <TrophyIcon size={24} className="text-zinc-400" />
+                      <h3 className="text-xl font-medium text-white tracking-wide">
+                        {tournament.format === 'RR_Double_Elim' ? 'Round Robin + Playoffs' : 'Group Standings'}
+                      </h3>
+                    </div>
+                    <CardContent className="p-6 pt-6">
+                      <GroupStandings tournamentId={tournament.id} />
+                    </CardContent>
+                  </Card>
+                  {tournament.format === 'RR_Double_Elim' && (
+                    <RRDEPlayoffBracket
+                      matchData={matchData}
+                      bracketSettings={tournament.bracket_settings}
+                    />
+                  )}
+                </>
               ) : (
                 <Card className="border-zinc-800 bg-zinc-900/50">
                   <CardContent className="flex flex-col items-center justify-center py-12 text-center min-h-[300px]">
