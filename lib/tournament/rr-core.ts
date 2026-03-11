@@ -285,8 +285,7 @@ export function computeTotalRounds(groupSizes: number[]): number {
  * Tiebreaker order:
  *   1. Points (descending)
  *   2. Head-to-head result
- *   3. Point differential (score_for - score_against)
- *   4. Seed number (ascending = higher seed wins)
+ *   3. Seed number (ascending = higher seed wins)
  */
 export function computeStandings(
     assignments: RRGroupAssignment[],
@@ -323,12 +322,6 @@ export function computeStandings(
 
         t1.matches_played++
         t2.matches_played++
-
-        // Score differential
-        const s1 = m.team1_score ?? 0
-        const s2 = m.team2_score ?? 0
-        t1.point_differential += (s1 - s2)
-        t2.point_differential += (s2 - s1)
 
         if (m.result === 'Team1_Win') {
             t1.wins++
@@ -376,16 +369,13 @@ export function computeStandings(
 
     const result: RRStanding[] = []
     for (const [, groupStandings] of byGroup) {
-        // Sort by: points DESC → h2h → point_diff DESC → seed ASC
+        // Sort by: points DESC → h2h → seed ASC
         groupStandings.sort((a, b) => {
             if (b.points !== a.points) return b.points - a.points
 
             // Head-to-head
             const h2hResult = h2h.get(`${a.team_id}|${b.team_id}`)
             if (h2hResult !== undefined && h2hResult !== 0) return -h2hResult  // positive = a won
-
-            // Point differential
-            if (b.point_differential !== a.point_differential) return b.point_differential - a.point_differential
 
             // Seed (lower = better)
             return a.seed_number - b.seed_number

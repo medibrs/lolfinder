@@ -69,8 +69,26 @@ export async function GET(request: Request) {
             email_confirm: true, // Auto confirm so they don't have to verify via email
             user_metadata: {
                 provider: '42',
+                intra_login: userData.login || null,
+                intra_avatar: userData.image?.link || null,
             }
         })
+
+        // For returning users, update their metadata with the latest intra login
+        if (createError && (createError.message.includes('already exists') || createError.message.includes('already registered') || createError.code === 'email_exists')) {
+            const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+            const existingUser = existingUsers?.users?.find(u => u.email === email)
+            if (existingUser) {
+                await supabaseAdmin.auth.admin.updateUser(existingUser.id, {
+                    user_metadata: {
+                        ...existingUser.user_metadata,
+                        provider: '42',
+                        intra_login: userData.login || existingUser.user_metadata?.intra_login || null,
+                        intra_avatar: userData.image?.link || existingUser.user_metadata?.intra_avatar || null,
+                    }
+                })
+            }
+        }
 
         // It's completely fine if the user already exists (they've logged in before)
         if (createError &&

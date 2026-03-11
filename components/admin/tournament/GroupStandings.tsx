@@ -77,11 +77,6 @@ function pointsColor(pts: number) {
     return 'text-red-400'
 }
 
-function rdColor(rd: number) {
-    if (rd > 0) return 'text-emerald-400'
-    if (rd < 0) return 'text-red-400'
-    return 'text-muted-foreground'
-}
 
 // ─── Component ──────────────────────────────────────────────────────
 
@@ -157,7 +152,6 @@ export default function GroupStandings({ tournamentId, matchData = EMPTY_MATCH_D
                                 <th className="text-center py-2 w-8">W</th>
                                 <th className="text-center py-2 w-8">D</th>
                                 <th className="text-center py-2 w-8">L</th>
-                                <th className="text-center py-2 w-10">RD</th>
                                 <th className="text-center py-2 w-10 font-bold">P</th>
                                 <th className="w-8"></th>
                             </tr>
@@ -231,13 +225,6 @@ export default function GroupStandings({ tournamentId, matchData = EMPTY_MATCH_D
                                             {/* L */}
                                             <td className="text-center py-2.5">
                                                 <span className="text-red-400 font-medium">{s.losses}</span>
-                                            </td>
-
-                                            {/* RD (Round Differential) */}
-                                            <td className="text-center py-2.5">
-                                                <span className={cn("font-medium", rdColor(s.point_differential))}>
-                                                    {s.point_differential > 0 ? `+${s.point_differential}` : s.point_differential}
-                                                </span>
                                             </td>
 
                                             {/* Points */}

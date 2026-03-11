@@ -38,12 +38,18 @@ export async function GET() {
       }
     )
 
-    // Fetch all users from Supabase Auth
-    const { data: authData, error: authError } = await adminClient.auth.admin.listUsers()
-
-    if (authError) {
-      console.error('Error fetching auth users:', authError)
-      return NextResponse.json({ error: 'Failed to fetch auth users' }, { status: 500 })
+    // Fetch all users from Supabase Auth (paginate in batches of 1000)
+    const allAuthUsers: any[] = []
+    let authPage = 1
+    while (true) {
+      const { data, error } = await adminClient.auth.admin.listUsers({ page: authPage, perPage: 1000 })
+      if (error) {
+        console.error('Error fetching auth users:', error)
+        return NextResponse.json({ error: 'Failed to fetch auth users' }, { status: 500 })
+      }
+      allAuthUsers.push(...(data.users || []))
+      if ((data.users || []).length < 1000) break
+      authPage++
     }
 
     // Fetch all player profiles
@@ -57,7 +63,7 @@ export async function GET() {
     }
 
     // Map profiles to user format
-    const usersWithProfiles = authData.users.map(u => {
+    const usersWithProfiles = allAuthUsers.map((u: any) => {
       const profile = profiles?.find(p => p.user_id === u.id || p.id === u.id)
       return {
         id: u.id,

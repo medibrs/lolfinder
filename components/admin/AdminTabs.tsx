@@ -14,6 +14,7 @@ import SystemHealthCard from '@/components/admin/SystemHealthCard'
 import ComprehensiveUserManagement from '@/components/admin/ComprehensiveUserManagement'
 import RiotApiStatsCard from '@/components/admin/RiotApiStatsCard'
 import AdminMessagesTable from '@/components/admin/AdminMessagesTable'
+import IntraPlayersTable from '@/components/admin/IntraPlayersTable'
 import { createClient } from '@/lib/supabase/client'
 
 interface AdminTabsProps {
@@ -195,6 +196,17 @@ export default function AdminTabs({ stats }: AdminTabsProps) {
             Messages from team captains. Respond to questions and requests.
           </p>
           <AdminMessagesTable />
+        </Card>
+      )}
+
+      {activeTab === 'intra' && (
+        <Card className="bg-card border-border p-6">
+          <div className="text-4xl mb-4">🔑</div>
+          <h3 className="text-xl font-bold mb-4">42 Intra — Players</h3>
+          <p className="text-muted-foreground mb-6">
+            All users with their 42 Intra login and team assignment.
+          </p>
+          <IntraPlayersTable />
         </Card>
       )}
     </div>

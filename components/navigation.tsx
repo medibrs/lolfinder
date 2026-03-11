@@ -519,6 +519,16 @@ export default function Navigation() {
                                 >
                                   Messages
                                 </Link>
+                                <Link
+                                  href="/admin?tab=intra"
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={cn(
+                                    "block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition",
+                                    activeAdminTab === 'intra' && "text-primary font-medium bg-accent"
+                                  )}
+                                >
+                                  42 Intra
+                                </Link>
                               </div>
                             )}
                           </div>
@@ -722,6 +732,15 @@ export default function Navigation() {
                   )}
                 >
                   Messages
+                </Link>
+                <Link
+                  href="/admin?tab=intra"
+                  className={cn(
+                    "text-sm font-medium px-3 py-2 rounded-md transition",
+                    activeAdminTab === 'intra' && "text-primary font-medium"
+                  )}
+                >
+                  42 Intra
                 </Link>
               </>
             ) : user ? (
