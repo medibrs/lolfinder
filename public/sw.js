@@ -8,7 +8,7 @@
 //   • Everything else: Network-only
 // ──────────────────────────────────────────────────────────────
 
-const CACHE_NAME = 'lolfinder-v4'
+const CACHE_NAME = 'lolfinder-v5'
 
 // All public pages users can visit without auth
 const PAGE_URLS = [
@@ -83,9 +83,9 @@ function isCacheablePage(url) {
   if (PAGE_URLS.includes(path)) return true
   // Dynamic public pages: /tournaments/*, /matches/*, /players/*, /teams/*
   if (path.startsWith('/tournaments/') ||
-      path.startsWith('/matches/') ||
-      path.startsWith('/players/') ||
-      path.startsWith('/teams/')) return true
+    path.startsWith('/matches/') ||
+    path.startsWith('/players/') ||
+    path.startsWith('/teams/')) return true
   return false
 }
 
@@ -102,7 +102,7 @@ self.addEventListener('install', (event) => {
           STATIC_URLS.map((url) =>
             fetch(url).then((resp) => {
               if (resp.ok) return cache.put(url, resp)
-            }).catch(() => {/* ignore */})
+            }).catch(() => {/* ignore */ })
           )
         )
       })
@@ -138,22 +138,22 @@ self.addEventListener('fetch', (event) => {
 
   // Skip auth-related API calls
   if (url.pathname.startsWith('/api/auth') ||
-      url.pathname.startsWith('/api/admin')) return
+    url.pathname.startsWith('/api/admin')) return
 
-  // ── 1. Navigation requests → Stale-While-Revalidate ──
+  // ── 1. Navigation requests → Network-First ──
   if (isNavigationRequest(request) && isCacheablePage(url)) {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
-        const cached = await cache.match(request)
-        const fetchPromise = fetch(request).then((response) => {
-          if (response.ok) {
-            cache.put(request, response.clone())
+        try {
+          const networkResponse = await fetch(request)
+          if (networkResponse.ok) {
+            cache.put(request, networkResponse.clone())
           }
-          return response
-        }).catch(() => cached || new Response('Offline', { status: 503 }))
-
-        // Return cached immediately, update in background
-        return cached || fetchPromise
+          return networkResponse
+        } catch (error) {
+          const cached = await cache.match(request)
+          return cached || new Response('Offline', { status: 503 })
+        }
       })
     )
     return

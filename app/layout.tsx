@@ -311,6 +311,24 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              window.addEventListener('error', function(e) {
+                if (
+                  (e.message && (e.message.includes('ChunkLoadError') || e.message.includes('Failed to load chunk'))) ||
+                  (e.error && e.error.name === 'ChunkLoadError')
+                ) {
+                  window.location.reload();
+                }
+              });
+              window.addEventListener('unhandledrejection', function(e) {
+                if (
+                  e.reason && (
+                    e.reason.name === 'ChunkLoadError' || 
+                    (e.reason.message && (e.reason.message.includes('ChunkLoadError') || e.reason.message.includes('Failed to load chunk')))
+                  )
+                ) {
+                  window.location.reload();
+                }
+              });
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js')
