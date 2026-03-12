@@ -10,7 +10,7 @@ import { getTeamAvatarUrl } from '@/components/ui/team-avatar'
 import {
     Play, ChevronRight, Loader2, CheckCircle2, Clock,
     Swords, Trophy, AlertTriangle, Settings2, CalendarIcon, Video, LayoutTemplate,
-    Save, Undo, CalendarClock
+    Save, Undo, CalendarClock, Zap
 } from 'lucide-react'
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -29,6 +29,9 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { format } from 'date-fns'
+import dynamic from 'next/dynamic'
+
+const LiveMatchOverlay = dynamic(() => import('@/components/tournament/LiveMatchOverlay'), { ssr: false })
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -94,7 +97,10 @@ export default function MatchDirector({
     const [showAdvanceDialog, setShowAdvanceDialog] = useState(false)
     const [showRewindDialog, setShowRewindDialog] = useState(false)
     const [editingMatch, setEditingMatch] = useState<any | null>(null)
+    const [editingGames, setEditingGames] = useState<Array<{ game_number: number; riot_match_id: string }>>([])
+    const [gamesLoading, setGamesLoading] = useState(false)
     const [pendingScores, setPendingScores] = useState<Record<string, { team1_score?: number; team2_score?: number }>>({})
+    const [liveOverlayMatch, setLiveOverlayMatch] = useState<any | null>(null)
     const [showScheduleDialog, setShowScheduleDialog] = useState(false)
     const [scheduleConfig, setScheduleConfig] = useState({
         start_hour: 10,
@@ -127,6 +133,50 @@ export default function MatchDirector({
             fetchMatches()
         }
     }, [externalMatchData, fetchMatches])
+
+    // Fetch games when editing a match
+    useEffect(() => {
+        if (!editingMatch) {
+            setEditingGames([])
+            return
+        }
+        const fetchGames = async () => {
+            setGamesLoading(true)
+            try {
+                const res = await fetch(`/api/tournaments/${tournamentId}/match-games?match_id=${editingMatch.id}`)
+                if (res.ok) {
+                    const data = await res.json()
+                    const existing = (data.games || []).map((g: any) => ({
+                        game_number: g.game_number,
+                        riot_match_id: g.riot_match_id || '',
+                    }))
+                    // Ensure we have slots for the number of games played
+                    const totalGames = (editingMatch.team1_score || 0) + (editingMatch.team2_score || 0)
+                    const slots = Math.max(totalGames, existing.length, 1)
+                    const games: Array<{ game_number: number; riot_match_id: string }> = []
+                    for (let i = 1; i <= slots; i++) {
+                        const found = existing.find((g: any) => g.game_number === i)
+                        games.push(found || { game_number: i, riot_match_id: '' })
+                    }
+                    setEditingGames(games)
+                }
+            } catch { }
+            setGamesLoading(false)
+        }
+        fetchGames()
+    }, [editingMatch?.id, tournamentId])
+
+    const handleSaveGames = async (matchId: string) => {
+        const gamesToSave = editingGames.filter(g => g.riot_match_id.trim())
+        if (gamesToSave.length === 0) return
+        try {
+            await fetch(`/api/tournaments/${tournamentId}/match-games`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ match_id: matchId, games: gamesToSave }),
+            })
+        } catch { }
+    }
 
     // Determine rounds
     const rounds = useMemo(() => {
@@ -327,9 +377,24 @@ export default function MatchDirector({
                 {/* Match Header */}
                 <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50 bg-muted/30">
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground font-mono">Match {match.match_number || '?'}</span>
+                        <a
+                            href={`/matches/${match.match_number || match.id}/${encodeURIComponent(
+                                `${match.team1?.name || 'team-1'} vs ${match.team2?.name || 'team-2'} ${match.tournament_id || 'match'}`
+                                    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-muted-foreground font-mono hover:text-primary transition-colors"
+                        >
+                            Match {match.match_number || '?'}
+                        </a>
                         {match.best_of && match.best_of > 1 && (
                             <Badge variant="outline" className="text-[10px] h-4 px-1">Bo{match.best_of}</Badge>
+                        )}
+                        {match.status === 'In_Progress' && (
+                            <Badge className="text-[10px] h-4 px-1.5 bg-red-500/20 text-red-400 border-red-500/30 animate-pulse">
+                                LIVE
+                            </Badge>
                         )}
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -370,6 +435,20 @@ export default function MatchDirector({
                             );
                         })()}
 
+                        {match.live_proxy_host && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 rounded-full hover:bg-yellow-500/20 hover:text-yellow-500"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setLiveOverlayMatch(match);
+                                }}
+                                title="Open Live Overlay"
+                            >
+                                <Zap className="h-3.5 w-3.5 text-yellow-500" />
+                            </Button>
+                        )}
                         <Button
                             variant="ghost"
                             size="icon"
@@ -449,7 +528,7 @@ export default function MatchDirector({
                 </span>
 
                 {/* Score input */}
-                {!readOnly && match.status !== 'Completed' ? (
+                {!readOnly ? (
                     <input
                         type="number"
                         min={0}
@@ -647,7 +726,7 @@ export default function MatchDirector({
                                             <div className="flex-1 h-px bg-border" />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            {bucketMatches.map(m => renderMatchCard(m, !isCurrentRound))}
+                                            {bucketMatches.map(m => renderMatchCard(m, false))}
                                         </div>
                                     </div>
                                 )
@@ -662,14 +741,14 @@ export default function MatchDirector({
                                         <div className="flex-1 h-px bg-border" />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {groupMatches.map((m: any) => renderMatchCard(m, !isCurrentRound))}
+                                        {groupMatches.map((m: any) => renderMatchCard(m, false))}
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {currentRoundMatches.map(m => renderMatchCard(m, !isCurrentRound))}
+                            {currentRoundMatches.map(m => renderMatchCard(m, false))}
                         </div>
                     )}
                 </CardContent>
@@ -769,6 +848,57 @@ export default function MatchDirector({
                                             className="h-8"
                                         />
                                     </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="live_proxy_host">Live Proxy IP</Label>
+                                        <Input
+                                            id="live_proxy_host"
+                                            placeholder="e.g. 192.168.1.50 or 192.168.1.50:4000"
+                                            value={editingMatch.live_proxy_host || ''}
+                                            onChange={(e) => setEditingMatch({ ...editingMatch, live_proxy_host: e.target.value })}
+                                            className="h-8"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">IP of the PC running lol-live-proxy. Enables live overlay on match page.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Game IDs (Riot Match IDs) */}
+                            <div className="space-y-2">
+                                <Label className="text-xs text-muted-foreground uppercase flex items-center gap-1.5"><Swords className="h-3.5 w-3.5" /> Game IDs (Lobby / Riot Match ID)</Label>
+                                <div className="space-y-2 p-3 bg-muted/30 rounded-lg border border-border/50">
+                                    {gamesLoading ? (
+                                        <div className="flex items-center justify-center py-3">
+                                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {editingGames.map((game, idx) => (
+                                                <div key={game.game_number} className="flex items-center gap-2">
+                                                    <span className="text-xs font-mono text-muted-foreground w-14 shrink-0">Game {game.game_number}</span>
+                                                    <Input
+                                                        placeholder="e.g. EUW1_1234567890"
+                                                        value={game.riot_match_id}
+                                                        onChange={(e) => {
+                                                            const updated = [...editingGames]
+                                                            updated[idx] = { ...updated[idx], riot_match_id: e.target.value }
+                                                            setEditingGames(updated)
+                                                        }}
+                                                        className="h-7 text-xs font-mono"
+                                                    />
+                                                </div>
+                                            ))}
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-xs h-7"
+                                                onClick={() => setEditingGames(prev => [...prev, { game_number: prev.length + 1, riot_match_id: '' }])}
+                                            >
+                                                + Add Game
+                                            </Button>
+                                        </>
+                                    )}
+                                    <p className="text-[10px] text-muted-foreground">Riot match IDs for fetching post-game KDA stats.</p>
                                 </div>
                             </div>
 
@@ -847,8 +977,9 @@ export default function MatchDirector({
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setEditingMatch(null)}>Cancel</Button>
-                        <Button onClick={() => {
+                        <Button onClick={async () => {
                             if (editingMatch) {
+                                await handleSaveGames(editingMatch.id)
                                 handleUpdateMatch(editingMatch.id, editingMatch)
                                 setEditingMatch(null)
                             }
@@ -1002,6 +1133,24 @@ export default function MatchDirector({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Live Overlay Dialog */}
+            <Dialog open={!!liveOverlayMatch} onOpenChange={(open) => { if (!open) setLiveOverlayMatch(null) }}>
+                <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto border-yellow-500/20">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-yellow-500">
+                            <Zap className="h-5 w-5" />
+                            Live Game Overlay
+                        </DialogTitle>
+                        <DialogDescription>
+                            {liveOverlayMatch?.team1?.name || 'Team 1'} vs {liveOverlayMatch?.team2?.name || 'Team 2'} — Proxy: {liveOverlayMatch?.live_proxy_host}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {liveOverlayMatch?.live_proxy_host && (
+                        <LiveMatchOverlay host={liveOverlayMatch.live_proxy_host} />
+                    )}
+                </DialogContent>
+            </Dialog>
         </>
     )
 }

@@ -529,6 +529,13 @@ export default function Navigation() {
                                 >
                                   42 Intra
                                 </Link>
+                                <Link
+                                  href="/live-game"
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className="block text-sm px-3 py-1.5 rounded-md hover:bg-accent transition"
+                                >
+                                  Live Game
+                                </Link>
                               </div>
                             )}
                           </div>
@@ -741,6 +748,12 @@ export default function Navigation() {
                   )}
                 >
                   42 Intra
+                </Link>
+                <Link
+                  href="/live-game"
+                  className="text-sm font-medium px-3 py-2 rounded-md transition hover:text-primary"
+                >
+                  Live Game
                 </Link>
               </>
             ) : user ? (
