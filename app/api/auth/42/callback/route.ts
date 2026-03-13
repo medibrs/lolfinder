@@ -79,7 +79,7 @@ export async function GET(request: Request) {
             const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
             const existingUser = existingUsers?.users?.find(u => u.email === email)
             if (existingUser) {
-                await supabaseAdmin.auth.admin.updateUser(existingUser.id, {
+                await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
                     user_metadata: {
                         ...existingUser.user_metadata,
                         provider: '42',
