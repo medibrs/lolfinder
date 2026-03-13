@@ -9,6 +9,7 @@ import RoleIcon from '@/components/RoleIcon'
 import { Trophy, Clock, Share2, ExternalLink, Calendar, ChevronRight, Zap, Target, Shield, Info, InfoIcon, Users } from 'lucide-react'
 import { cdnUrl } from '@/lib/cdn';
 import { cn } from '@/lib/utils'
+import LiveMatchOverlay from '@/components/tournament/LiveMatchOverlay'
 
 import { DDRAGON_VERSION } from '@/lib/ddragon'
 
@@ -100,6 +101,7 @@ async function getMatch(id: string, slug?: string) {
       completed_at,
       stream_url,
       match_room,
+      live_proxy_host,
       notes,
       is_locked,
       override_reason,
@@ -112,7 +114,39 @@ async function getMatch(id: string, slug?: string) {
     `
 
   const isNumericRoute = /^\d+$/.test(id)
+  const isFullUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+  const isHexPrefix = /^[0-9a-f]{4,32}$/i.test(id)
   let match: any = null
+
+  function pickBySlug(candidates: any[], slug?: string) {
+    if (!candidates || candidates.length === 0) return null
+    if (slug && candidates.length > 1) {
+      const slugMatch = candidates.find((c: any) => {
+        const composed = `${c.team1?.name || 'team-1'} vs ${c.team2?.name || 'team-2'} ${c.tournament?.name || 'match'}`
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+        return composed === slug
+      })
+      return slugMatch || candidates[0]
+    }
+    return candidates[0]
+  }
+
+  async function findByUUIDPrefix(prefix: string) {
+    const padded = prefix.padEnd(8, '0')
+    const minUUID = `${padded}-0000-0000-0000-000000000000`.slice(0, 36)
+    const maxPadded = prefix.padEnd(8, 'f')
+    const maxUUID = `${maxPadded}-ffff-ffff-ffff-ffffffffffff`.slice(0, 36)
+    const { data } = await supabase
+      .from('tournament_matches')
+      .select(selectQuery)
+      .gte('id', minUUID)
+      .lte('id', maxUUID)
+      .order('created_at', { ascending: false })
+      .limit(5)
+    return data
+  }
 
   if (isNumericRoute) {
     const matchNumber = parseInt(id, 10)
@@ -122,59 +156,23 @@ async function getMatch(id: string, slug?: string) {
       .eq('match_number', matchNumber)
       .order('created_at', { ascending: false })
 
-    if (candidates && candidates.length > 0) {
-      if (slug && candidates.length > 1) {
-        const slugMatch = candidates.find((candidate: any) => {
-          const composed = `${candidate.team1?.name || 'team-1'} vs ${candidate.team2?.name || 'team-2'} ${candidate.tournament?.name || 'match'}`
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
-          return composed === slug
-        })
-        match = slugMatch || candidates[0]
-      } else {
-        match = candidates[0]
-      }
-    } else {
-      const { data: byPrefix } = await supabase
-        .from('tournament_matches')
-        .select(selectQuery)
-        .ilike('id', `${id}%`)
-        .order('created_at', { ascending: false })
-        .limit(5)
+    match = pickBySlug(candidates || [], slug)
 
-      if (slug && byPrefix && byPrefix.length > 1) {
-        const slugMatch = byPrefix.find((candidate: any) => {
-          const composed = `${candidate.team1?.name || 'team-1'} vs ${candidate.team2?.name || 'team-2'} ${candidate.tournament?.name || 'match'}`
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
-          return composed === slug
-        })
-        match = slugMatch || byPrefix[0] || null
-      } else {
-        match = byPrefix?.[0] || null
-      }
+    if (!match) {
+      const byPrefix = await findByUUIDPrefix(id)
+      match = pickBySlug(byPrefix || [], slug)
     }
-  } else {
+  } else if (isFullUUID) {
     const { data: exact } = await supabase
       .from('tournament_matches')
       .select(selectQuery)
       .eq('id', id)
       .maybeSingle()
 
-    if (exact) {
-      match = exact
-    } else {
-      const { data: candidates } = await supabase
-        .from('tournament_matches')
-        .select(selectQuery)
-        .ilike('id', `${id}%`)
-        .order('created_at', { ascending: false })
-        .limit(5)
-
-      match = candidates?.[0] || null
-    }
+    match = exact || null
+  } else if (isHexPrefix) {
+    const candidates = await findByUUIDPrefix(id)
+    match = pickBySlug(candidates || [], slug)
   }
 
   if (!match) return null
@@ -411,6 +409,17 @@ export default async function MatchPage({ params }: Props) {
             </div>
           </div>
         </section>
+
+        {/* ── Live Game Overlay ── */}
+        {match.live_proxy_host && (
+          <section className="space-y-4">
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-beaufort font-bold uppercase tracking-widest text-[#c9aa71]">Live Game</h3>
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-[#c9aa71]/20 via-[#c9aa71]/5 to-transparent"></div>
+            </div>
+            <LiveMatchOverlay host={match.live_proxy_host} />
+          </section>
+        )}
 
         {/* ── Match Information (Scheduling / Location / Rules) ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -1,0 +1,22 @@
+{
+  "name": "lol-live-proxy",
+  "version": "1.0.0",
+  "description": "Local proxy that reads League of Legends Live Client Data and exposes it via HTTP for the lolfinder overlay",
+  "main": "server.js",
+  "bin": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build:exe": "pkg server.js --targets node18-win-x64 --output lol-live-proxy.exe"
+  },
+  "pkg": {
+    "targets": ["node18-win-x64"],
+    "outputPath": "dist"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}

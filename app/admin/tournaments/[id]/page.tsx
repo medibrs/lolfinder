@@ -6,11 +6,12 @@ import { createClient } from '@/lib/supabase/client'
 import {
   ArrowLeft, Save, Trophy, Calendar, Users, Settings,
   BarChart3, Copy, Trash2, AlertTriangle, GitBranch,
-  ImagePlus, X, ExternalLink, Loader2, Shuffle
+  ImagePlus, X, ExternalLink, Loader2, Shuffle, Swords
 } from 'lucide-react'
 import LifecycleBar from '@/components/admin/tournament/LifecycleBar'
 import BracketManager from '@/components/admin/tournament/BracketManager'
 import MatchDirector from '@/components/admin/tournament/MatchDirector'
+import KdaRankings from '@/components/admin/tournament/KdaRankings'
 import SeedingManager from '@/components/admin/tournament/SeedingManager'
 import GroupStandings from '@/components/admin/tournament/GroupStandings'
 import RRDEPlayoffSection from '@/components/admin/tournament/RRDEPlayoffSection'
@@ -399,7 +400,7 @@ export default function TournamentManagePage() {
 
           {/* ─── Tabs ────────────────────────────────────────────── */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full grid grid-cols-4 lg:w-[600px]">
+            <TabsList className="w-full grid grid-cols-5 lg:w-[750px]">
               <TabsTrigger value="overview" className="text-xs">
                 <BarChart3 className="h-3.5 w-3.5 mr-1.5" />Overview
               </TabsTrigger>
@@ -408,6 +409,9 @@ export default function TournamentManagePage() {
               </TabsTrigger>
               <TabsTrigger value="matches" className="text-xs">
                 <Trophy className="h-3.5 w-3.5 mr-1.5" />Matches
+              </TabsTrigger>
+              <TabsTrigger value="kda" className="text-xs">
+                <Swords className="h-3.5 w-3.5 mr-1.5" />KDA Stats
               </TabsTrigger>
               <TabsTrigger value="settings" className="text-xs">
                 <Settings className="h-3.5 w-3.5 mr-1.5" />Settings
@@ -536,6 +540,11 @@ export default function TournamentManagePage() {
                 onStateChanged={handleMatchStateChanged}
                 onMatchDataUpdate={setMatchData}
               />
+            </TabsContent>
+
+            {/* ─── KDA Stats Tab ──────────────────────────────────── */}
+            <TabsContent value="kda" className="mt-5 space-y-5">
+              <KdaRankings tournamentId={tournament.id} />
             </TabsContent>
 
             {/* ─── Settings Tab ──────────────────────────────────── */}

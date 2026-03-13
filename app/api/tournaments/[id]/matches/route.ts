@@ -139,6 +139,7 @@ export async function PUT(
         if (best_of !== undefined) updateData.best_of = best_of;
         if (match_room !== undefined) updateData.match_room = match_room;
         if (stream_url !== undefined) updateData.stream_url = stream_url;
+        if (body.live_proxy_host !== undefined) updateData.live_proxy_host = body.live_proxy_host;
         if (notes !== undefined) updateData.notes = notes;
         if (is_locked !== undefined) updateData.is_locked = is_locked;
         if (override_reason !== undefined) updateData.override_reason = override_reason;
