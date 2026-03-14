@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { ChevronRight, ChevronDown, EyeOff } from 'lucide-react'
+import { useEffect, useMemo, useRef, useCallback, useState } from 'react'
+import { ChevronRight, ChevronDown, EyeOff, Eye } from 'lucide-react'
 import { TrophyIcon, CalendarIcon, ShieldIcon, InfoIcon } from '@/components/TournamentIcons'
 import { cdnUrl } from '@/lib/cdn'
 import Link from 'next/link'
@@ -154,6 +154,26 @@ export default function MatchesPage() {
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null)
   const [revealedMatches, setRevealedMatches] = useState<Set<string>>(new Set())
 
+  // Show Spoilers toggle — persisted in localStorage
+  const [showSpoilers, setShowSpoilers] = useState(false)
+  const hasScrolledRef = useRef(false)
+
+  // Load persisted spoiler pref on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('lolfinder_show_spoilers')
+      if (stored === 'true') setShowSpoilers(true)
+    } catch {}
+  }, [])
+
+  const toggleSpoilers = useCallback(() => {
+    setShowSpoilers(prev => {
+      const next = !prev
+      try { localStorage.setItem('lolfinder_show_spoilers', String(next)) } catch {}
+      return next
+    })
+  }, [])
+
   // Fetch active tournaments
   useEffect(() => {
     const fetchTournaments = async () => {
@@ -214,7 +234,25 @@ export default function MatchesPage() {
 
     fetchMatches()
     setExpandedMatch(null)
+    hasScrolledRef.current = false  // allow scroll for new tournament
   }, [selectedTournament])
+
+  // Auto-scroll to today's matches once loaded
+  useEffect(() => {
+    if (loadingMatches || matches.length === 0 || hasScrolledRef.current) return
+    hasScrolledRef.current = true
+
+    const now = new Date()
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+    // Small delay to ensure DOM is painted
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-day="${todayKey}"]`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    })
+  }, [loadingMatches, matches])
 
   const activeTournament = tournaments.find((t) => t.id === selectedTournament)
 
@@ -307,6 +345,39 @@ export default function MatchesPage() {
           )}
         </section>
 
+        {/* Fixed Spoiler Toggle Bar */}
+        <div className="fixed top-16 right-4 md:right-20 z-50">
+          <div className="mt-2">
+            <button
+              onClick={toggleSpoilers}
+              className={`flex items-center gap-3 px-5 py-2.5 md:px-6 md:py-3 rounded-full border backdrop-blur-xl shadow-lg transition-all duration-300 ${
+                showSpoilers
+                  ? 'bg-[#c9aa71]/20 border-[#c9aa71]/50 shadow-[#c9aa71]/10'
+                  : 'bg-slate-900/80 border-slate-700/60 hover:border-slate-500'
+              }`}
+            >
+              {showSpoilers ? (
+                <Eye size={16} className="text-[#c9aa71] md:w-5 md:h-5" />
+              ) : (
+                <EyeOff size={16} className="text-slate-400 md:w-5 md:h-5" />
+              )}
+              <span className={`text-xs md:text-sm font-bold uppercase tracking-[0.15em] ${
+                showSpoilers ? 'text-[#c9aa71]' : 'text-slate-400'
+              }`}>
+                Show Spoilers
+              </span>
+              {/* Toggle switch */}
+              <div className={`relative w-9 h-5 md:w-11 md:h-6 rounded-full transition-colors duration-300 ${
+                showSpoilers ? 'bg-[#c9aa71]' : 'bg-slate-600'
+              }`}>
+                <div className={`absolute top-0.5 w-4 h-4 md:w-5 md:h-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                  showSpoilers ? 'translate-x-4 md:translate-x-5' : 'translate-x-0.5'
+                }`} />
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* Match List */}
         {selectedTournament && (
           <section className="space-y-4">
@@ -346,7 +417,7 @@ export default function MatchesPage() {
             ) : (
               <div className="space-y-10">
                 {grouped.map(({ dayKey, matches: dayMatches }) => (
-                  <div key={dayKey}>
+                  <div key={dayKey} data-day={dayKey}>
                     {/* Day Header — bold underlined like reference */}
                     <div className="mb-5">
                       <h3 className="text-base md:text-lg font-black text-white underline underline-offset-4 decoration-2">
@@ -366,7 +437,7 @@ export default function MatchesPage() {
                           contextName: match.tournament?.name,
                         })
 
-                        const isSpoilerHidden = isComplete && !revealedMatches.has(match.id)
+                        const isSpoilerHidden = isComplete && !showSpoilers && !revealedMatches.has(match.id)
 
                         const handleCardClick = () => {
                           if (isSpoilerHidden) {
