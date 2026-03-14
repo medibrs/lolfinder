@@ -46,6 +46,18 @@ interface PlayerSearchResult {
 /* ── Page ── */
 
 export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <div className="fixed inset-x-0 bottom-0 bg-[#010a13] flex items-center justify-center" style={{ top: 'calc(var(--banner-height, 0px) + 4rem)' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#c9aa71]"></div>
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
+  )
+}
+
+function MessagesContent() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConvo, setActiveConvo] = useState<Conversation | null>(null)
   const [loading, setLoading] = useState(true)
