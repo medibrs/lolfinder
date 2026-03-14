@@ -85,6 +85,11 @@ export default function PlayerDetailPage({ params }: { params: { id: string } })
                 <Button variant="outline" className="w-full">
                   Invite to Team
                 </Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href={`/messages?with=${params.id}`}>
+                    Send Message
+                  </Link>
+                </Button>
               </div>
             </Card>
 

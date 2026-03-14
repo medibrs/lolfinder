@@ -56,6 +56,7 @@ export default function LeaderboardPage() {
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
   const [profileIconUrls, setProfileIconUrls] = useState<Record<string, string>>({})
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined)
   const supabase = createClient()
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function LeaderboardPage() {
         return
       }
 
+      setCurrentUserId(authUser.id)
       fetchPlayers()
     }
 
@@ -183,7 +185,7 @@ export default function LeaderboardPage() {
         ) : (
           <>
             <LeaderboardPodium players={players} profileIconUrls={profileIconUrls} />
-            <StandingsList players={players} profileIconUrls={profileIconUrls} />
+            <StandingsList players={players} profileIconUrls={profileIconUrls} currentUserId={currentUserId} />
 
             {!loading && players.length > 0 && (
               <div className="mt-12 py-6 border-t border-slate-800/50 text-center">

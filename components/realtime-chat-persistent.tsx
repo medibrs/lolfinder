@@ -19,6 +19,7 @@ interface RealtimeChatPersistentProps {
   onMessage?: (messages: ChatMessage[]) => void
   messages?: ChatMessage[]
   enablePersistence?: boolean
+  showStatusBar?: boolean
 }
 
 /**
@@ -35,7 +36,8 @@ export const RealtimeChatPersistent = ({
   username,
   onMessage,
   messages: propMessages,
-  enablePersistence = true
+  enablePersistence = true,
+  showStatusBar = true
 }: RealtimeChatPersistentProps) => {
   const [newMessage, setNewMessage] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -117,29 +119,31 @@ export const RealtimeChatPersistent = ({
   return (
     <div className="flex flex-col h-full">
       {/* Chat Header */}
-      <div className="flex items-center justify-between p-3 border-b">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <div
-              className={cn(
-                'w-2 h-2 rounded-full',
-                isConnected ? 'bg-green-500' : isReconnecting ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
-              )}
-            />
-            <span className="text-sm text-muted-foreground">
-              {isConnected ? 'Connected' : isReconnecting ? 'Reconnecting...' : 'Disconnected'}
-            </span>
-          </div>
-          {enablePersistence && (
+      {showStatusBar && (
+        <div className="flex items-center justify-between p-3 border-b border-slate-800/60 shrink-0">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
-              <History className="h-3 w-3" />
+              <div
+                className={cn(
+                  'w-2 h-2 rounded-full',
+                  isConnected ? 'bg-green-500' : isReconnecting ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
+                )}
+              />
               <span className="text-sm text-muted-foreground">
-                {messages.length} messages
+                {isConnected ? 'Connected' : isReconnecting ? 'Reconnecting...' : 'Disconnected'}
               </span>
             </div>
-          )}
+            {enablePersistence && (
+              <div className="flex items-center gap-1">
+                <History className="h-3 w-3" />
+                <span className="text-sm text-muted-foreground">
+                  {messages.length} messages
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Messages */}
       <div 
@@ -179,7 +183,7 @@ export const RealtimeChatPersistent = ({
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSendMessage} className="p-4 border-t">
+      <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800/60 shrink-0">
         <div className="flex gap-2">
           <Input
             value={newMessage}

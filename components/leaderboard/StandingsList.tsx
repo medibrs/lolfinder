@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { TrendingUp } from "lucide-react"
+import Link from "next/link"
+import { TrendingUp, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { getRankImage } from "@/lib/rank-utils"
@@ -100,9 +101,10 @@ interface Player {
 interface StandingsListProps {
     players: Player[]
     profileIconUrls: Record<string, string>
+    currentUserId?: string
 }
 
-export default function StandingsList({ players, profileIconUrls }: StandingsListProps) {
+export default function StandingsList({ players, profileIconUrls, currentUserId }: StandingsListProps) {
     if (players.length <= 3) {
         return <StandingsEmpty />
     }
@@ -200,18 +202,29 @@ export default function StandingsList({ players, profileIconUrls }: StandingsLis
                             </span>
                         </div>
 
-                        {/* View Button */}
-                        <div className="text-right">
+                        {/* Actions */}
+                        <div className="flex items-center justify-end gap-1">
                             <Button
                                 asChild
                                 variant="ghost"
-                                className="w-full text-[7px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] h-6 sm:h-9 border border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-500/5 hover:text-cyan-400 transition-all rounded-md px-1 sm:px-3"
+                                className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] h-6 sm:h-9 border border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-500/5 hover:text-cyan-400 transition-all rounded-md px-1 sm:px-3"
                             >
                                 <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
                                     <span className="sm:hidden">OP.GG</span>
                                     <span className="hidden sm:inline">View OP.GG</span>
                                 </a>
                             </Button>
+                            {currentUserId && currentUserId !== player.id && (
+                                <Button
+                                    asChild
+                                    variant="ghost"
+                                    className="h-6 sm:h-9 w-6 sm:w-9 p-0 border border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-500/5 hover:text-cyan-400 transition-all rounded-md"
+                                >
+                                    <Link href={`/messages?with=${player.id}`}>
+                                        <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    </Link>
+                                </Button>
+                            )}
                         </div>
                     </StandingsRow>
                 )

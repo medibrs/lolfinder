@@ -360,6 +360,17 @@ export default function Navigation() {
                             <Trophy className="w-4 h-4" />
                             Leaderboard
                           </Link>
+                          <Link
+                            href="/messages"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={cn(
+                              "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
+                              pathname === "/messages" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                            )}
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                            Messages
+                          </Link>
                         </div>
                       </div>
 
@@ -803,6 +814,15 @@ export default function Navigation() {
                   )}
                 >
                   Leaderboard
+                </Link>
+                <Link
+                  href="/messages"
+                  className={cn(
+                    "text-foreground hover:text-primary transition",
+                    pathname === "/messages" && "text-primary font-medium"
+                  )}
+                >
+                  Messages
                 </Link>
               </>
             ) : (

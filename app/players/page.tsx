@@ -12,7 +12,7 @@ import { getRankImage } from '@/lib/rank-utils'
 import RoleIcon from '@/components/RoleIcon'
 import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
-import { Target } from 'lucide-react'
+import { Target, MessageSquare } from 'lucide-react'
 import { getCached, setCache } from '@/lib/cache'
 import ProfileSetupBanner from '@/components/ProfileSetupBanner'
 
@@ -578,17 +578,26 @@ export default function PlayersPage() {
                           </>
                         ) : null}
 
-                        {player.opgg_url && player.opgg_url.trim() !== '' ? (
-                          <Button asChild variant="outline" className="w-full border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest bg-transparent">
-                            <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
-                              View OP.GG
-                            </a>
-                          </Button>
-                        ) : (
-                          <div className="w-full py-2 text-center border border-slate-800/50 rounded-md">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 italic">No OP.GG History</span>
-                          </div>
-                        )}
+                        <div className="flex gap-2">
+                          {player.opgg_url && player.opgg_url.trim() !== '' ? (
+                            <Button asChild variant="outline" className="flex-1 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest bg-transparent">
+                              <a href={player.opgg_url} target="_blank" rel="noopener noreferrer">
+                                View OP.GG
+                              </a>
+                            </Button>
+                          ) : (
+                            <div className="flex-1 py-2 text-center border border-slate-800/50 rounded-md">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 italic">No OP.GG History</span>
+                            </div>
+                          )}
+                          {user && player.id !== user.id && (
+                            <Button asChild variant="outline" className="border-slate-700 text-slate-400 hover:bg-cyan-500/10 hover:border-cyan-500/50 hover:text-cyan-400 transition-all bg-transparent px-3">
+                              <Link href={`/messages?with=${player.id}`}>
+                                <MessageSquare className="w-4 h-4" />
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

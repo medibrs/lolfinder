@@ -115,6 +115,61 @@ export function useRealtimeChat({
     }
   }, [enablePersistence, loadMessageHistory])
 
+  // Polling fallback: fetch new messages every 3 seconds
+  useEffect(() => {
+    if (!enablePersistence) return
+
+    const POLL_INTERVAL = 3000
+    const poll = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('room_name', roomName)
+          .order('created_at', { ascending: true })
+          .limit(50)
+
+        if (error || !data) return
+
+        setMessages((current) => {
+          // Build a set of existing IDs for fast lookup
+          const existingIds = new Set(current.map(m => m.id))
+          const newMsgs: ChatMessage[] = []
+
+          for (const row of data) {
+            if (!existingIds.has(row.id)) {
+              newMsgs.push({
+                id: row.id,
+                content: row.content,
+                user: { name: row.user_name, id: row.user_id },
+                createdAt: row.created_at,
+              })
+            } else {
+              // Check for updated content (e.g. deleted messages)
+              const existing = current.find(m => m.id === row.id)
+              if (existing && existing.content !== row.content) {
+                return data.map(r => ({
+                  id: r.id,
+                  content: r.content,
+                  user: { name: r.user_name, id: r.user_id },
+                  createdAt: r.created_at,
+                }))
+              }
+            }
+          }
+
+          if (newMsgs.length === 0) return current
+          return [...current, ...newMsgs]
+        })
+      } catch {
+        // Ignore polling errors
+      }
+    }
+
+    const interval = setInterval(poll, POLL_INTERVAL)
+    return () => clearInterval(interval)
+  }, [enablePersistence, roomName, supabase])
+
   // Reconnection logic
   const [reconnectAttempts, setReconnectAttempts] = useState(0)
   const MAX_RECONNECT_ATTEMPTS = 5
@@ -222,7 +277,7 @@ export function useRealtimeChat({
     }
   }, [isConnected, reconnect])
 
-  // Initial channel setup
+  // Initial channel setup — broadcast + Postgres Changes for real-time
   useEffect(() => {
     const newChannel = supabase.channel(roomName)
 
@@ -230,7 +285,6 @@ export function useRealtimeChat({
       .on('broadcast', { event: EVENT_MESSAGE_TYPE }, (payload) => {
         const newMessage = payload.payload as ChatMessage
         setMessages((current) => {
-          // Avoid duplicate messages
           if (current.some(msg => msg.id === newMessage.id)) {
             return current
           }
@@ -239,7 +293,6 @@ export function useRealtimeChat({
       })
       .on('broadcast', { event: EVENT_DELETE_TYPE }, (payload) => {
         const { messageId } = payload.payload as { messageId: string }
-        // Update the message content to "Message deleted" for all users
         setMessages((current) =>
           current.map(msg =>
             msg.id === messageId
@@ -248,6 +301,52 @@ export function useRealtimeChat({
           )
         )
       })
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_name=eq.${roomName}`,
+        },
+        (payload) => {
+          const row = payload.new as any
+          const newMessage: ChatMessage = {
+            id: row.id,
+            content: row.content,
+            user: {
+              name: row.user_name,
+              id: row.user_id,
+            },
+            createdAt: row.created_at,
+          }
+          setMessages((current) => {
+            if (current.some(msg => msg.id === newMessage.id)) {
+              return current
+            }
+            return [...current, newMessage]
+          })
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_name=eq.${roomName}`,
+        },
+        (payload) => {
+          const row = payload.new as any
+          setMessages((current) =>
+            current.map(msg =>
+              msg.id === row.id
+                ? { ...msg, content: row.content }
+                : msg
+            )
+          )
+        }
+      )
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true)
