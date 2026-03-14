@@ -68,6 +68,7 @@ function MessagesContent() {
   const [searchResults, setSearchResults] = useState<PlayerSearchResult[]>([])
   const [searching, setSearching] = useState(false)
   const [creatingConvo, setCreatingConvo] = useState(false)
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -110,11 +111,53 @@ function MessagesContent() {
     }
   }, [])
 
+  // Fetch unread counts
+  const fetchUnreadCounts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/dm/unread')
+      if (res.ok) {
+        const data = await res.json()
+        setUnreadCounts(data.unreadCounts || {})
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  // Mark a conversation as read
+  const markAsRead = useCallback(async (conversationId: string) => {
+    try {
+      await fetch('/api/dm/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId }),
+      })
+      setUnreadCounts(prev => {
+        const next = { ...prev }
+        delete next[conversationId]
+        return next
+      })
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => {
     if (currentUser) {
       fetchConversations()
+      fetchUnreadCounts()
     }
-  }, [currentUser, fetchConversations])
+  }, [currentUser, fetchConversations, fetchUnreadCounts])
+
+  // Poll unread counts every 10 seconds
+  useEffect(() => {
+    if (!currentUser) return
+    const interval = setInterval(fetchUnreadCounts, 10000)
+    return () => clearInterval(interval)
+  }, [currentUser, fetchUnreadCounts])
+
+  // Mark conversation as read when opened
+  useEffect(() => {
+    if (activeConvo) {
+      markAsRead(activeConvo.id)
+    }
+  }, [activeConvo, markAsRead])
 
   // Handle ?with= query param to auto-open/create a conversation
   const withProcessedRef = useRef<string | null>(null)
@@ -417,26 +460,37 @@ function MessagesContent() {
                           : 'hover:bg-slate-800/40 border border-transparent'
                       }`}
                     >
-                      <Image
-                        src={convo.otherUser.profileIconId ? getProfileIconUrl(convo.otherUser.profileIconId) : cdnUrl('/default-avatar.svg')}
-                        alt={convo.otherUser.summonerName}
-                        width={44}
-                        height={44}
-                        className="rounded-full border border-slate-700 shrink-0"
-                        onError={(e) => { (e.target as HTMLImageElement).src = cdnUrl('/default-avatar.svg') }}
-                      />
+                      <div className="relative shrink-0">
+                        <Image
+                          src={convo.otherUser.profileIconId ? getProfileIconUrl(convo.otherUser.profileIconId) : cdnUrl('/default-avatar.svg')}
+                          alt={convo.otherUser.summonerName}
+                          width={44}
+                          height={44}
+                          className="rounded-full border border-slate-700"
+                          onError={(e) => { (e.target as HTMLImageElement).src = cdnUrl('/default-avatar.svg') }}
+                        />
+                        {(unreadCounts[convo.id] || 0) > 0 && (
+                          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#c9aa71] text-[10px] font-bold text-zinc-900">
+                            {unreadCounts[convo.id] > 99 ? '99+' : unreadCounts[convo.id]}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className={`text-sm font-semibold truncate ${isActive ? 'text-[#c9aa71]' : 'text-white'}`}>
+                          <p className={`text-sm truncate ${
+                            (unreadCounts[convo.id] || 0) > 0
+                              ? 'font-bold text-white'
+                              : isActive ? 'font-semibold text-[#c9aa71]' : 'font-semibold text-white'
+                          }`}>
                             {convo.otherUser.summonerName}
                           </p>
                           {convo.lastMessage && (
-                            <span className="text-[10px] text-slate-500 shrink-0">
+                            <span className={`text-[10px] shrink-0 ${(unreadCounts[convo.id] || 0) > 0 ? 'text-[#c9aa71]' : 'text-slate-500'}`}>
                               {formatRelativeTime(convo.lastMessage.createdAt)}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                        <p className={`text-xs truncate mt-0.5 ${(unreadCounts[convo.id] || 0) > 0 ? 'text-slate-300 font-medium' : 'text-slate-500'}`}>
                           {convo.lastMessage
                             ? convo.lastMessage.content === 'Message deleted'
                               ? 'Message deleted'

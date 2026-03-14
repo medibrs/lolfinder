@@ -42,6 +42,7 @@ export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
   const [unreadTeamMessages, setUnreadTeamMessages] = useState(0)
+  const [unreadDmMessages, setUnreadDmMessages] = useState(0)
   const supabase = createClient()
 
 
@@ -189,6 +190,32 @@ export default function Navigation() {
       setUnreadTeamMessages(0)
     }
   }, [pathname, userTeam])
+
+  // Fetch DM unread count
+  useEffect(() => {
+    if (!user) return
+
+    const fetchDmUnread = async () => {
+      try {
+        const res = await fetch('/api/dm/unread')
+        if (res.ok) {
+          const data = await res.json()
+          setUnreadDmMessages(data.totalUnread || 0)
+        }
+      } catch { /* ignore */ }
+    }
+
+    fetchDmUnread()
+    const interval = setInterval(fetchDmUnread, 15000)
+    return () => clearInterval(interval)
+  }, [user])
+
+  // Reset DM unread when visiting messages page
+  useEffect(() => {
+    if (pathname === '/messages') {
+      setUnreadDmMessages(0)
+    }
+  }, [pathname])
 
   if (loading) {
     return (
@@ -364,12 +391,17 @@ export default function Navigation() {
                             href="/messages"
                             onClick={() => setMobileMenuOpen(false)}
                             className={cn(
-                              "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3",
+                              "text-base font-medium px-3 py-2 rounded-md transition flex items-center gap-3 relative",
                               pathname === "/messages" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
                             )}
                           >
                             <MessageSquare className="w-4 h-4" />
                             Messages
+                            {unreadDmMessages > 0 && (
+                              <span className="ml-auto flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full bg-red-500 text-[11px] font-bold text-white">
+                                {unreadDmMessages > 99 ? '99+' : unreadDmMessages}
+                              </span>
+                            )}
                           </Link>
                         </div>
                       </div>
@@ -818,11 +850,16 @@ export default function Navigation() {
                 <Link
                   href="/messages"
                   className={cn(
-                    "text-foreground hover:text-primary transition",
+                    "relative text-foreground hover:text-primary transition",
                     pathname === "/messages" && "text-primary font-medium"
                   )}
                 >
                   Messages
+                  {unreadDmMessages > 0 && (
+                    <span className="absolute -top-2 -right-4 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {unreadDmMessages > 99 ? '99+' : unreadDmMessages}
+                    </span>
+                  )}
                 </Link>
               </>
             ) : (
